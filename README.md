@@ -49,7 +49,7 @@ uv tool install --editable .
 quotabubble
 ```
 
-Once published on PyPI, you can also install it as a standalone command with [pipx](https://pipx.pypa.io/): `pipx install quotabubble`.
+You can also install it as a standalone command with [pipx](https://pipx.pypa.io/): `pipx install quotabubble`.
 
 ## Usage
 
