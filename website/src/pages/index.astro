@@ -92,7 +92,12 @@ const providers = [
       <section>
         <h2>Install</h2>
         <p>
-          <strong>Windows.</strong> Download the latest <code>QuotaBubble-windows-x64.zip</code> from
+          <strong>Windows.</strong> With
+          <a href="https://learn.microsoft.com/windows/package-manager/winget/">winget</a>:
+        </p>
+        <pre><code>winget install Izzet.QuotaBubble</code></pre>
+        <p>
+          Or download the latest <code>QuotaBubble-windows-x64.zip</code> from
           <a href={releases}>Releases</a>, unzip it, and run <code>QuotaBubble.exe</code>.
         </p>
         <p class="note">
@@ -105,6 +110,10 @@ const providers = [
 cd quotabubble
 uv tool install --editable .
 quotabubble`}</code></pre>
+        <p>
+          Or install it as a standalone command with
+          <a href="https://pipx.pypa.io/">pipx</a>: <code>pipx install quotabubble</code>.
+        </p>
       </section>
     </main>
 
