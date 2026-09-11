@@ -17,6 +17,7 @@ from PySide6.QtGui import (
     QColor,
     QCursor,
     QFont,
+    QFontMetrics,
     QGuiApplication,
     QPainter,
     QPaintEvent,
@@ -48,7 +49,7 @@ class BubbleWindow(QWidget):
     COMPACT_WIDTH = 260
     EXPANDED_WIDTH = 300
     COMPACT_ROW_HEIGHT = 26
-    NAME_WIDTH = 54
+    NAME_GAP = 12
     MINI_LABEL_WIDTH = 18
     MINI_BAR_WIDTH = 32
     MINI_PCT_WIDTH = 26
@@ -145,7 +146,7 @@ class BubbleWindow(QWidget):
 
         painter.setPen(TEXT)
         painter.drawText(
-            QRectF(left, top, self.NAME_WIDTH, self.COMPACT_ROW_HEIGHT),
+            QRectF(left, top, self._name_width(), self.COMPACT_ROW_HEIGHT),
             vertical | Qt.AlignmentFlag.AlignLeft,
             snapshot.display_name,
         )
@@ -232,6 +233,23 @@ class BubbleWindow(QWidget):
             + cls.MINI_GAP
             + cls.MINI_PCT_WIDTH
         )
+
+    def _content_font(self) -> QFont:
+        font = QFont(self.font())
+        font.setPointSize(9)
+        return font
+
+    def _name_width(self) -> int:
+        snapshots = self._state.ordered()
+        if not snapshots:
+            return 0
+        metrics = QFontMetrics(self._content_font())
+        return max(metrics.horizontalAdvance(snapshot.display_name) for snapshot in snapshots)
+
+    def _compact_width(self) -> int:
+        groups = 2 * self._group_width() + self.GROUP_GAP
+        needed = PADDING * 2 + self._name_width() + self.NAME_GAP + groups
+        return max(self.COMPACT_WIDTH, needed)
 
     @staticmethod
     def _find(snapshot: UsageSnapshot, key: str) -> UsageWindow | None:
@@ -342,11 +360,12 @@ class BubbleWindow(QWidget):
 
     def _compact_size(self) -> QSize:
         rows = max(1, len(self._state.ordered()))
-        return QSize(self.COMPACT_WIDTH, PADDING * 2 + rows * self.COMPACT_ROW_HEIGHT)
+        return QSize(self._compact_width(), PADDING * 2 + rows * self.COMPACT_ROW_HEIGHT)
 
     def _expanded_size(self) -> QSize:
         snapshots = self._state.ordered()
-        return QSize(self.EXPANDED_WIDTH, PADDING * 2 + expanded_content_height(snapshots))
+        width = max(self.EXPANDED_WIDTH, self._compact_width())
+        return QSize(width, PADDING * 2 + expanded_content_height(snapshots))
 
     def _target_size(self) -> QSize:
         return self._expanded_size() if self._expanded else self._compact_size()

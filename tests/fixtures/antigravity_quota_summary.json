@@ -1,0 +1,32 @@
+{
+  "groups": [
+    {
+      "displayName": "Gemini",
+      "buckets": [
+        {
+          "bucketId": "gemini-5h",
+          "window": "5h",
+          "remainingFraction": 0.6,
+          "resetTime": "2026-09-11T18:00:00Z"
+        },
+        {
+          "bucketId": "gemini-weekly",
+          "window": "weekly",
+          "remainingFraction": 0.25,
+          "resetTime": "2026-09-15T00:00:00Z"
+        }
+      ]
+    },
+    {
+      "displayName": "Claude",
+      "buckets": [
+        {
+          "bucketId": "claude-5h",
+          "window": "5h",
+          "remainingFraction": 0.1,
+          "resetTime": "2026-09-11T18:00:00Z"
+        }
+      ]
+    }
+  ]
+}

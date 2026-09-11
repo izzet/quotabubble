@@ -13,6 +13,7 @@ from quotabubble.providers.base import (
     ProviderStatus,
     UsageSnapshot,
     UsageWindow,
+    format_plan,
 )
 
 USAGE_URL = "https://api.anthropic.com/api/oauth/usage"
@@ -89,12 +90,6 @@ def read_credentials(path: Path) -> _Credentials | None:
         access_token=token,
         subscription_type=subscription if isinstance(subscription, str) else None,
     )
-
-
-def _plan(subscription_type: str | None) -> str | None:
-    if not subscription_type:
-        return None
-    return subscription_type.replace("_", " ").title()
 
 
 def _as_float(value: object) -> float | None:
@@ -279,7 +274,7 @@ class ClaudeProvider:
             display_name=self.display_name,
             windows=_usage_windows(parsed),
             credits=_credits(parsed.spend),
-            plan=_plan(credentials.subscription_type),
+            plan=format_plan(credentials.subscription_type),
         )
 
     def _snapshot(self, status: ProviderStatus, message: str | None = None) -> UsageSnapshot:

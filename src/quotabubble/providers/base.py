@@ -41,6 +41,12 @@ class UsageSnapshot(BaseModel):
     fetched_at: datetime | None = None
 
 
+def format_plan(value: str | None) -> str | None:
+    if not value:
+        return None
+    return value.replace("_", " ").title()
+
+
 @runtime_checkable
 class Provider(Protocol):
     id: str

@@ -8,7 +8,13 @@ from pathlib import Path
 import httpx2
 from pydantic import BaseModel
 
-from quotabubble.providers.base import Credits, ProviderStatus, UsageSnapshot, UsageWindow
+from quotabubble.providers.base import (
+    Credits,
+    ProviderStatus,
+    UsageSnapshot,
+    UsageWindow,
+    format_plan,
+)
 
 USAGE_URL = "https://chatgpt.com/backend-api/wham/usage"
 USER_AGENT = "codex-cli"
@@ -146,7 +152,7 @@ class CodexProvider:
             display_name=self.display_name,
             windows=self._windows(parsed),
             credits=_credits(parsed.credits),
-            plan=parsed.plan_type,
+            plan=format_plan(parsed.plan_type),
         )
 
     def _windows(self, parsed: _UsageResponse) -> list[UsageWindow]:

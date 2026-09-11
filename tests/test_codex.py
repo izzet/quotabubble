@@ -50,7 +50,7 @@ def test_fetch_parses_quota_windows_and_plan(tmp_path: Path) -> None:
     assert [window.label for window in snapshot.windows] == ["5h", "Weekly"]
     assert [window.used_pct for window in snapshot.windows] == [67.0, 54.0]
     assert snapshot.windows[0].resets_at is not None
-    assert snapshot.plan == "plus"
+    assert snapshot.plan == "Plus"
     assert snapshot.credits is None
 
 
@@ -63,7 +63,7 @@ def test_credits_are_reported_when_present(tmp_path: Path) -> None:
     )
     snapshot = provider.fetch()
 
-    assert snapshot.plan == "pro"
+    assert snapshot.plan == "Pro"
     assert snapshot.credits is not None
     assert snapshot.credits.display == "12.5"
 

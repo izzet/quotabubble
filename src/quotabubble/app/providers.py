@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 
 from quotabubble.app.settings import Settings
+from quotabubble.providers.antigravity import AntigravityProvider
 from quotabubble.providers.base import Provider, ProviderStatus, UsageSnapshot
 from quotabubble.providers.claude import ClaudeProvider
 from quotabubble.providers.codex import CodexProvider
@@ -20,6 +21,7 @@ def build_providers(settings: Settings) -> list[Provider]:
     return [
         ClaudeProvider(),
         CodexProvider(),
+        AntigravityProvider(),
         DeepSeekProvider(api_key=resolve_api_key(settings, "deepseek")),
     ]
 
