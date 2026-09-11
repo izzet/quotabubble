@@ -46,4 +46,6 @@ class Provider(Protocol):
     id: str
     display_name: str
 
+    def detect(self) -> bool: ...
+
     def fetch(self) -> UsageSnapshot: ...

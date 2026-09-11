@@ -3,7 +3,21 @@ from __future__ import annotations
 from pathlib import Path
 
 from quotabubble.app.settings import Settings
+from quotabubble.providers.base import UsageSnapshot
 from quotabubble.ui.settings_dialog import SettingsDialog
+
+
+class _FakeProvider:
+    def __init__(self, provider_id: str, detected: bool) -> None:
+        self.id = provider_id
+        self.display_name = provider_id.title()
+        self._detected = detected
+
+    def detect(self) -> bool:
+        return self._detected
+
+    def fetch(self) -> UsageSnapshot:
+        return UsageSnapshot(provider=self.id, display_name=self.display_name)
 
 
 def test_dialog_applies_and_saves(qapp: object, tmp_path: Path) -> None:
@@ -22,3 +36,18 @@ def test_dialog_applies_and_saves(qapp: object, tmp_path: Path) -> None:
     assert settings.refresh_interval_ms == 30_000
     assert settings.show_remaining is True
     assert Settings.load(path).refresh_interval_ms == 30_000
+
+
+def test_dialog_lists_detected_providers(qapp: object, tmp_path: Path) -> None:
+    path = tmp_path / "settings.json"
+    settings = Settings()
+    providers = [_FakeProvider("claude", True), _FakeProvider("codex", False)]
+    dialog = SettingsDialog(settings, providers, path=path)
+
+    assert dialog.provider_checks[0][1].isChecked() is True
+    assert dialog.provider_checks[1][1].isEnabled() is False
+
+    dialog.provider_checks[0][1].setChecked(False)
+    dialog.accept()
+
+    assert settings.enabled_providers == []

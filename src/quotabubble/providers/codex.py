@@ -106,6 +106,9 @@ class CodexProvider:
         self._credentials_path = credentials_path or default_credentials_path()
         self._client = client
 
+    def detect(self) -> bool:
+        return read_credentials(self._credentials_path) is not None
+
     def fetch(self) -> UsageSnapshot:
         credentials = read_credentials(self._credentials_path)
         if credentials is None:

@@ -14,5 +14,8 @@ class AppState:
                 return
         self._snapshots.append(snapshot)
 
+    def replace(self, snapshots: list[UsageSnapshot]) -> None:
+        self._snapshots = list(snapshots)
+
     def ordered(self) -> list[UsageSnapshot]:
         return list(self._snapshots)

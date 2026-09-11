@@ -21,6 +21,11 @@ REQUEST_TIMEOUT_SECONDS = 15.0
 _WINDOW_ORDER = {"session": 0, "weekly": 1}
 
 
+class _Credentials(BaseModel):
+    access_token: str
+    subscription_type: str | None = None
+
+
 class _Bucket(BaseModel):
     utilization: float
     resets_at: datetime | None = None
@@ -68,7 +73,7 @@ def default_credentials_path() -> Path:
     return Path.home() / ".claude" / ".credentials.json"
 
 
-def read_access_token(path: Path) -> str | None:
+def read_credentials(path: Path) -> _Credentials | None:
     try:
         raw = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, ValueError):
@@ -77,9 +82,19 @@ def read_access_token(path: Path) -> str | None:
     if not isinstance(oauth, dict):
         return None
     token = oauth.get("accessToken")
-    if isinstance(token, str) and token:
-        return token
-    return None
+    if not isinstance(token, str) or not token:
+        return None
+    subscription = oauth.get("subscriptionType")
+    return _Credentials(
+        access_token=token,
+        subscription_type=subscription if isinstance(subscription, str) else None,
+    )
+
+
+def _plan(subscription_type: str | None) -> str | None:
+    if not subscription_type:
+        return None
+    return subscription_type.replace("_", " ").title()
 
 
 def _as_float(value: object) -> float | None:
@@ -225,15 +240,18 @@ class ClaudeProvider:
         self._credentials_path = credentials_path or default_credentials_path()
         self._client = client
 
+    def detect(self) -> bool:
+        return read_credentials(self._credentials_path) is not None
+
     def fetch(self) -> UsageSnapshot:
-        token = read_access_token(self._credentials_path)
-        if token is None:
+        credentials = read_credentials(self._credentials_path)
+        if credentials is None:
             return self._snapshot(
                 ProviderStatus.NO_CREDENTIALS, "No Claude Code credentials found"
             )
 
         headers = {
-            "Authorization": f"Bearer {token}",
+            "Authorization": f"Bearer {credentials.access_token}",
             "anthropic-beta": ANTHROPIC_BETA,
         }
         client = self._client or httpx2.Client(timeout=REQUEST_TIMEOUT_SECONDS)
@@ -260,6 +278,7 @@ class ClaudeProvider:
             display_name=self.display_name,
             windows=_usage_windows(parsed),
             credits=_credits(parsed.spend),
+            plan=_plan(credentials.subscription_type),
         )
 
     def _snapshot(self, status: ProviderStatus, message: str | None = None) -> UsageSnapshot:

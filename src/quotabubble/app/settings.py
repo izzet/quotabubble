@@ -14,12 +14,13 @@ def default_settings_path() -> Path:
 
 
 class Settings(BaseModel):
-    idle_opacity: float = 0.10
+    idle_opacity: float = 0.25
     hover_opacity: float = 1.0
     fade_delay_ms: int = 700
     fade_duration_ms: int = 180
     show_remaining: bool = False
     refresh_interval_ms: int = 60_000
+    enabled_providers: list[str] | None = None
     position: tuple[int, int] | None = None
 
     @classmethod

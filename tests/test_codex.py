@@ -117,3 +117,11 @@ def test_network_error_reports_error(tmp_path: Path) -> None:
     )
 
     assert provider.fetch().status is ProviderStatus.ERROR
+
+
+def test_detect_reflects_credential_presence(tmp_path: Path) -> None:
+    present = CodexProvider(credentials_path=_write_credentials(tmp_path))
+    absent = CodexProvider(credentials_path=tmp_path / "absent.json")
+
+    assert present.detect() is True
+    assert absent.detect() is False

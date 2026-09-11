@@ -7,9 +7,9 @@ from PySide6.QtGui import QGuiApplication
 from PySide6.QtWidgets import QApplication, QDialog
 
 from quotabubble.app.polling import PollingService
+from quotabubble.app.providers import loading_snapshot, select_providers
 from quotabubble.app.settings import Settings
 from quotabubble.app.state import AppState
-from quotabubble.providers.base import ProviderStatus, UsageSnapshot
 from quotabubble.providers.claude import ClaudeProvider
 from quotabubble.providers.codex import CodexProvider
 from quotabubble.ui.bubble import BubbleWindow
@@ -28,36 +28,40 @@ def main() -> None:
     app.setQuitOnLastWindowClosed(False)
 
     settings = Settings.load()
-    providers = [ClaudeProvider(), CodexProvider()]
+    all_providers = [ClaudeProvider(), CodexProvider()]
 
     state = AppState()
-    for provider in providers:
-        state.update(
-            UsageSnapshot(
-                provider=provider.id,
-                display_name=provider.display_name,
-                status=ProviderStatus.LOADING,
-            )
-        )
-
     window = BubbleWindow(state, settings)
     window.show()
 
-    service = PollingService(providers, settings.refresh_interval_ms)
-    service.snapshot_ready.connect(window.apply_snapshot)
-    service.start()
-    app.aboutToQuit.connect(service.stop)
-
-    def open_settings() -> None:
-        dialog = SettingsDialog(settings, window)
-        if dialog.exec() == QDialog.DialogCode.Accepted:
-            window.apply_settings()
-            service.set_interval(settings.refresh_interval_ms)
-
-    window.settings_requested.connect(open_settings)
-
     tray = TrayIcon(window)
-    tray.settings_requested.connect(open_settings)
     tray.show()
 
+    services: list[PollingService] = []
+
+    def start_service() -> None:
+        providers = select_providers(all_providers, settings)
+        state.replace([loading_snapshot(provider) for provider in providers])
+        window.refresh()
+        service = PollingService(providers, settings.refresh_interval_ms)
+        service.snapshot_ready.connect(window.apply_snapshot)
+        service.start()
+        services.append(service)
+
+    def stop_service() -> None:
+        while services:
+            services.pop().stop()
+
+    def open_settings() -> None:
+        dialog = SettingsDialog(settings, all_providers, window)
+        if dialog.exec() == QDialog.DialogCode.Accepted:
+            stop_service()
+            start_service()
+            window.apply_settings()
+
+    window.settings_requested.connect(open_settings)
+    tray.settings_requested.connect(open_settings)
+    app.aboutToQuit.connect(stop_service)
+
+    start_service()
     sys.exit(app.exec())

@@ -128,3 +128,19 @@ def test_network_error_reports_error(tmp_path: Path) -> None:
     )
 
     assert provider.fetch().status is ProviderStatus.ERROR
+
+
+def test_detect_reflects_credential_presence(tmp_path: Path) -> None:
+    present = ClaudeProvider(credentials_path=_write_credentials(tmp_path))
+    absent = ClaudeProvider(credentials_path=tmp_path / "absent.json")
+
+    assert present.detect() is True
+    assert absent.detect() is False
+
+
+def test_plan_is_reported_from_credentials(tmp_path: Path) -> None:
+    body = (FIXTURES / "claude_usage.json").read_text(encoding="utf-8")
+
+    snapshot = _provider_with_body(tmp_path, body).fetch()
+
+    assert snapshot.plan == "Max"

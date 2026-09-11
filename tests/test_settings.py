@@ -15,5 +15,5 @@ def test_settings_roundtrip(tmp_path: Path) -> None:
 def test_settings_load_missing_returns_defaults(tmp_path: Path) -> None:
     loaded = Settings.load(tmp_path / "absent.json")
 
-    assert loaded.idle_opacity == 0.10
+    assert loaded.idle_opacity == 0.25
     assert loaded.position is None
