@@ -88,3 +88,7 @@ See [AGENTS.md](AGENTS.md) for architecture and contribution conventions. The pr
 ## Status
 
 Windows is the primary, fully supported platform. Claude, Codex, DeepSeek, and OpenRouter work anywhere; Antigravity and Copilot currently use the Windows credential store and need macOS/Linux implementations. API keys are stored in the local settings file for now — moving them to the OS keyring is tracked in [#3](https://github.com/izzet/quotabubble/issues/3).
+
+## License
+
+[MIT](LICENSE)
