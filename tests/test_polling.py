@@ -5,9 +5,14 @@ from quotabubble.providers.base import UsageSnapshot
 
 
 class _FakeProvider:
+    uses_api_key = False
+
     def __init__(self, provider_id: str) -> None:
         self.id = provider_id
         self.display_name = provider_id.title()
+
+    def detect(self) -> bool:
+        return True
 
     def fetch(self) -> UsageSnapshot:
         return UsageSnapshot(provider=self.id, display_name=self.display_name)
@@ -21,3 +26,13 @@ def test_poll_emits_a_snapshot_per_provider(qapp: object) -> None:
     worker.poll()
 
     assert [snapshot.provider for snapshot in received] == ["claude", "codex"]
+
+
+def test_set_providers_swaps_and_repolls(qapp: object) -> None:
+    worker = PollingWorker([_FakeProvider("claude")], 60000)
+    received: list[UsageSnapshot] = []
+    worker.snapshot_ready.connect(received.append)
+
+    worker.set_providers([_FakeProvider("codex")])
+
+    assert [snapshot.provider for snapshot in received] == ["codex"]

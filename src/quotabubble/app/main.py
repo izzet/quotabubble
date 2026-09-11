@@ -34,31 +34,29 @@ def main() -> None:
     tray = TrayIcon(window)
     tray.show()
 
-    services: list[PollingService] = []
+    providers = select_providers(build_providers(settings), settings)
+    state.replace([loading_snapshot(provider) for provider in providers])
+    window.refresh()
 
-    def start_service() -> None:
-        providers = select_providers(build_providers(settings), settings)
-        state.replace([loading_snapshot(provider) for provider in providers])
+    service = PollingService(providers, settings.refresh_interval_ms)
+    service.snapshot_ready.connect(window.apply_snapshot)
+    service.start()
+
+    def apply_providers() -> None:
+        selected = select_providers(build_providers(settings), settings)
+        state.replace([loading_snapshot(provider) for provider in selected])
         window.refresh()
-        service = PollingService(providers, settings.refresh_interval_ms)
-        service.snapshot_ready.connect(window.apply_snapshot)
-        service.start()
-        services.append(service)
-
-    def stop_service() -> None:
-        while services:
-            services.pop().stop()
+        service.set_providers(selected)
 
     def open_settings() -> None:
         dialog = SettingsDialog(settings, build_providers(settings), window)
         if dialog.exec() == QDialog.DialogCode.Accepted:
-            stop_service()
-            start_service()
+            apply_providers()
+            service.set_interval(settings.refresh_interval_ms)
             window.apply_settings()
 
     window.settings_requested.connect(open_settings)
     tray.settings_requested.connect(open_settings)
-    app.aboutToQuit.connect(stop_service)
+    app.aboutToQuit.connect(service.stop)
 
-    start_service()
     sys.exit(app.exec())

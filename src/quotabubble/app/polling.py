@@ -17,7 +17,7 @@ class PollingWorker(QObject):
         parent: QObject | None = None,
     ) -> None:
         super().__init__(parent)
-        self._providers = providers
+        self._providers = list(providers)
         self._interval_ms = interval_ms
         self._timer: QTimer | None = None
 
@@ -34,6 +34,11 @@ class PollingWorker(QObject):
         for provider in self._providers:
             self.snapshot_ready.emit(provider.fetch())
 
+    @Slot(object)
+    def set_providers(self, providers: list[Provider]) -> None:
+        self._providers = list(providers)
+        self.poll()
+
     @Slot(int)
     def set_interval(self, interval_ms: int) -> None:
         self._interval_ms = interval_ms
@@ -44,12 +49,14 @@ class PollingWorker(QObject):
     def stop(self) -> None:
         if self._timer is not None:
             self._timer.stop()
+            self._timer.setParent(None)
             self._timer = None
 
 
 class PollingService(QObject):
     snapshot_ready = Signal(object)
     interval_changed = Signal(int)
+    providers_changed = Signal(object)
 
     def __init__(
         self,
@@ -64,6 +71,7 @@ class PollingService(QObject):
         self._thread.started.connect(self._worker.start)
         self._worker.snapshot_ready.connect(self._relay)
         self.interval_changed.connect(self._worker.set_interval)
+        self.providers_changed.connect(self._worker.set_providers)
 
     def start(self) -> None:
         self._thread.start()
@@ -71,11 +79,18 @@ class PollingService(QObject):
     def set_interval(self, interval_ms: int) -> None:
         self.interval_changed.emit(interval_ms)
 
+    def set_providers(self, providers: list[Provider]) -> None:
+        self.providers_changed.emit(list(providers))
+
     @Slot(object)
     def _relay(self, snapshot: UsageSnapshot) -> None:
         self.snapshot_ready.emit(snapshot)
 
     def stop(self) -> None:
-        QMetaObject.invokeMethod(self._worker, "stop", Qt.ConnectionType.QueuedConnection)
+        if not self._thread.isRunning():
+            return
+        QMetaObject.invokeMethod(
+            self._worker, "stop", Qt.ConnectionType.BlockingQueuedConnection
+        )
         self._thread.quit()
-        self._thread.wait(2000)
+        self._thread.wait()
