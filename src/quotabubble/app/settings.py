@@ -19,6 +19,7 @@ class Settings(BaseModel):
     fade_delay_ms: int = 700
     fade_duration_ms: int = 180
     show_remaining: bool = False
+    launch_at_login: bool = False
     refresh_interval_ms: int = 60_000
     enabled_providers: list[str] | None = None
     api_keys: dict[str, str] = {}

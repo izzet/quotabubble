@@ -1,14 +1,19 @@
 from __future__ import annotations
 
 import ctypes
+import winreg
 from ctypes import wintypes
 
 from PySide6.QtWidgets import QWidget
+
+from quotabubble.platform.launch import launch_command
 
 GWL_EXSTYLE = -20
 WS_EX_TOOLWINDOW = 0x00000080
 WS_EX_APPWINDOW = 0x00040000
 WS_EX_NOACTIVATE = 0x08000000
+RUN_KEY = r"Software\Microsoft\Windows\CurrentVersion\Run"
+APP_NAME = "QuotaBubble"
 
 _user32 = ctypes.windll.user32
 
@@ -31,3 +36,14 @@ def configure_window(widget: QWidget) -> None:
     style |= WS_EX_TOOLWINDOW | WS_EX_NOACTIVATE
     style &= ~WS_EX_APPWINDOW
     _set_window_long(hwnd, GWL_EXSTYLE, style)
+
+
+def set_launch_at_login(enabled: bool) -> None:
+    with winreg.OpenKey(winreg.HKEY_CURRENT_USER, RUN_KEY, 0, winreg.KEY_SET_VALUE) as key:
+        if enabled:
+            winreg.SetValueEx(key, APP_NAME, 0, winreg.REG_SZ, launch_command())
+        else:
+            try:
+                winreg.DeleteValue(key, APP_NAME)
+            except FileNotFoundError:
+                pass

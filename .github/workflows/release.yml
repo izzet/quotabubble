@@ -1,0 +1,38 @@
+name: release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Sync dependencies
+        run: uv sync
+
+      - name: Test
+        run: uv run pytest -q
+
+      - name: Build
+        run: uv run pyinstaller --noconfirm packaging/quotabubble.spec
+
+      - name: Package
+        shell: pwsh
+        run: Compress-Archive -Path dist/QuotaBubble/* -DestinationPath QuotaBubble-windows-x64.zip
+
+      - name: Publish release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: QuotaBubble-windows-x64.zip

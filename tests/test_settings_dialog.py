@@ -70,6 +70,16 @@ def test_dialog_applies_and_saves(qapp: object, tmp_path: Path) -> None:
     assert Settings.load(path).refresh_interval_ms == 30_000
 
 
+def test_dialog_toggles_launch_at_login(qapp: object, tmp_path: Path) -> None:
+    settings = Settings()
+    dialog = SettingsDialog(settings, path=tmp_path / "settings.json")
+
+    dialog.launch_at_login.setChecked(True)
+    dialog.accept()
+
+    assert settings.launch_at_login is True
+
+
 def test_dialog_lists_detected_providers(qapp: object, tmp_path: Path) -> None:
     path = tmp_path / "settings.json"
     settings = Settings()

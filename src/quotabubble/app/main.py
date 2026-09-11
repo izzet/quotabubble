@@ -11,6 +11,7 @@ from quotabubble.app.polling import PollingService
 from quotabubble.app.providers import build_providers, loading_snapshot, select_providers
 from quotabubble.app.settings import Settings
 from quotabubble.app.state import AppState
+from quotabubble.platform import set_launch_at_login
 from quotabubble.ui.bubble import BubbleWindow
 from quotabubble.ui.icon import app_icon
 from quotabubble.ui.settings_dialog import SettingsDialog
@@ -27,6 +28,7 @@ def main() -> None:
     app.setQuitOnLastWindowClosed(False)
 
     settings = Settings.load()
+    set_launch_at_login(settings.launch_at_login)
 
     state = AppState()
     window = BubbleWindow(state, settings)
@@ -61,6 +63,7 @@ def main() -> None:
             apply_providers()
             service.set_interval(settings.refresh_interval_ms)
             window.apply_settings()
+            set_launch_at_login(settings.launch_at_login)
 
     window.settings_requested.connect(open_settings)
     tray.settings_requested.connect(open_settings)

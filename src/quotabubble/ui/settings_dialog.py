@@ -88,11 +88,15 @@ class SettingsDialog(QDialog):
         self.show_remaining = QCheckBox("Show percentage remaining")
         self.show_remaining.setChecked(settings.show_remaining)
 
+        self.launch_at_login = QCheckBox("Launch at login")
+        self.launch_at_login.setChecked(settings.launch_at_login)
+
         form = QFormLayout(self)
         form.addRow("Idle opacity", self.opacity)
         form.addRow("Fade delay", self.fade_delay)
         form.addRow("Refresh interval", self.refresh)
         form.addRow("", self.show_remaining)
+        form.addRow("", self.launch_at_login)
 
         if self._providers:
             form.addRow(self._build_providers())
@@ -188,6 +192,7 @@ class SettingsDialog(QDialog):
         self._settings.fade_delay_ms = self.fade_delay.value()
         self._settings.refresh_interval_ms = self.refresh.value() * 1000
         self._settings.show_remaining = self.show_remaining.isChecked()
+        self._settings.launch_at_login = self.launch_at_login.isChecked()
         if self.provider_checks:
             enabled = [
                 provider.id
