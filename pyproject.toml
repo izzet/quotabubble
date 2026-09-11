@@ -3,6 +3,7 @@ name = "quotabubble"
 version = "0.1.0"
 description = "A lightweight cross-platform floating widget that shows AI usage quotas."
 readme = "README.md"
+license = "MIT"
 requires-python = ">=3.11"
 dependencies = [
     "httpx2>=2.12",
