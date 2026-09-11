@@ -9,6 +9,7 @@ from quotabubble.providers.claude import ClaudeProvider
 from quotabubble.providers.codex import CodexProvider
 from quotabubble.providers.copilot import CopilotProvider
 from quotabubble.providers.deepseek import DeepSeekProvider
+from quotabubble.providers.openrouter import OpenRouterProvider
 
 
 def resolve_api_key(settings: Settings, provider_id: str) -> str | None:
@@ -25,6 +26,7 @@ def build_providers(settings: Settings) -> list[Provider]:
         AntigravityProvider(),
         CopilotProvider(),
         DeepSeekProvider(api_key=resolve_api_key(settings, "deepseek")),
+        OpenRouterProvider(api_key=resolve_api_key(settings, "openrouter")),
     ]
 
 
