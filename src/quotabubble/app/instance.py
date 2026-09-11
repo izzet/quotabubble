@@ -14,23 +14,36 @@ class SingleInstance:
         self._server: QLocalServer | None = None
 
     def acquire(self) -> bool:
-        socket = QLocalSocket()
-        socket.connectToServer(self._name)
-        if socket.waitForConnected(200):
-            socket.write(b"activate")
-            socket.flush()
-            socket.waitForBytesWritten(200)
-            socket.disconnectFromServer()
+        if self._notify_existing():
             return False
-        QLocalServer.removeServer(self._name)
         self._server = QLocalServer()
         self._server.newConnection.connect(self._handle)
-        return self._server.listen(self._name)
+        if self._server.listen(self._name):
+            return True
+        if self._notify_existing():
+            self._server = None
+            return False
+        QLocalServer.removeServer(self._name)
+        if self._server.listen(self._name):
+            return True
+        self._server = None
+        return False
 
     def close(self) -> None:
         if self._server is not None:
             self._server.close()
             self._server = None
+
+    def _notify_existing(self) -> bool:
+        socket = QLocalSocket()
+        socket.connectToServer(self._name)
+        if not socket.waitForConnected(200):
+            return False
+        socket.write(b"activate")
+        socket.flush()
+        socket.waitForBytesWritten(200)
+        socket.disconnectFromServer()
+        return True
 
     def _handle(self) -> None:
         if self._server is None:

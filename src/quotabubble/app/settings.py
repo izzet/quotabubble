@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 import json
+import logging
 from pathlib import Path
 
 from platformdirs import user_config_dir
 from pydantic import BaseModel
 
 CONFIG_DIR = Path(user_config_dir("quotabubble", appauthor=False))
+logger = logging.getLogger(__name__)
 
 
 def default_settings_path() -> Path:
@@ -33,11 +35,25 @@ class Settings(BaseModel):
         except (OSError, ValueError):
             return cls()
         try:
-            return cls.model_validate(raw)
+            settings = cls.model_validate(raw)
         except ValueError:
+            logger.warning("settings at %s are invalid; using defaults", target)
             return cls()
+        logger.info(
+            "settings loaded from %s (providers=%s, keys=%d)",
+            target,
+            settings.enabled_providers,
+            len(settings.api_keys),
+        )
+        return settings
 
     def save(self, path: Path | None = None) -> None:
         target = path or default_settings_path()
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_text(self.model_dump_json(indent=2), encoding="utf-8")
+        logger.info(
+            "settings saved to %s (providers=%s, keys=%d)",
+            target,
+            self.enabled_providers,
+            len(self.api_keys),
+        )
