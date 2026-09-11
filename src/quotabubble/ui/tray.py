@@ -1,9 +1,10 @@
 from __future__ import annotations
 
-from PySide6.QtCore import Signal
-from PySide6.QtGui import QAction
+from PySide6.QtCore import QUrl, Signal
+from PySide6.QtGui import QAction, QDesktopServices
 from PySide6.QtWidgets import QApplication, QMenu, QSystemTrayIcon, QWidget
 
+from quotabubble.app.logging_setup import LOG_DIR
 from quotabubble.ui.icon import app_icon
 
 
@@ -23,6 +24,10 @@ class TrayIcon(QSystemTrayIcon):
         settings_action = QAction("Settings…", menu)
         settings_action.triggered.connect(self._request_settings)
         menu.addAction(settings_action)
+
+        logs_action = QAction("Open logs", menu)
+        logs_action.triggered.connect(self._open_logs)
+        menu.addAction(logs_action)
 
         menu.addSeparator()
         quit_action = QAction("Quit QuotaBubble", menu)
@@ -48,3 +53,6 @@ class TrayIcon(QSystemTrayIcon):
 
     def _request_settings(self) -> None:
         self.settings_requested.emit()
+
+    def _open_logs(self) -> None:
+        QDesktopServices.openUrl(QUrl.fromLocalFile(str(LOG_DIR)))

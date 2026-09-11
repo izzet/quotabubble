@@ -1,10 +1,13 @@
 from __future__ import annotations
 
+import logging
+
 from PySide6.QtCore import QMetaObject, QObject, Qt, QThread, QTimer, Signal, Slot
 
-from quotabubble.providers.base import Provider, UsageSnapshot
+from quotabubble.providers.base import Provider, ProviderStatus, UsageSnapshot
 
 DEFAULT_REFRESH_INTERVAL_MS = 60_000
+logger = logging.getLogger(__name__)
 
 
 class PollingWorker(QObject):
@@ -32,12 +35,37 @@ class PollingWorker(QObject):
     @Slot()
     def poll(self) -> None:
         for provider in self._providers:
-            self.snapshot_ready.emit(provider.fetch())
+            try:
+                snapshot = provider.fetch()
+            except Exception:
+                logger.exception("provider '%s' raised during fetch", provider.id)
+                snapshot = UsageSnapshot(
+                    provider=provider.id,
+                    display_name=provider.display_name,
+                    status=ProviderStatus.ERROR,
+                    message="unexpected error",
+                )
+            if snapshot.status is ProviderStatus.OK:
+                logger.info(
+                    "provider '%s' ok (%d windows)", provider.id, len(snapshot.windows)
+                )
+            else:
+                logger.warning(
+                    "provider '%s' %s (%s)",
+                    provider.id,
+                    snapshot.status,
+                    snapshot.message,
+                )
+            self.snapshot_ready.emit(snapshot)
 
     @Slot(object)
     def set_providers(self, providers: list[Provider]) -> None:
+        changed = [provider.id for provider in providers] != [
+            provider.id for provider in self._providers
+        ]
         self._providers = list(providers)
-        self.poll()
+        if changed:
+            self.poll()
 
     @Slot(int)
     def set_interval(self, interval_ms: int) -> None:

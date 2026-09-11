@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 import sys
 
 from PySide6.QtCore import Qt
@@ -7,6 +8,7 @@ from PySide6.QtGui import QGuiApplication
 from PySide6.QtWidgets import QApplication, QDialog
 
 from quotabubble.app.instance import SingleInstance
+from quotabubble.app.logging_setup import setup_logging
 from quotabubble.app.polling import PollingService
 from quotabubble.app.providers import build_providers, loading_snapshot, select_providers
 from quotabubble.app.settings import Settings
@@ -17,6 +19,8 @@ from quotabubble.ui.icon import app_icon
 from quotabubble.ui.settings_dialog import SettingsDialog
 from quotabubble.ui.tray import TrayIcon
 
+logger = logging.getLogger(__name__)
+
 
 def main() -> None:
     QGuiApplication.setHighDpiScaleFactorRoundingPolicy(
@@ -26,6 +30,9 @@ def main() -> None:
     app.setApplicationName("QuotaBubble")
     app.setWindowIcon(app_icon())
     app.setQuitOnLastWindowClosed(False)
+
+    setup_logging()
+    logger.info("QuotaBubble starting")
 
     settings = Settings.load()
     set_launch_at_login(settings.launch_at_login)
@@ -44,6 +51,7 @@ def main() -> None:
     tray.show()
 
     providers = select_providers(build_providers(settings), settings)
+    logger.info("providers: %s", [provider.id for provider in providers])
     state.replace([loading_snapshot(provider) for provider in providers])
     window.refresh()
 
@@ -60,6 +68,7 @@ def main() -> None:
     def open_settings() -> None:
         dialog = SettingsDialog(settings, build_providers(settings), window)
         if dialog.exec() == QDialog.DialogCode.Accepted:
+            logger.info("settings applied")
             apply_providers()
             service.set_interval(settings.refresh_interval_ms)
             window.apply_settings()
