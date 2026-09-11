@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import sys
 
+from PySide6.QtCore import Qt
+from PySide6.QtGui import QGuiApplication
 from PySide6.QtWidgets import QApplication
 
 from quotabubble.app.polling import PollingService
@@ -16,6 +18,9 @@ from quotabubble.ui.tray import TrayIcon
 
 
 def main() -> None:
+    QGuiApplication.setHighDpiScaleFactorRoundingPolicy(
+        Qt.HighDpiScaleFactorRoundingPolicy.PassThrough
+    )
     app = QApplication(sys.argv)
     app.setApplicationName("QuotaBubble")
     app.setWindowIcon(app_icon())

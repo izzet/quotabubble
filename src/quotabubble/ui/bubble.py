@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from PySide6.QtCore import (
     QEasingCurve,
+    QEvent,
     QPoint,
     QPropertyAnimation,
     QRect,
@@ -59,7 +60,7 @@ class BubbleWindow(QWidget):
         self._fade_timer.timeout.connect(self._fade_out)
 
         self.setWindowOpacity(self._settings.idle_opacity)
-        self.adjustSize()
+        self.setFixedSize(self.sizeHint())
         self._restore_position()
         configure_window(self)
 
@@ -69,7 +70,7 @@ class BubbleWindow(QWidget):
         return QSize(self.MIN_WIDTH, height)
 
     def refresh(self) -> None:
-        self.adjustSize()
+        self.setFixedSize(self.sizeHint())
         self.update()
 
     def apply_snapshot(self, snapshot: UsageSnapshot) -> None:
@@ -198,6 +199,29 @@ class BubbleWindow(QWidget):
     def showEvent(self, event) -> None:
         super().showEvent(event)
         configure_window(self)
+
+    def event(self, event) -> bool:
+        if event.type() in (
+            QEvent.Type.ScreenChangeInternal,
+            QEvent.Type.DevicePixelRatioChange,
+        ):
+            self._handle_screen_change()
+        return super().event(event)
+
+    def _handle_screen_change(self) -> None:
+        self.setFixedSize(self.sizeHint())
+        self.update()
+        if not self._dragging:
+            self._clamp_to_screen()
+
+    def _clamp_to_screen(self) -> None:
+        screen = self.screen() or QGuiApplication.primaryScreen()
+        if screen is None:
+            return
+        area = screen.availableGeometry()
+        x = min(max(self.x(), area.left()), area.right() - self.width())
+        y = min(max(self.y(), area.top()), area.bottom() - self.height())
+        self.move(x, y)
 
     def _fade_out(self) -> None:
         if not self._dragging:

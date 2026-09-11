@@ -1,18 +1,7 @@
 from __future__ import annotations
 
-from collections.abc import Iterator
-
-import pytest
-from PySide6.QtCore import QCoreApplication
-
 from quotabubble.app.polling import PollingWorker
 from quotabubble.providers.base import UsageSnapshot
-
-
-@pytest.fixture(scope="module")
-def qapp() -> Iterator[QCoreApplication]:
-    app = QCoreApplication.instance() or QCoreApplication([])
-    yield app
 
 
 class _FakeProvider:
@@ -24,7 +13,7 @@ class _FakeProvider:
         return UsageSnapshot(provider=self.id, display_name=self.display_name)
 
 
-def test_poll_emits_a_snapshot_per_provider(qapp: QCoreApplication) -> None:
+def test_poll_emits_a_snapshot_per_provider(qapp: object) -> None:
     worker = PollingWorker([_FakeProvider("claude"), _FakeProvider("codex")], 60000)
     received: list[UsageSnapshot] = []
     worker.snapshot_ready.connect(received.append)
