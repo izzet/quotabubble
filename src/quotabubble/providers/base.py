@@ -15,6 +15,13 @@ class ProviderStatus(StrEnum):
     ERROR = "error"
 
 
+class KeyStatus(StrEnum):
+    VALID = "valid"
+    INVALID = "invalid"
+    UNREACHABLE = "unreachable"
+    MISSING = "missing"
+
+
 class UsageWindow(BaseModel):
     label: str
     used_pct: float
@@ -57,3 +64,16 @@ class Provider(Protocol):
     def detect(self) -> bool: ...
 
     def fetch(self) -> UsageSnapshot: ...
+
+
+@runtime_checkable
+class ApiKeyProvider(Protocol):
+    id: str
+    display_name: str
+    uses_api_key: bool
+
+    def detect(self) -> bool: ...
+
+    def fetch(self) -> UsageSnapshot: ...
+
+    def check_api_key(self, api_key: str) -> KeyStatus: ...

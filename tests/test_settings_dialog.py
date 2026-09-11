@@ -3,7 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from quotabubble.app.settings import Settings
-from quotabubble.providers.base import UsageSnapshot
+from quotabubble.providers.base import KeyStatus, UsageSnapshot
 from quotabubble.ui.settings_dialog import SettingsDialog
 
 
@@ -33,8 +33,23 @@ class _KeyProvider:
     def detect(self) -> bool:
         return self._detected
 
+    def check_api_key(self, api_key: str) -> KeyStatus:
+        return KeyStatus.VALID
+
     def fetch(self) -> UsageSnapshot:
         return UsageSnapshot(provider=self.id, display_name=self.display_name)
+
+
+def test_key_provider_has_test_button(qapp: object, tmp_path: Path) -> None:
+    dialog = SettingsDialog(
+        Settings(), [_KeyProvider(False)], path=tmp_path / "settings.json"
+    )
+
+    _provider, _field, button, status = dialog.provider_keys[0]
+
+    assert button.text() == "Test"
+    assert button.isEnabled() is True
+    assert status.text() == ""
 
 
 def test_dialog_applies_and_saves(qapp: object, tmp_path: Path) -> None:
@@ -81,4 +96,4 @@ def test_dialog_collects_api_keys(qapp: object, tmp_path: Path) -> None:
     dialog.accept()
 
     assert settings.api_keys["deepseek"] == "secret-key"
-    assert settings.enabled_providers == []
+    assert settings.enabled_providers == ["deepseek"]

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from PySide6.QtCore import Qt
+from PySide6.QtCore import QObject, QRunnable, Qt, QThreadPool, Signal
 from PySide6.QtWidgets import (
     QCheckBox,
     QDialog,
@@ -10,7 +10,9 @@ from PySide6.QtWidgets import (
     QFormLayout,
     QGroupBox,
     QHBoxLayout,
+    QLabel,
     QLineEdit,
+    QPushButton,
     QSlider,
     QSpinBox,
     QVBoxLayout,
@@ -18,7 +20,33 @@ from PySide6.QtWidgets import (
 )
 
 from quotabubble.app.settings import Settings
-from quotabubble.providers.base import Provider
+from quotabubble.providers.base import ApiKeyProvider, KeyStatus, Provider
+
+_STATUS_STYLES = {
+    KeyStatus.VALID: ("Valid", "#5ec584"),
+    KeyStatus.INVALID: ("Invalid", "#e85c54"),
+    KeyStatus.UNREACHABLE: ("Unreachable", "#9a9aa5"),
+    KeyStatus.MISSING: ("Enter a key", "#9a9aa5"),
+}
+
+
+class _CheckSignals(QObject):
+    finished = Signal(str, object)
+
+
+class _KeyCheckTask(QRunnable):
+    def __init__(self, provider: ApiKeyProvider, api_key: str, signals: _CheckSignals) -> None:
+        super().__init__()
+        self._provider = provider
+        self._api_key = api_key
+        self._signals = signals
+
+    def run(self) -> None:
+        try:
+            status = self._provider.check_api_key(self._api_key)
+        except Exception:
+            status = KeyStatus.UNREACHABLE
+        self._signals.finished.emit(self._provider.id, status)
 
 
 class SettingsDialog(QDialog):
@@ -34,7 +62,10 @@ class SettingsDialog(QDialog):
         self._path = path
         self._providers = providers or []
         self.provider_checks: list[tuple[Provider, QCheckBox]] = []
-        self.provider_keys: list[tuple[Provider, QLineEdit]] = []
+        self.provider_keys: list[tuple[Provider, QLineEdit, QPushButton, QLabel]] = []
+        self._check_signals = _CheckSignals(self)
+        self._check_signals.finished.connect(self._on_check_finished)
+        self._tasks: dict[str, _KeyCheckTask] = {}
 
         self.setWindowTitle("QuotaBubble Settings")
 
@@ -97,11 +128,60 @@ class SettingsDialog(QDialog):
                 field.setPlaceholderText("API key")
                 field.setText(self._settings.api_keys.get(provider.id, ""))
                 row.addWidget(field)
-                self.provider_keys.append((provider, field))
+
+                button = QPushButton("Test")
+                button.setEnabled(isinstance(provider, ApiKeyProvider))
+                row.addWidget(button)
+
+                status = QLabel("")
+                status.setMinimumWidth(80)
+                row.addWidget(status)
+
+                field.textChanged.connect(lambda _text, lbl=status: lbl.setText(""))
+                button.clicked.connect(
+                    lambda _checked=False, p=provider, f=field, b=button, s=status: (
+                        self._start_check(p, f, b, s)
+                    )
+                )
+                self.provider_keys.append((provider, field, button, status))
             row.addStretch()
             box.addLayout(row)
             self.provider_checks.append((provider, checkbox))
         return group
+
+    def _start_check(
+        self,
+        provider: Provider,
+        field: QLineEdit,
+        button: QPushButton,
+        status: QLabel,
+    ) -> None:
+        api_key = field.text().strip()
+        if not api_key:
+            self._set_status(status, KeyStatus.MISSING)
+            return
+        if not isinstance(provider, ApiKeyProvider):
+            return
+        status.setText("Checking…")
+        status.setStyleSheet("color: #9a9aa5")
+        button.setEnabled(False)
+        task = _KeyCheckTask(provider, api_key, self._check_signals)
+        self._tasks[provider.id] = task
+        QThreadPool.globalInstance().start(task)
+
+    def _on_check_finished(self, provider_id: str, status: object) -> None:
+        self._tasks.pop(provider_id, None)
+        for provider, _field, button, label in self.provider_keys:
+            if provider.id == provider_id:
+                self._set_status(label, status)
+                button.setEnabled(True)
+                return
+
+    @staticmethod
+    def _set_status(label: QLabel, status: object) -> None:
+        text, color = _STATUS_STYLES.get(status, ("", "#9a9aa5"))
+        label.setText(text)
+        label.setStyleSheet(f"color: {color}")
 
     def accept(self) -> None:
         self._settings.idle_opacity = self.opacity.value() / 100
@@ -109,16 +189,19 @@ class SettingsDialog(QDialog):
         self._settings.refresh_interval_ms = self.refresh.value() * 1000
         self._settings.show_remaining = self.show_remaining.isChecked()
         if self.provider_checks:
-            self._settings.enabled_providers = [
+            enabled = [
                 provider.id
                 for provider, checkbox in self.provider_checks
                 if checkbox.isChecked()
             ]
-        for provider, field in self.provider_keys:
-            value = field.text().strip()
-            if value:
-                self._settings.api_keys[provider.id] = value
-            else:
-                self._settings.api_keys.pop(provider.id, None)
+            for provider, field, _button, _status in self.provider_keys:
+                value = field.text().strip()
+                if value:
+                    self._settings.api_keys[provider.id] = value
+                    if provider.id not in enabled:
+                        enabled.append(provider.id)
+                else:
+                    self._settings.api_keys.pop(provider.id, None)
+            self._settings.enabled_providers = enabled
         self._settings.save(self._path)
         super().accept()

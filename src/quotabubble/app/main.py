@@ -6,6 +6,7 @@ from PySide6.QtCore import Qt
 from PySide6.QtGui import QGuiApplication
 from PySide6.QtWidgets import QApplication, QDialog
 
+from quotabubble.app.instance import SingleInstance
 from quotabubble.app.polling import PollingService
 from quotabubble.app.providers import build_providers, loading_snapshot, select_providers
 from quotabubble.app.settings import Settings
@@ -29,6 +30,12 @@ def main() -> None:
 
     state = AppState()
     window = BubbleWindow(state, settings)
+
+    instance = SingleInstance(window.show)
+    if not instance.acquire():
+        sys.exit(0)
+    app.aboutToQuit.connect(instance.close)
+
     window.show()
 
     tray = TrayIcon(window)

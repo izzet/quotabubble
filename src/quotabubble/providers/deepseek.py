@@ -3,7 +3,7 @@ from __future__ import annotations
 import httpx2
 from pydantic import BaseModel
 
-from quotabubble.providers.base import Credits, ProviderStatus, UsageSnapshot
+from quotabubble.providers.base import Credits, KeyStatus, ProviderStatus, UsageSnapshot
 
 BALANCE_URL = "https://api.deepseek.com/user/balance"
 REQUEST_TIMEOUT_SECONDS = 15.0
@@ -69,16 +69,29 @@ class DeepSeekProvider:
     def fetch(self) -> UsageSnapshot:
         if not self._api_key:
             return self._snapshot(ProviderStatus.NO_CREDENTIALS, "Add a DeepSeek API key")
-
-        headers = {"Authorization": f"Bearer {self._api_key}"}
         client = self._client or httpx2.Client(timeout=REQUEST_TIMEOUT_SECONDS)
+        try:
+            return self._query(self._api_key, client)
+        finally:
+            if self._client is None:
+                client.close()
+
+    def check_api_key(self, api_key: str) -> KeyStatus:
+        if not api_key:
+            return KeyStatus.MISSING
+        client = self._client or httpx2.Client(timeout=REQUEST_TIMEOUT_SECONDS)
+        try:
+            return self._status_for(api_key, client)
+        finally:
+            if self._client is None:
+                client.close()
+
+    def _query(self, api_key: str, client: httpx2.Client) -> UsageSnapshot:
+        headers = {"Authorization": f"Bearer {api_key}"}
         try:
             response = client.get(BALANCE_URL, headers=headers)
         except httpx2.HTTPError as exc:
             return self._snapshot(ProviderStatus.ERROR, str(exc))
-        finally:
-            if self._client is None:
-                client.close()
 
         if response.status_code in (401, 403):
             return self._snapshot(ProviderStatus.ERROR, "Invalid DeepSeek API key")
@@ -95,6 +108,18 @@ class DeepSeekProvider:
             display_name=self.display_name,
             credits=_credits(balance),
         )
+
+    def _status_for(self, api_key: str, client: httpx2.Client) -> KeyStatus:
+        headers = {"Authorization": f"Bearer {api_key}"}
+        try:
+            response = client.get(BALANCE_URL, headers=headers)
+        except httpx2.HTTPError:
+            return KeyStatus.UNREACHABLE
+        if response.status_code in (401, 403):
+            return KeyStatus.INVALID
+        if response.status_code != 200:
+            return KeyStatus.UNREACHABLE
+        return KeyStatus.VALID
 
     def _snapshot(self, status: ProviderStatus, message: str | None = None) -> UsageSnapshot:
         return UsageSnapshot(

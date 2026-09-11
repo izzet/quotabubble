@@ -5,7 +5,7 @@ from pathlib import Path
 
 import httpx2
 
-from quotabubble.providers.base import Provider, ProviderStatus
+from quotabubble.providers.base import KeyStatus, Provider, ProviderStatus
 from quotabubble.providers.deepseek import DeepSeekProvider
 
 FIXTURES = Path(__file__).parent / "fixtures"
@@ -58,3 +58,30 @@ def test_network_error_reports_error() -> None:
     provider = DeepSeekProvider(api_key="secret", client=_client(handler))
 
     assert provider.fetch().status is ProviderStatus.ERROR
+
+
+def test_check_api_key_valid() -> None:
+    provider = DeepSeekProvider(
+        client=_client(lambda request: httpx2.Response(200, text="{}"))
+    )
+
+    assert provider.check_api_key("secret") is KeyStatus.VALID
+
+
+def test_check_api_key_invalid() -> None:
+    provider = DeepSeekProvider(client=_client(lambda request: httpx2.Response(401)))
+
+    assert provider.check_api_key("secret") is KeyStatus.INVALID
+
+
+def test_check_api_key_unreachable() -> None:
+    def handler(request: httpx2.Request) -> httpx2.Response:
+        raise httpx2.ConnectError("boom")
+
+    provider = DeepSeekProvider(client=_client(handler))
+
+    assert provider.check_api_key("secret") is KeyStatus.UNREACHABLE
+
+
+def test_check_api_key_missing() -> None:
+    assert DeepSeekProvider().check_api_key("") is KeyStatus.MISSING

@@ -6,7 +6,7 @@ from pathlib import Path
 from platformdirs import user_config_dir
 from pydantic import BaseModel
 
-CONFIG_DIR = Path(user_config_dir("quotabubble"))
+CONFIG_DIR = Path(user_config_dir("quotabubble", appauthor=False))
 
 
 def default_settings_path() -> Path:
