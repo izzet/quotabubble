@@ -1,11 +1,17 @@
 from __future__ import annotations
 
-from quotabubble.app.providers import loading_snapshot, select_providers
+from quotabubble.app.providers import (
+    loading_snapshot,
+    resolve_api_key,
+    select_providers,
+)
 from quotabubble.app.settings import Settings
 from quotabubble.providers.base import ProviderStatus, UsageSnapshot
 
 
 class _FakeProvider:
+    uses_api_key = False
+
     def __init__(self, provider_id: str, detected: bool) -> None:
         self.id = provider_id
         self.display_name = provider_id.title()
@@ -39,3 +45,16 @@ def test_loading_snapshot_marks_loading() -> None:
 
     assert snapshot.provider == "claude"
     assert snapshot.status is ProviderStatus.LOADING
+
+
+def test_resolve_api_key_prefers_settings(monkeypatch) -> None:
+    monkeypatch.setenv("DEEPSEEK_API_KEY", "from-env")
+    settings = Settings(api_keys={"deepseek": "from-settings"})
+
+    assert resolve_api_key(settings, "deepseek") == "from-settings"
+
+
+def test_resolve_api_key_falls_back_to_environment(monkeypatch) -> None:
+    monkeypatch.setenv("DEEPSEEK_API_KEY", "from-env")
+
+    assert resolve_api_key(Settings(), "deepseek") == "from-env"

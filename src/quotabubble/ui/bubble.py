@@ -150,9 +150,19 @@ class BubbleWindow(QWidget):
             snapshot.display_name,
         )
 
-        if snapshot.status is not ProviderStatus.OK or not snapshot.windows:
+        if snapshot.status is not ProviderStatus.OK:
             painter.setPen(TEXT_DIM)
-            text = status_text(snapshot) if snapshot.status is not ProviderStatus.OK else "—"
+            painter.drawText(
+                QRectF(left, top, right - left, self.COMPACT_ROW_HEIGHT),
+                vertical | Qt.AlignmentFlag.AlignRight,
+                status_text(snapshot),
+            )
+            return
+
+        if not snapshot.windows:
+            has_credits = snapshot.credits is not None
+            text = snapshot.credits.display if has_credits else "—"
+            painter.setPen(TEXT if has_credits else TEXT_DIM)
             painter.drawText(
                 QRectF(left, top, right - left, self.COMPACT_ROW_HEIGHT),
                 vertical | Qt.AlignmentFlag.AlignRight,

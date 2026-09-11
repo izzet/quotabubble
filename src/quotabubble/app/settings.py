@@ -21,6 +21,7 @@ class Settings(BaseModel):
     show_remaining: bool = False
     refresh_interval_ms: int = 60_000
     enabled_providers: list[str] | None = None
+    api_keys: dict[str, str] = {}
     position: tuple[int, int] | None = None
 
     @classmethod

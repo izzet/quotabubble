@@ -9,6 +9,8 @@ from PySide6.QtWidgets import (
     QDialogButtonBox,
     QFormLayout,
     QGroupBox,
+    QHBoxLayout,
+    QLineEdit,
     QSlider,
     QSpinBox,
     QVBoxLayout,
@@ -32,6 +34,7 @@ class SettingsDialog(QDialog):
         self._path = path
         self._providers = providers or []
         self.provider_checks: list[tuple[Provider, QCheckBox]] = []
+        self.provider_keys: list[tuple[Provider, QLineEdit]] = []
 
         self.setWindowTitle("QuotaBubble Settings")
 
@@ -76,15 +79,27 @@ class SettingsDialog(QDialog):
         for provider in self._providers:
             detected = provider.detect()
             label = provider.display_name
-            if not detected:
+            if not provider.uses_api_key and not detected:
                 label = f"{label} (not detected)"
+
             checkbox = QCheckBox(label)
             if self._settings.enabled_providers is None:
                 checkbox.setChecked(detected)
             else:
                 checkbox.setChecked(provider.id in self._settings.enabled_providers)
-            checkbox.setEnabled(detected)
-            box.addWidget(checkbox)
+            checkbox.setEnabled(provider.uses_api_key or detected)
+
+            row = QHBoxLayout()
+            row.addWidget(checkbox)
+            if provider.uses_api_key:
+                field = QLineEdit()
+                field.setEchoMode(QLineEdit.EchoMode.Password)
+                field.setPlaceholderText("API key")
+                field.setText(self._settings.api_keys.get(provider.id, ""))
+                row.addWidget(field)
+                self.provider_keys.append((provider, field))
+            row.addStretch()
+            box.addLayout(row)
             self.provider_checks.append((provider, checkbox))
         return group
 
@@ -99,5 +114,11 @@ class SettingsDialog(QDialog):
                 for provider, checkbox in self.provider_checks
                 if checkbox.isChecked()
             ]
+        for provider, field in self.provider_keys:
+            value = field.text().strip()
+            if value:
+                self._settings.api_keys[provider.id] = value
+            else:
+                self._settings.api_keys.pop(provider.id, None)
         self._settings.save(self._path)
         super().accept()

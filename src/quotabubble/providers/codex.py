@@ -97,6 +97,7 @@ def _credits(credits: _Credits | None) -> Credits | None:
 class CodexProvider:
     id = "codex"
     display_name = "Codex"
+    uses_api_key = False
 
     def __init__(
         self,

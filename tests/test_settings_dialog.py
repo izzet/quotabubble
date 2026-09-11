@@ -8,9 +8,26 @@ from quotabubble.ui.settings_dialog import SettingsDialog
 
 
 class _FakeProvider:
+    uses_api_key = False
+
     def __init__(self, provider_id: str, detected: bool) -> None:
         self.id = provider_id
         self.display_name = provider_id.title()
+        self._detected = detected
+
+    def detect(self) -> bool:
+        return self._detected
+
+    def fetch(self) -> UsageSnapshot:
+        return UsageSnapshot(provider=self.id, display_name=self.display_name)
+
+
+class _KeyProvider:
+    id = "deepseek"
+    display_name = "DeepSeek"
+    uses_api_key = True
+
+    def __init__(self, detected: bool) -> None:
         self._detected = detected
 
     def detect(self) -> bool:
@@ -50,4 +67,18 @@ def test_dialog_lists_detected_providers(qapp: object, tmp_path: Path) -> None:
     dialog.provider_checks[0][1].setChecked(False)
     dialog.accept()
 
+    assert settings.enabled_providers == []
+
+
+def test_dialog_collects_api_keys(qapp: object, tmp_path: Path) -> None:
+    path = tmp_path / "settings.json"
+    settings = Settings()
+    dialog = SettingsDialog(settings, [_KeyProvider(False)], path=path)
+
+    assert dialog.provider_checks[0][1].isEnabled() is True
+
+    dialog.provider_keys[0][1].setText("secret-key")
+    dialog.accept()
+
+    assert settings.api_keys["deepseek"] == "secret-key"
     assert settings.enabled_providers == []

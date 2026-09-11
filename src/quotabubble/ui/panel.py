@@ -56,11 +56,20 @@ def status_text(snapshot: UsageSnapshot) -> str:
     return "error"
 
 
+def _content_rows(snapshot: UsageSnapshot) -> int:
+    if snapshot.status is not ProviderStatus.OK:
+        return 1
+    if snapshot.windows:
+        return len(snapshot.windows)
+    if snapshot.credits is None:
+        return 1
+    return 0
+
+
 def expanded_content_height(snapshots: list[UsageSnapshot]) -> int:
     height = 0
     for index, snapshot in enumerate(snapshots):
-        rows = max(1, len(snapshot.windows))
-        height += HEADER_ROW_HEIGHT + rows * WINDOW_ROW_HEIGHT
+        height += HEADER_ROW_HEIGHT + _content_rows(snapshot) * WINDOW_ROW_HEIGHT
         if snapshot.credits is not None:
             height += WINDOW_ROW_HEIGHT
         if index < len(snapshots) - 1:
@@ -89,15 +98,20 @@ def paint_expanded(
             painter.drawText(header, vertical | Qt.AlignmentFlag.AlignRight, snapshot.plan)
         y += HEADER_ROW_HEIGHT
 
-        if snapshot.status is not ProviderStatus.OK or not snapshot.windows:
+        if snapshot.status is not ProviderStatus.OK:
             painter.setPen(TEXT_DIM)
             row = QRectF(left, y, right - left, WINDOW_ROW_HEIGHT)
             painter.drawText(row, vertical | Qt.AlignmentFlag.AlignLeft, status_text(snapshot))
             y += WINDOW_ROW_HEIGHT
-        else:
+        elif snapshot.windows:
             for window in snapshot.windows:
                 _paint_window_row(painter, window, settings, y, left, right)
                 y += WINDOW_ROW_HEIGHT
+        elif snapshot.credits is None:
+            painter.setPen(TEXT_DIM)
+            row = QRectF(left, y, right - left, WINDOW_ROW_HEIGHT)
+            painter.drawText(row, vertical | Qt.AlignmentFlag.AlignLeft, "—")
+            y += WINDOW_ROW_HEIGHT
 
         if snapshot.credits is not None:
             _paint_credits_row(painter, snapshot.credits, y, left, right)

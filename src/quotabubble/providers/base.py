@@ -45,6 +45,7 @@ class UsageSnapshot(BaseModel):
 class Provider(Protocol):
     id: str
     display_name: str
+    uses_api_key: bool
 
     def detect(self) -> bool: ...
 

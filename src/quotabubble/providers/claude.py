@@ -231,6 +231,7 @@ def _credits(spend: _Spend | None) -> Credits | None:
 class ClaudeProvider:
     id = "claude"
     display_name = "Claude"
+    uses_api_key = False
 
     def __init__(
         self,
