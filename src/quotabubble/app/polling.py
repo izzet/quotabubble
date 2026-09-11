@@ -5,11 +5,12 @@ import time
 
 from PySide6.QtCore import QMetaObject, QObject, Qt, QThread, QTimer, Signal, Slot
 
+from quotabubble.app.cache import load_snapshots, save_snapshots
 from quotabubble.providers.base import Provider, ProviderStatus, UsageSnapshot
 
-DEFAULT_REFRESH_INTERVAL_MS = 60_000
-ERROR_BACKOFF_SECONDS = 120.0
-MAX_BACKOFF_SECONDS = 900.0
+DEFAULT_REFRESH_INTERVAL_MS = 300_000
+ERROR_BACKOFF_SECONDS = 300.0
+MAX_BACKOFF_SECONDS = 3600.0
 logger = logging.getLogger(__name__)
 
 
@@ -26,7 +27,7 @@ class PollingWorker(QObject):
         self._providers = list(providers)
         self._interval_ms = interval_ms
         self._timer: QTimer | None = None
-        self._last_good: dict[str, UsageSnapshot] = {}
+        self._last_good: dict[str, UsageSnapshot] = load_snapshots()
         self._failures: dict[str, int] = {}
         self._retry_at: dict[str, float] = {}
 
@@ -62,13 +63,17 @@ class PollingWorker(QObject):
             self._failures.pop(provider_id, None)
             self._retry_at.pop(provider_id, None)
             self._last_good[provider_id] = fresh
+            save_snapshots(self._last_good)
             logger.info("provider '%s' ok (%d windows)", provider_id, len(fresh.windows))
             self.snapshot_ready.emit(fresh)
             return
         if fresh.status is ProviderStatus.ERROR:
             failures = self._failures.get(provider_id, 0) + 1
             self._failures[provider_id] = failures
-            delay = min(ERROR_BACKOFF_SECONDS * 2 ** (failures - 1), MAX_BACKOFF_SECONDS)
+            if fresh.retry_after:
+                delay = min(max(fresh.retry_after, ERROR_BACKOFF_SECONDS), MAX_BACKOFF_SECONDS)
+            else:
+                delay = min(ERROR_BACKOFF_SECONDS * 2 ** (failures - 1), MAX_BACKOFF_SECONDS)
             self._retry_at[provider_id] = time.monotonic() + delay
             previous = self._last_good.get(provider_id)
             if previous is not None:

@@ -80,10 +80,10 @@ class SettingsDialog(QDialog):
         self.fade_delay.setValue(settings.fade_delay_ms)
 
         self.refresh = QSpinBox()
-        self.refresh.setRange(10, 3600)
-        self.refresh.setSingleStep(10)
+        self.refresh.setRange(60, 3600)
+        self.refresh.setSingleStep(30)
         self.refresh.setSuffix(" s")
-        self.refresh.setValue(max(10, settings.refresh_interval_ms // 1000))
+        self.refresh.setValue(max(60, settings.refresh_interval_ms // 1000))
 
         self.show_remaining = QCheckBox("Show percentage remaining")
         self.show_remaining.setChecked(settings.show_remaining)

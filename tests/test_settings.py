@@ -16,6 +16,7 @@ def test_settings_load_missing_returns_defaults(tmp_path: Path) -> None:
     loaded = Settings.load(tmp_path / "absent.json")
 
     assert loaded.idle_opacity == 0.25
+    assert loaded.refresh_interval_ms == 300_000
     assert loaded.position is None
 
 

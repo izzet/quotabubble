@@ -47,7 +47,17 @@ class UsageSnapshot(BaseModel):
     plan: str | None = None
     message: str | None = None
     stale: bool = False
+    retry_after: float | None = None
     fetched_at: datetime | None = None
+
+
+def parse_retry_after(value: str | None) -> float | None:
+    if not value:
+        return None
+    try:
+        return max(0.0, float(value))
+    except ValueError:
+        return None
 
 
 def format_plan(value: str | None) -> str | None:

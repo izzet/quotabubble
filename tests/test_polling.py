@@ -1,7 +1,15 @@
 from __future__ import annotations
 
+import pytest
+
 from quotabubble.app.polling import PollingWorker
 from quotabubble.providers.base import ProviderStatus, UsageSnapshot, UsageWindow
+
+
+@pytest.fixture(autouse=True)
+def _isolate_cache(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr("quotabubble.app.polling.load_snapshots", lambda: {})
+    monkeypatch.setattr("quotabubble.app.polling.save_snapshots", lambda *args, **kwargs: None)
 
 
 class _FakeProvider:
@@ -93,3 +101,15 @@ def test_error_without_last_good_is_emitted(qapp: object) -> None:
 
     assert received[0].status is ProviderStatus.ERROR
     assert received[0].stale is False
+
+
+def test_error_backs_off_the_provider(qapp: object) -> None:
+    worker = PollingWorker([_SequencedProvider("claude", [_error(), _ok()])], 60000)
+    received: list[UsageSnapshot] = []
+    worker.snapshot_ready.connect(received.append)
+
+    worker.poll()
+    worker.poll()
+
+    assert len(received) == 1
+    assert received[0].status is ProviderStatus.ERROR

@@ -110,6 +110,21 @@ def test_server_error_reports_error(tmp_path: Path) -> None:
     assert provider.fetch().status is ProviderStatus.ERROR
 
 
+def test_rate_limit_reports_retry_after(tmp_path: Path) -> None:
+    provider = ClaudeProvider(
+        credentials_path=_write_credentials(tmp_path),
+        client=_client(
+            lambda request: httpx2.Response(429, headers={"Retry-After": "600"})
+        ),
+    )
+
+    snapshot = provider.fetch()
+
+    assert snapshot.status is ProviderStatus.ERROR
+    assert snapshot.message == "HTTP 429"
+    assert snapshot.retry_after == 600.0
+
+
 def test_malformed_body_reports_error(tmp_path: Path) -> None:
     provider = ClaudeProvider(
         credentials_path=_write_credentials(tmp_path),

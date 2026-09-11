@@ -14,6 +14,7 @@ from quotabubble.providers.base import (
     UsageSnapshot,
     UsageWindow,
     format_plan,
+    parse_retry_after,
 )
 
 USAGE_URL = "https://api.anthropic.com/api/oauth/usage"
@@ -265,6 +266,12 @@ class ClaudeProvider:
 
         if response.status_code in (401, 403):
             return self._snapshot(ProviderStatus.EXPIRED, "Sign in with Claude Code again")
+        if response.status_code == 429:
+            return self._snapshot(
+                ProviderStatus.ERROR,
+                "HTTP 429",
+                parse_retry_after(response.headers.get("Retry-After")),
+            )
         if response.status_code != 200:
             return self._snapshot(ProviderStatus.ERROR, f"HTTP {response.status_code}")
 
@@ -281,10 +288,16 @@ class ClaudeProvider:
             plan=format_plan(credentials.subscription_type),
         )
 
-    def _snapshot(self, status: ProviderStatus, message: str | None = None) -> UsageSnapshot:
+    def _snapshot(
+        self,
+        status: ProviderStatus,
+        message: str | None = None,
+        retry_after: float | None = None,
+    ) -> UsageSnapshot:
         return UsageSnapshot(
             provider=self.id,
             display_name=self.display_name,
             status=status,
             message=message,
+            retry_after=retry_after,
         )

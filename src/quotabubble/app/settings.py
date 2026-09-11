@@ -20,7 +20,7 @@ class Settings(BaseModel):
     fade_duration_ms: int = 180
     show_remaining: bool = False
     launch_at_login: bool = False
-    refresh_interval_ms: int = 60_000
+    refresh_interval_ms: int = 300_000
     enabled_providers: list[str] | None = None
     api_keys: dict[str, str] = {}
     position: tuple[int, int] | None = None

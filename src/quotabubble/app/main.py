@@ -7,6 +7,7 @@ from PySide6.QtCore import Qt
 from PySide6.QtGui import QGuiApplication
 from PySide6.QtWidgets import QApplication, QDialog
 
+from quotabubble.app.cache import load_snapshots
 from quotabubble.app.instance import SingleInstance
 from quotabubble.app.logging_setup import setup_logging
 from quotabubble.app.polling import PollingService
@@ -40,6 +41,18 @@ def main() -> None:
     state = AppState()
     window = BubbleWindow(state, settings)
 
+    def seed_state(selected: list) -> None:
+        cached = load_snapshots()
+        snapshots = []
+        for provider in selected:
+            previous = cached.get(provider.id)
+            if previous is not None:
+                snapshots.append(previous.model_copy(update={"stale": True}))
+            else:
+                snapshots.append(loading_snapshot(provider))
+        state.replace(snapshots)
+        window.refresh()
+
     instance = SingleInstance(window.show)
     if not instance.acquire():
         sys.exit(0)
@@ -52,8 +65,7 @@ def main() -> None:
 
     providers = select_providers(build_providers(settings), settings)
     logger.info("providers: %s", [provider.id for provider in providers])
-    state.replace([loading_snapshot(provider) for provider in providers])
-    window.refresh()
+    seed_state(providers)
 
     service = PollingService(providers, settings.refresh_interval_ms)
     service.snapshot_ready.connect(window.apply_snapshot)
@@ -61,8 +73,7 @@ def main() -> None:
 
     def apply_providers() -> None:
         selected = select_providers(build_providers(settings), settings)
-        state.replace([loading_snapshot(provider) for provider in selected])
-        window.refresh()
+        seed_state(selected)
         service.set_providers(selected)
 
     def open_settings() -> None:
