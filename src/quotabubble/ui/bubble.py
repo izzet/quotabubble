@@ -144,7 +144,7 @@ class BubbleWindow(QWidget):
         vertical = Qt.AlignmentFlag.AlignVCenter
         center = top + self.COMPACT_ROW_HEIGHT / 2
 
-        painter.setPen(TEXT)
+        painter.setPen(TEXT_DIM if snapshot.stale else TEXT)
         painter.drawText(
             QRectF(left, top, self._name_width(), self.COMPACT_ROW_HEIGHT),
             vertical | Qt.AlignmentFlag.AlignLeft,
@@ -176,9 +176,9 @@ class BubbleWindow(QWidget):
         first_left = second_left - self.GROUP_GAP - group_width
 
         windows = snapshot.windows
-        self._paint_mini(painter, windows[0], first_left, top, center)
+        self._paint_mini(painter, windows[0], first_left, top, center, snapshot.stale)
         if len(windows) > 1:
-            self._paint_mini(painter, windows[1], second_left, top, center)
+            self._paint_mini(painter, windows[1], second_left, top, center, snapshot.stale)
 
     def _paint_mini(
         self,
@@ -187,6 +187,7 @@ class BubbleWindow(QWidget):
         left: int,
         top: int,
         center: float,
+        stale: bool,
     ) -> None:
         vertical = Qt.AlignmentFlag.AlignVCenter
 
@@ -211,7 +212,7 @@ class BubbleWindow(QWidget):
             painter.setBrush(row_color(window))
             painter.drawRoundedRect(QRectF(bar_left, bar_top, fill, BAR_HEIGHT), 3, 3)
 
-        painter.setPen(TEXT)
+        painter.setPen(TEXT_DIM if stale else TEXT)
         painter.drawText(
             QRectF(
                 bar_left + self.MINI_BAR_WIDTH + self.MINI_GAP,

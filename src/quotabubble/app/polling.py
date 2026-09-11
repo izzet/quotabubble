@@ -1,12 +1,15 @@
 from __future__ import annotations
 
 import logging
+import time
 
 from PySide6.QtCore import QMetaObject, QObject, Qt, QThread, QTimer, Signal, Slot
 
 from quotabubble.providers.base import Provider, ProviderStatus, UsageSnapshot
 
 DEFAULT_REFRESH_INTERVAL_MS = 60_000
+ERROR_BACKOFF_SECONDS = 120.0
+MAX_BACKOFF_SECONDS = 900.0
 logger = logging.getLogger(__name__)
 
 
@@ -23,6 +26,9 @@ class PollingWorker(QObject):
         self._providers = list(providers)
         self._interval_ms = interval_ms
         self._timer: QTimer | None = None
+        self._last_good: dict[str, UsageSnapshot] = {}
+        self._failures: dict[str, int] = {}
+        self._retry_at: dict[str, float] = {}
 
     @Slot()
     def start(self) -> None:
@@ -34,29 +40,53 @@ class PollingWorker(QObject):
 
     @Slot()
     def poll(self) -> None:
+        now = time.monotonic()
         for provider in self._providers:
+            if now < self._retry_at.get(provider.id, 0.0):
+                continue
             try:
-                snapshot = provider.fetch()
+                fresh = provider.fetch()
             except Exception:
                 logger.exception("provider '%s' raised during fetch", provider.id)
-                snapshot = UsageSnapshot(
+                fresh = UsageSnapshot(
                     provider=provider.id,
                     display_name=provider.display_name,
                     status=ProviderStatus.ERROR,
                     message="unexpected error",
                 )
-            if snapshot.status is ProviderStatus.OK:
-                logger.info(
-                    "provider '%s' ok (%d windows)", provider.id, len(snapshot.windows)
-                )
-            else:
+            self._publish(fresh)
+
+    def _publish(self, fresh: UsageSnapshot) -> None:
+        provider_id = fresh.provider
+        if fresh.status is ProviderStatus.OK:
+            self._failures.pop(provider_id, None)
+            self._retry_at.pop(provider_id, None)
+            self._last_good[provider_id] = fresh
+            logger.info("provider '%s' ok (%d windows)", provider_id, len(fresh.windows))
+            self.snapshot_ready.emit(fresh)
+            return
+        if fresh.status is ProviderStatus.ERROR:
+            failures = self._failures.get(provider_id, 0) + 1
+            self._failures[provider_id] = failures
+            delay = min(ERROR_BACKOFF_SECONDS * 2 ** (failures - 1), MAX_BACKOFF_SECONDS)
+            self._retry_at[provider_id] = time.monotonic() + delay
+            previous = self._last_good.get(provider_id)
+            if previous is not None:
                 logger.warning(
-                    "provider '%s' %s (%s)",
-                    provider.id,
-                    snapshot.status,
-                    snapshot.message,
+                    "provider '%s' error (%s); keeping last-good, retry in %.0fs",
+                    provider_id,
+                    fresh.message,
+                    delay,
                 )
-            self.snapshot_ready.emit(snapshot)
+                self.snapshot_ready.emit(previous.model_copy(update={"stale": True}))
+            else:
+                logger.warning("provider '%s' error (%s)", provider_id, fresh.message)
+                self.snapshot_ready.emit(fresh)
+            return
+        self._failures.pop(provider_id, None)
+        self._retry_at.pop(provider_id, None)
+        logger.warning("provider '%s' %s (%s)", provider_id, fresh.status, fresh.message)
+        self.snapshot_ready.emit(fresh)
 
     @Slot(object)
     def set_providers(self, providers: list[Provider]) -> None:

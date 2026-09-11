@@ -91,11 +91,14 @@ def paint_expanded(
     for snapshot in snapshots:
         y = top
         header = QRectF(left, y, right - left, HEADER_ROW_HEIGHT)
-        painter.setPen(TEXT)
+        painter.setPen(TEXT_DIM if snapshot.stale else TEXT)
         painter.drawText(header, vertical | Qt.AlignmentFlag.AlignLeft, snapshot.display_name)
-        if snapshot.plan:
+        trailing = " · ".join(
+            label for label in (snapshot.plan, "stale" if snapshot.stale else None) if label
+        )
+        if trailing:
             painter.setPen(TEXT_DIM)
-            painter.drawText(header, vertical | Qt.AlignmentFlag.AlignRight, snapshot.plan)
+            painter.drawText(header, vertical | Qt.AlignmentFlag.AlignRight, trailing)
         y += HEADER_ROW_HEIGHT
 
         if snapshot.status is not ProviderStatus.OK:

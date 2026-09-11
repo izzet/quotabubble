@@ -46,6 +46,7 @@ class UsageSnapshot(BaseModel):
     credits: Credits | None = None
     plan: str | None = None
     message: str | None = None
+    stale: bool = False
     fetched_at: datetime | None = None
 
 
