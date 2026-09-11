@@ -1,0 +1,12 @@
+[submodule "external/claude-code-usage-monitor"]
+	path = external/claude-code-usage-monitor
+	url = https://github.com/CodeZeno/Claude-Code-Usage-Monitor.git
+[submodule "external/claude-usage-bar"]
+	path = external/claude-usage-bar
+	url = https://github.com/Artzainnn/ClaudeUsageBar.git
+[submodule "external/codex-bar"]
+	path = external/codex-bar
+	url = https://github.com/steipete/CodexBar.git
+[submodule "external/token-bar"]
+	path = external/token-bar
+	url = https://github.com/Nanako0129/TokenBar.git
