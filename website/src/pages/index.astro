@@ -9,20 +9,35 @@ const ogCard = new URL(`${base}og.png`, Astro.site).href;
 const appVersion = "0.1.2";
 const structuredData = {
   "@context": "https://schema.org",
-  "@type": "SoftwareApplication",
-  name: "QuotaBubble",
-  description:
-    "A tiny always-on-top desktop bubble that shows your AI coding usage limits: Claude Code, Codex, Antigravity, Copilot, DeepSeek, and OpenRouter.",
-  url: canonical,
-  applicationCategory: "DeveloperApplication",
-  operatingSystem: "Windows, macOS, Linux",
-  softwareVersion: appVersion,
-  isAccessibleForFree: true,
-  license: `${repo}/blob/main/LICENSE`,
-  author: { "@type": "Person", name: "Izzet Yildirim" },
-  sameAs: [repo, "https://pypi.org/project/quotabubble/"],
-  screenshot: ogImage,
-  downloadUrl: releases,
+  "@graph": [
+    {
+      "@type": "Person",
+      "@id": "https://iyildirim.com/#person",
+      name: "Izzet Yildirim",
+      url: "https://iyildirim.com",
+      jobTitle: "PhD Candidate & Software Engineer",
+      sameAs: ["https://github.com/izzet"],
+    },
+    {
+      "@type": "SoftwareApplication",
+      "@id": `${canonical}#software`,
+      name: "QuotaBubble",
+      description:
+        "A tiny always-on-top desktop bubble that shows your AI coding usage limits: Claude Code, Codex, Antigravity, Copilot, DeepSeek, and OpenRouter.",
+      url: canonical,
+      applicationCategory: "DeveloperApplication",
+      operatingSystem: "Windows, macOS, Linux",
+      softwareVersion: appVersion,
+      isAccessibleForFree: true,
+      license: `${repo}/blob/main/LICENSE`,
+      image: ogCard,
+      screenshot: ogImage,
+      downloadUrl: releases,
+      author: { "@id": "https://iyildirim.com/#person" },
+      creator: { "@id": "https://iyildirim.com/#person" },
+      sameAs: [repo, "https://pypi.org/project/quotabubble/"],
+    },
+  ],
 };
 
 const features = [
