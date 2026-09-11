@@ -19,3 +19,7 @@ htmlcov/
 Thumbs.db
 
 .env
+
+# Local reference clones (not part of the project)
+external/
+.wakatime-project
