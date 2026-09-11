@@ -1,0 +1,319 @@
+---
+const rawBase = import.meta.env.BASE_URL;
+const base = rawBase.endsWith("/") ? rawBase : `${rawBase}/`;
+const repo = "https://github.com/izzet/quotabubble";
+const releases = `${repo}/releases/latest`;
+
+const features = [
+  ["Frameless bubble", "Translucent, rounded, always on top — and it never steals keyboard focus."],
+  ["Fades when idle", "A configurable low opacity keeps it out of the way; hover to bring it back."],
+  ["Click to expand", "Every usage window, the percentage used, and a live reset countdown."],
+  ["Drag anywhere", "Move it across monitors; its position is remembered."],
+  ["Stays accurate", "Refreshes every 5 minutes and keeps the last good values through transient errors."],
+  ["Local only", "Reuses the credentials your tools already store. No telemetry, no server."],
+];
+
+const providers = [
+  ["Claude Code", "~/.claude/.credentials.json"],
+  ["Codex", "~/.codex/auth.json"],
+  ["Google Antigravity", "Windows Credential Manager"],
+  ["GitHub Copilot", "Windows Credential Manager"],
+  ["DeepSeek", "API key"],
+  ["OpenRouter", "API key"],
+];
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>QuotaBubble — your AI usage limits, always in sight</title>
+    <meta
+      name="description"
+      content="A tiny always-on-top desktop bubble that shows your AI coding usage limits: Claude Code, Codex, Antigravity, Copilot, DeepSeek, and OpenRouter."
+    />
+    <link rel="icon" type="image/png" href={`${base}favicon.png`} />
+    <meta property="og:title" content="QuotaBubble" />
+    <meta property="og:description" content="Your AI usage limits, always in sight." />
+    <meta property="og:image" content={`${base}screenshot-expanded.png`} />
+  </head>
+  <body>
+    <header class="nav">
+      <a class="brand" href={base}>
+        <img src={`${base}icon.png`} width="28" height="28" alt="" />
+        <span>QuotaBubble</span>
+      </a>
+      <a class="ghost" href={repo}>GitHub →</a>
+    </header>
+
+    <main>
+      <section class="hero">
+        <h1>Your AI usage limits,<br />always in sight.</h1>
+        <p class="lede">
+          QuotaBubble is a tiny, always-on-top desktop bubble that shows the usage limits for your
+          AI coding tools — without opening a dashboard, terminal, or browser. It fades away when
+          idle and expands when you click it.
+        </p>
+        <div class="cta">
+          <a class="primary" href={releases}>Download for Windows</a>
+          <a class="secondary" href={repo}>View on GitHub</a>
+        </div>
+        <div class="shots">
+          <img src={`${base}screenshot-compact.png`} width="220" alt="Idle bubble" />
+          <img src={`${base}screenshot-expanded.png`} width="300" alt="Expanded detail" />
+        </div>
+      </section>
+
+      <section>
+        <h2>Features</h2>
+        <ul class="grid">
+          {features.map(([title, body]) => (
+            <li>
+              <h3>{title}</h3>
+              <p>{body}</p>
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      <section>
+        <h2>Supported providers</h2>
+        <ul class="providers">
+          {providers.map(([name, auth]) => (
+            <li>
+              <span class="pname">{name}</span>
+              <span class="pauth">{auth}</span>
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      <section>
+        <h2>Install</h2>
+        <p>
+          <strong>Windows.</strong> Download the latest <code>QuotaBubble-windows-x64.zip</code> from
+          <a href={releases}>Releases</a>, unzip it, and run <code>QuotaBubble.exe</code>.
+        </p>
+        <p class="note">
+          The build is unsigned for now, so SmartScreen may warn you — choose “More info → Run anyway”.
+        </p>
+        <p>
+          <strong>From source.</strong> With Python 3.11+ and <a href="https://docs.astral.sh/uv/">uv</a>:
+        </p>
+        <pre><code>{`git clone ${repo}.git
+cd quotabubble
+uv tool install --editable .
+quotabubble`}</code></pre>
+      </section>
+    </main>
+
+    <footer>
+      <span>MIT licensed</span>
+      <span>·</span>
+      <a href={repo}>github.com/izzet/quotabubble</a>
+    </footer>
+  </body>
+</html>
+
+<style>
+  :root {
+    --bg: #0e0e11;
+    --panel: #16161a;
+    --line: rgba(255, 255, 255, 0.08);
+    --text: #ececf1;
+    --dim: #9a9aa5;
+    --accent: #5ec584;
+    --accent-ink: #06210f;
+  }
+  * {
+    box-sizing: border-box;
+  }
+  body {
+    margin: 0;
+    background:
+      radial-gradient(1200px 600px at 50% -200px, rgba(94, 197, 132, 0.12), transparent),
+      var(--bg);
+    color: var(--text);
+    font: 16px/1.6 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial,
+      sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  a {
+    color: var(--accent);
+    text-decoration: none;
+  }
+  a:hover {
+    text-decoration: underline;
+  }
+  code {
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 1px 6px;
+    font-size: 0.9em;
+  }
+  pre {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 16px;
+    overflow-x: auto;
+  }
+  pre code {
+    background: none;
+    border: none;
+    padding: 0;
+  }
+  .nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 20px 24px;
+  }
+  .brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--text);
+    font-weight: 700;
+  }
+  .brand img {
+    border-radius: 7px;
+  }
+  .ghost {
+    color: var(--dim);
+  }
+  main {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 0 24px;
+  }
+  section {
+    padding: 40px 0;
+    border-top: 1px solid var(--line);
+  }
+  h2 {
+    font-size: 24px;
+    letter-spacing: -0.01em;
+  }
+  h3 {
+    font-size: 16px;
+    margin: 0 0 4px;
+  }
+  .hero {
+    border-top: none;
+    text-align: center;
+    padding: 40px 0 24px;
+  }
+  .hero h1 {
+    font-size: clamp(32px, 6vw, 52px);
+    line-height: 1.05;
+    letter-spacing: -0.03em;
+    margin: 8px 0 16px;
+  }
+  .lede {
+    color: var(--dim);
+    max-width: 620px;
+    margin: 0 auto 28px;
+    font-size: 18px;
+  }
+  .cta {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  .primary,
+  .secondary {
+    display: inline-block;
+    padding: 12px 20px;
+    border-radius: 10px;
+    font-weight: 600;
+  }
+  .primary {
+    background: var(--accent);
+    color: var(--accent-ink);
+  }
+  .primary:hover {
+    text-decoration: none;
+    filter: brightness(1.05);
+  }
+  .secondary {
+    border: 1px solid var(--line);
+    color: var(--text);
+  }
+  .secondary:hover {
+    text-decoration: none;
+    background: rgba(255, 255, 255, 0.04);
+  }
+  .shots {
+    display: flex;
+    gap: 20px;
+    justify-content: center;
+    align-items: center;
+    margin-top: 40px;
+    flex-wrap: wrap;
+  }
+  .shots img {
+    filter: drop-shadow(0 10px 30px rgba(0, 0, 0, 0.5));
+  }
+  .grid {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 16px;
+  }
+  .grid li {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 18px;
+  }
+  .grid p {
+    color: var(--dim);
+    margin: 0;
+  }
+  .providers {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 8px;
+  }
+  .providers li {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 12px 14px;
+  }
+  .pname {
+    font-weight: 600;
+  }
+  .pauth {
+    color: var(--dim);
+    font-size: 13px;
+    text-align: right;
+  }
+  .note {
+    color: var(--dim);
+    font-size: 14px;
+  }
+  footer {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 32px 24px 48px;
+    color: var(--dim);
+    display: flex;
+    gap: 8px;
+    border-top: 1px solid var(--line);
+  }
+</style>
