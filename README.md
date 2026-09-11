@@ -36,7 +36,13 @@ Providers are detected automatically. Enable or disable them in Settings; API ke
 
 ### Windows
 
-Download the latest `QuotaBubble-windows-x64.zip` from the [Releases page](https://github.com/izzet/quotabubble/releases), unzip it, and run `QuotaBubble.exe`.
+With [winget](https://learn.microsoft.com/windows/package-manager/winget/):
+
+```powershell
+winget install Izzet.QuotaBubble
+```
+
+Or download the latest `QuotaBubble-windows-x64.zip` from the [Releases page](https://github.com/izzet/quotabubble/releases), unzip it, and run `QuotaBubble.exe`.
 
 > The binary is not code-signed yet, so Windows SmartScreen may warn you. Choose **More info → Run anyway**.
 
