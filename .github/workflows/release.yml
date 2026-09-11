@@ -36,3 +36,31 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: QuotaBubble-windows-x64.zip
+
+  winget:
+    needs: windows
+    runs-on: windows-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    env:
+      WINGET_TOKEN: ${{ secrets.WINGET_TOKEN }}
+    steps:
+      - name: Skip when WINGET_TOKEN is not configured
+        if: env.WINGET_TOKEN == ''
+        shell: pwsh
+        run: Write-Output "WINGET_TOKEN is not set; skipping winget submission."
+
+      - name: Download komac
+        if: env.WINGET_TOKEN != ''
+        shell: pwsh
+        run: |
+          $url = "https://github.com/RussellBanks/Komac/releases/download/v2.16.0/komac-2.16.0-x86_64-pc-windows-msvc.exe"
+          Invoke-WebRequest -Uri $url -OutFile komac.exe
+
+      - name: Submit winget update
+        if: env.WINGET_TOKEN != ''
+        shell: pwsh
+        run: |
+          $version = $env:GITHUB_REF_NAME -replace '^v', ''
+          $zip = "https://github.com/izzet/quotabubble/releases/download/v$version/QuotaBubble-windows-x64.zip"
+          .\komac.exe update Izzet.QuotaBubble -v $version -u $zip --yes --token $env:WINGET_TOKEN
+
