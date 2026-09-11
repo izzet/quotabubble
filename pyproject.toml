@@ -5,7 +5,7 @@ description = "A lightweight cross-platform floating widget that shows AI usage 
 readme = "README.md"
 license = "MIT"
 requires-python = ">=3.11"
-authors = [{ name = "izzet" }]
+authors = [{ name = "Izzet Yildirim", email = "izzet@izzet.dev" }]
 keywords = [
     "ai",
     "usage",
