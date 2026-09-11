@@ -10,10 +10,12 @@ SECONDS_PER_DAY = 86_400
 def format_reset(resets_at: datetime | None, now: datetime | None = None) -> str | None:
     if resets_at is None:
         return None
+    if resets_at.tzinfo is None:
+        resets_at = resets_at.replace(tzinfo=UTC)
     if now is None:
-        now = datetime.now(tz=resets_at.tzinfo or UTC)
+        now = datetime.now(tz=UTC)
     elif now.tzinfo is None:
-        now = now.replace(tzinfo=resets_at.tzinfo or UTC)
+        now = now.replace(tzinfo=UTC)
 
     seconds = int((resets_at - now).total_seconds())
     if seconds <= 0:

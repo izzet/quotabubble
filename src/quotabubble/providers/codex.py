@@ -172,6 +172,7 @@ class CodexProvider:
                 UsageWindow(
                     key=key,
                     label="Weekly" if key == "weekly" else "5h",
+                    short="wk" if key == "weekly" else "5h",
                     used_pct=window.used_percent,
                     resets_at=_to_datetime(window.reset_at),
                 )

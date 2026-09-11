@@ -129,6 +129,7 @@ def _windows_from_limits(limits: list[_Limit]) -> list[UsageWindow]:
                 UsageWindow(
                     key="session",
                     label="5h",
+                    short="5h",
                     used_pct=percent,
                     resets_at=limit.resets_at,
                     severity=limit.severity,
@@ -140,6 +141,7 @@ def _windows_from_limits(limits: list[_Limit]) -> list[UsageWindow]:
                 UsageWindow(
                     key="weekly",
                     label="Weekly",
+                    short="wk",
                     used_pct=percent,
                     resets_at=limit.resets_at,
                     severity=limit.severity,
@@ -171,6 +173,7 @@ def _windows_from_flat(parsed: _UsageResponse) -> list[UsageWindow]:
             UsageWindow(
                 key="session",
                 label="5h",
+                short="5h",
                 used_pct=parsed.five_hour.utilization,
                 resets_at=parsed.five_hour.resets_at,
             )
@@ -180,6 +183,7 @@ def _windows_from_flat(parsed: _UsageResponse) -> list[UsageWindow]:
             UsageWindow(
                 key="weekly",
                 label="Weekly",
+                short="wk",
                 used_pct=parsed.seven_day.utilization,
                 resets_at=parsed.seven_day.resets_at,
             )

@@ -25,3 +25,9 @@ def test_format_reset_days() -> None:
 
 def test_format_reset_in_the_past() -> None:
     assert format_reset(NOW - timedelta(seconds=1), NOW) == "now"
+
+
+def test_format_reset_naive_datetime() -> None:
+    naive = datetime(2026, 9, 11, 13, 0)
+
+    assert format_reset(naive, NOW) == "1h"

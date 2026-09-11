@@ -7,6 +7,7 @@ from quotabubble.providers.antigravity import AntigravityProvider
 from quotabubble.providers.base import Provider, ProviderStatus, UsageSnapshot
 from quotabubble.providers.claude import ClaudeProvider
 from quotabubble.providers.codex import CodexProvider
+from quotabubble.providers.copilot import CopilotProvider
 from quotabubble.providers.deepseek import DeepSeekProvider
 
 
@@ -22,6 +23,7 @@ def build_providers(settings: Settings) -> list[Provider]:
         ClaudeProvider(),
         CodexProvider(),
         AntigravityProvider(),
+        CopilotProvider(),
         DeepSeekProvider(api_key=resolve_api_key(settings, "deepseek")),
     ]
 

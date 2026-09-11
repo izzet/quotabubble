@@ -19,6 +19,7 @@ class UsageWindow(BaseModel):
     label: str
     used_pct: float
     key: str = ""
+    short: str | None = None
     resets_at: datetime | None = None
     scope: str | None = None
     severity: str | None = None

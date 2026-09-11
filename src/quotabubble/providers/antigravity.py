@@ -28,7 +28,7 @@ USER_AGENT = "antigravity"
 REQUEST_TIMEOUT_SECONDS = 20.0
 GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token"
 EXPIRY_SKEW_SECONDS = 60
-_WINDOW_LABELS = {"5h": ("session", "5h"), "weekly": ("weekly", "Weekly")}
+_WINDOW_LABELS = {"5h": ("session", "5h", "5h"), "weekly": ("weekly", "Weekly", "wk")}
 _WINDOW_ORDER = {"session": 0, "weekly": 1}
 _DISPLAY_MODEL_PREFIXES = ("gemini", "claude", "gpt", "image", "imagen")
 _CLIENT_SUFFIX = b".apps.googleusercontent.com"
@@ -199,9 +199,11 @@ def _windows_from_group(group: _Group) -> list[UsageWindow]:
         used = _used_from_remaining(bucket.remaining_fraction)
         if labels is None or used is None:
             continue
-        key, label = labels
+        key, label, short = labels
         windows.append(
-            UsageWindow(key=key, label=label, used_pct=used, resets_at=bucket.reset_time)
+            UsageWindow(
+                key=key, label=label, short=short, used_pct=used, resets_at=bucket.reset_time
+            )
         )
     return windows
 
@@ -244,6 +246,7 @@ def _best_model_window(response: _ModelsResponse) -> list[UsageWindow]:
             UsageWindow(
                 key="session",
                 label="5h",
+                short="5h",
                 used_pct=used,
                 resets_at=info.quota_info.reset_time,
             )

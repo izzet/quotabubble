@@ -50,7 +50,7 @@ class BubbleWindow(QWidget):
     EXPANDED_WIDTH = 300
     COMPACT_ROW_HEIGHT = 26
     NAME_GAP = 12
-    MINI_LABEL_WIDTH = 18
+    MINI_LABEL_WIDTH = 22
     MINI_BAR_WIDTH = 32
     MINI_PCT_WIDTH = 26
     MINI_GAP = 4
@@ -175,27 +175,26 @@ class BubbleWindow(QWidget):
         second_left = right - group_width
         first_left = second_left - self.GROUP_GAP - group_width
 
-        self._paint_mini(painter, "5h", self._find(snapshot, "session"), first_left, top, center)
-        self._paint_mini(painter, "wk", self._find(snapshot, "weekly"), second_left, top, center)
+        windows = snapshot.windows
+        self._paint_mini(painter, windows[0], first_left, top, center)
+        if len(windows) > 1:
+            self._paint_mini(painter, windows[1], second_left, top, center)
 
     def _paint_mini(
         self,
         painter: QPainter,
-        label: str,
-        window: UsageWindow | None,
+        window: UsageWindow,
         left: int,
         top: int,
         center: float,
     ) -> None:
-        if window is None:
-            return
         vertical = Qt.AlignmentFlag.AlignVCenter
 
         painter.setPen(TEXT_DIM)
         painter.drawText(
             QRectF(left, top, self.MINI_LABEL_WIDTH, self.COMPACT_ROW_HEIGHT),
             vertical | Qt.AlignmentFlag.AlignLeft,
-            label,
+            window.short or window.label,
         )
 
         bar_left = left + self.MINI_LABEL_WIDTH + self.MINI_GAP
@@ -250,13 +249,6 @@ class BubbleWindow(QWidget):
         groups = 2 * self._group_width() + self.GROUP_GAP
         needed = PADDING * 2 + self._name_width() + self.NAME_GAP + groups
         return max(self.COMPACT_WIDTH, needed)
-
-    @staticmethod
-    def _find(snapshot: UsageSnapshot, key: str) -> UsageWindow | None:
-        for window in snapshot.windows:
-            if window.key == key:
-                return window
-        return None
 
     def enterEvent(self, event) -> None:
         self._fade_timer.stop()
