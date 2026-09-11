@@ -8,13 +8,13 @@ from pathlib import Path
 import httpx2
 from pydantic import BaseModel
 
-from quotabubble.providers.base import ProviderStatus, UsageSnapshot, UsageWindow
+from quotabubble.providers.base import Credits, ProviderStatus, UsageSnapshot, UsageWindow
 
 USAGE_URL = "https://chatgpt.com/backend-api/wham/usage"
 USER_AGENT = "codex-cli"
 REQUEST_TIMEOUT_SECONDS = 15.0
 WEEKLY_WINDOW_THRESHOLD_SECONDS = 86_400
-_WINDOW_ORDER = {"5h": 0, "7d": 1}
+_WINDOW_ORDER = {"session": 0, "weekly": 1}
 
 
 class _TokenData(BaseModel):
@@ -37,8 +37,16 @@ class _RateLimitDetails(BaseModel):
     secondary_window: _RateLimitWindow | None = None
 
 
+class _Credits(BaseModel):
+    has_credits: bool = False
+    unlimited: bool = False
+    balance: str | None = None
+
+
 class _UsageResponse(BaseModel):
+    plan_type: str | None = None
     rate_limit: _RateLimitDetails | None = None
+    credits: _Credits | None = None
 
 
 def default_credentials_path() -> Path:
@@ -66,6 +74,24 @@ def _to_datetime(timestamp: int | None) -> datetime | None:
     if timestamp is None:
         return None
     return datetime.fromtimestamp(timestamp, tz=UTC)
+
+
+def _window_key(window: _RateLimitWindow, default_is_weekly: bool) -> str:
+    if window.limit_window_seconds is not None:
+        is_weekly = window.limit_window_seconds >= WEEKLY_WINDOW_THRESHOLD_SECONDS
+    else:
+        is_weekly = default_is_weekly
+    return "weekly" if is_weekly else "session"
+
+
+def _credits(credits: _Credits | None) -> Credits | None:
+    if credits is None:
+        return None
+    if credits.unlimited:
+        return Credits(display="Unlimited")
+    if credits.has_credits and credits.balance is not None:
+        return Credits(display=credits.balance)
+    return None
 
 
 class CodexProvider:
@@ -115,6 +141,8 @@ class CodexProvider:
             provider=self.id,
             display_name=self.display_name,
             windows=self._windows(parsed),
+            credits=_credits(parsed.credits),
+            plan=parsed.plan_type,
         )
 
     def _windows(self, parsed: _UsageResponse) -> list[UsageWindow]:
@@ -129,19 +157,17 @@ class CodexProvider:
         for window, default_is_weekly in candidates:
             if window is None:
                 continue
-            if window.limit_window_seconds is not None:
-                is_weekly = window.limit_window_seconds >= WEEKLY_WINDOW_THRESHOLD_SECONDS
-            else:
-                is_weekly = default_is_weekly
+            key = _window_key(window, default_is_weekly)
             windows.append(
                 UsageWindow(
-                    label="7d" if is_weekly else "5h",
+                    key=key,
+                    label="Weekly" if key == "weekly" else "5h",
                     used_pct=window.used_percent,
                     resets_at=_to_datetime(window.reset_at),
                 )
             )
 
-        windows.sort(key=lambda window: _WINDOW_ORDER.get(window.label, len(_WINDOW_ORDER)))
+        windows.sort(key=lambda item: (_WINDOW_ORDER.get(item.key, 2), item.label))
         return windows
 
     def _snapshot(self, status: ProviderStatus, message: str | None = None) -> UsageSnapshot:

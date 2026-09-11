@@ -18,7 +18,16 @@ class ProviderStatus(StrEnum):
 class UsageWindow(BaseModel):
     label: str
     used_pct: float
+    key: str = ""
     resets_at: datetime | None = None
+    scope: str | None = None
+    severity: str | None = None
+    active: bool = False
+
+
+class Credits(BaseModel):
+    display: str
+    used_pct: float | None = None
 
 
 class UsageSnapshot(BaseModel):
@@ -26,6 +35,8 @@ class UsageSnapshot(BaseModel):
     display_name: str
     status: ProviderStatus = ProviderStatus.OK
     windows: list[UsageWindow] = Field(default_factory=list)
+    credits: Credits | None = None
+    plan: str | None = None
     message: str | None = None
     fetched_at: datetime | None = None
 

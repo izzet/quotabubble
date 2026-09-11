@@ -22,6 +22,13 @@ def _client(handler: Callable[[httpx2.Request], httpx2.Response]) -> httpx2.Clie
     return httpx2.Client(transport=httpx2.MockTransport(handler))
 
 
+def _provider_with_body(tmp_path: Path, body: str) -> ClaudeProvider:
+    return ClaudeProvider(
+        credentials_path=_write_credentials(tmp_path),
+        client=_client(lambda request: httpx2.Response(200, text=body)),
+    )
+
+
 def test_implements_provider_protocol() -> None:
     assert isinstance(ClaudeProvider(), Provider)
 
@@ -32,7 +39,7 @@ def test_missing_credentials_reports_no_credentials(tmp_path: Path) -> None:
     assert provider.fetch().status is ProviderStatus.NO_CREDENTIALS
 
 
-def test_fetch_parses_quota_windows(tmp_path: Path) -> None:
+def test_flat_buckets_are_used_when_limits_are_absent(tmp_path: Path) -> None:
     body = (FIXTURES / "claude_usage.json").read_text(encoding="utf-8")
 
     def handler(request: httpx2.Request) -> httpx2.Response:
@@ -46,10 +53,43 @@ def test_fetch_parses_quota_windows(tmp_path: Path) -> None:
     snapshot = provider.fetch()
 
     assert snapshot.status is ProviderStatus.OK
-    assert [window.label for window in snapshot.windows] == ["5h", "7d"]
+    assert [window.label for window in snapshot.windows] == ["5h", "Weekly"]
     assert snapshot.windows[0].used_pct == 42.0
     assert snapshot.windows[1].used_pct == 71.0
     assert snapshot.windows[0].resets_at is not None
+
+
+def test_limits_are_preferred_and_scoped_windows_are_labelled(tmp_path: Path) -> None:
+    body = (FIXTURES / "claude_usage_limits.json").read_text(encoding="utf-8")
+    snapshot = _provider_with_body(tmp_path, body).fetch()
+
+    assert [window.label for window in snapshot.windows] == ["5h", "Weekly", "Fable"]
+    assert [window.used_pct for window in snapshot.windows] == [9.0, 90.0, 53.0]
+
+    weekly = snapshot.windows[1]
+    assert weekly.key == "weekly"
+    assert weekly.severity == "critical"
+    assert weekly.active is True
+
+    fable = snapshot.windows[2]
+    assert fable.key == "weekly_scoped.fable"
+    assert fable.scope == "Fable"
+
+
+def test_credits_are_reported_when_enabled(tmp_path: Path) -> None:
+    body = (FIXTURES / "claude_usage_credits.json").read_text(encoding="utf-8")
+    snapshot = _provider_with_body(tmp_path, body).fetch()
+
+    assert snapshot.credits is not None
+    assert snapshot.credits.display == "$13.59 / $50.00"
+    assert snapshot.credits.used_pct == 27.0
+
+
+def test_credits_absent_when_disabled(tmp_path: Path) -> None:
+    body = (FIXTURES / "claude_usage_limits.json").read_text(encoding="utf-8")
+    snapshot = _provider_with_body(tmp_path, body).fetch()
+
+    assert snapshot.credits is None
 
 
 def test_rejected_credentials_report_expired(tmp_path: Path) -> None:

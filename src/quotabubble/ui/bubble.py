@@ -10,6 +10,7 @@ from PySide6.QtCore import (
     QSize,
     Qt,
     QTimer,
+    QVariantAnimation,
     Signal,
 )
 from PySide6.QtGui import (
@@ -21,23 +22,38 @@ from PySide6.QtGui import (
     QPaintEvent,
     QPen,
 )
-from PySide6.QtWidgets import QWidget
+from PySide6.QtWidgets import QApplication, QWidget
 
 from quotabubble.app.settings import Settings
 from quotabubble.app.state import AppState
 from quotabubble.platform import configure_window
-from quotabubble.providers.base import ProviderStatus, UsageSnapshot
+from quotabubble.providers.base import ProviderStatus, UsageSnapshot, UsageWindow
 from quotabubble.ui.context_menu import build_context_menu
+from quotabubble.ui.panel import (
+    BAR_HEIGHT,
+    PADDING,
+    TEXT,
+    TEXT_DIM,
+    display_pct,
+    expanded_content_height,
+    paint_expanded,
+    row_color,
+    status_text,
+)
 
 
 class BubbleWindow(QWidget):
     settings_requested = Signal()
 
-    ROW_HEIGHT = 24
-    PADDING = 12
-    BAR_WIDTH = 44
-    BAR_HEIGHT = 6
-    MIN_WIDTH = 168
+    COMPACT_WIDTH = 260
+    EXPANDED_WIDTH = 300
+    COMPACT_ROW_HEIGHT = 26
+    NAME_WIDTH = 54
+    MINI_LABEL_WIDTH = 18
+    MINI_BAR_WIDTH = 32
+    MINI_PCT_WIDTH = 26
+    MINI_GAP = 4
+    GROUP_GAP = 8
     CORNER_RADIUS = 14
 
     def __init__(self, state: AppState, settings: Settings) -> None:
@@ -45,7 +61,11 @@ class BubbleWindow(QWidget):
         self._state = state
         self._settings = settings
         self._dragging = False
+        self._pending_click = False
+        self._press_pos = QPoint()
         self._drag_offset = QPoint()
+        self._expanded = False
+        self._expand_progress = 0.0
 
         self.setWindowTitle("QuotaBubble")
         self.setWindowFlags(
@@ -58,22 +78,25 @@ class BubbleWindow(QWidget):
         self._animation = QPropertyAnimation(self, b"windowOpacity", self)
         self._animation.setEasingCurve(QEasingCurve.Type.InOutQuad)
 
+        self._resize_animation = QVariantAnimation(self)
+        self._resize_animation.setDuration(150)
+        self._resize_animation.setEasingCurve(QEasingCurve.Type.InOutCubic)
+        self._resize_animation.valueChanged.connect(self._on_resize_value)
+
         self._fade_timer = QTimer(self)
         self._fade_timer.setSingleShot(True)
         self._fade_timer.timeout.connect(self._fade_out)
 
         self.setWindowOpacity(self._settings.idle_opacity)
-        self.setFixedSize(self.sizeHint())
+        self._apply_size()
         self._restore_position()
         configure_window(self)
 
     def sizeHint(self) -> QSize:
-        rows = max(1, len(self._state.ordered()))
-        height = self.PADDING * 2 + rows * self.ROW_HEIGHT
-        return QSize(self.MIN_WIDTH, height)
+        return self._target_size()
 
     def refresh(self) -> None:
-        self.setFixedSize(self.sizeHint())
+        self._apply_size()
         self.update()
 
     def apply_snapshot(self, snapshot: UsageSnapshot) -> None:
@@ -83,7 +106,7 @@ class BubbleWindow(QWidget):
     def apply_settings(self) -> None:
         if not self.underMouse() and not self._dragging:
             self.setWindowOpacity(self._settings.idle_opacity)
-        self.update()
+        self.refresh()
 
     def paintEvent(self, event: QPaintEvent) -> None:
         painter = QPainter(self)
@@ -99,69 +122,113 @@ class BubbleWindow(QWidget):
 
         snapshots = self._state.ordered()
         if not snapshots:
-            painter.setPen(QColor(180, 180, 190))
+            painter.setPen(TEXT_DIM)
             painter.drawText(self.rect(), Qt.AlignmentFlag.AlignCenter, "No providers")
             return
 
-        top = self.PADDING
-        for snapshot in snapshots:
-            self._paint_row(painter, snapshot, top)
-            top += self.ROW_HEIGHT
-
-    def _paint_row(self, painter: QPainter, snapshot: UsageSnapshot, top: int) -> None:
-        left = self.PADDING
-        right = self.width() - self.PADDING
-        row = QRectF(left, top, right - left, self.ROW_HEIGHT)
-        vertical = Qt.AlignmentFlag.AlignVCenter
-
-        painter.setPen(QColor(235, 235, 240))
-        name_rect = QRectF(row.left(), row.top(), 72, row.height())
-        painter.drawText(name_rect, vertical | Qt.AlignmentFlag.AlignLeft, snapshot.display_name)
-
-        if snapshot.status is not ProviderStatus.OK or not snapshot.windows:
-            painter.setPen(QColor(150, 150, 160))
-            text = self._status_text(snapshot)
-            painter.drawText(row, vertical | Qt.AlignmentFlag.AlignRight, text)
+        if self._expanded:
+            paint_expanded(
+                painter, snapshots, self._settings, PADDING, self.EXPANDED_WIDTH
+            )
             return
 
-        used = snapshot.windows[0].used_pct
-        shown = (100.0 - used) if self._settings.show_remaining else used
+        top = PADDING
+        for snapshot in snapshots:
+            self._paint_compact_row(painter, snapshot, top)
+            top += self.COMPACT_ROW_HEIGHT
 
-        bar = QRectF(
-            right - 36 - self.BAR_WIDTH,
-            row.center().y() - self.BAR_HEIGHT / 2,
-            self.BAR_WIDTH,
-            self.BAR_HEIGHT,
+    def _paint_compact_row(self, painter: QPainter, snapshot: UsageSnapshot, top: int) -> None:
+        left = PADDING
+        right = self.width() - PADDING
+        vertical = Qt.AlignmentFlag.AlignVCenter
+        center = top + self.COMPACT_ROW_HEIGHT / 2
+
+        painter.setPen(TEXT)
+        painter.drawText(
+            QRectF(left, top, self.NAME_WIDTH, self.COMPACT_ROW_HEIGHT),
+            vertical | Qt.AlignmentFlag.AlignLeft,
+            snapshot.display_name,
         )
+
+        if snapshot.status is not ProviderStatus.OK or not snapshot.windows:
+            painter.setPen(TEXT_DIM)
+            text = status_text(snapshot) if snapshot.status is not ProviderStatus.OK else "—"
+            painter.drawText(
+                QRectF(left, top, right - left, self.COMPACT_ROW_HEIGHT),
+                vertical | Qt.AlignmentFlag.AlignRight,
+                text,
+            )
+            return
+
+        group_width = self._group_width()
+        second_left = right - group_width
+        first_left = second_left - self.GROUP_GAP - group_width
+
+        self._paint_mini(painter, "5h", self._find(snapshot, "session"), first_left, top, center)
+        self._paint_mini(painter, "wk", self._find(snapshot, "weekly"), second_left, top, center)
+
+    def _paint_mini(
+        self,
+        painter: QPainter,
+        label: str,
+        window: UsageWindow | None,
+        left: int,
+        top: int,
+        center: float,
+    ) -> None:
+        if window is None:
+            return
+        vertical = Qt.AlignmentFlag.AlignVCenter
+
+        painter.setPen(TEXT_DIM)
+        painter.drawText(
+            QRectF(left, top, self.MINI_LABEL_WIDTH, self.COMPACT_ROW_HEIGHT),
+            vertical | Qt.AlignmentFlag.AlignLeft,
+            label,
+        )
+
+        bar_left = left + self.MINI_LABEL_WIDTH + self.MINI_GAP
+        bar_top = center - BAR_HEIGHT / 2
         painter.setPen(Qt.PenStyle.NoPen)
         painter.setBrush(QColor(255, 255, 255, 34))
-        painter.drawRoundedRect(bar, 3, 3)
-        fill = bar.width() * max(0.0, min(1.0, shown / 100.0))
+        painter.drawRoundedRect(
+            QRectF(bar_left, bar_top, self.MINI_BAR_WIDTH, BAR_HEIGHT), 3, 3
+        )
+
+        shown = display_pct(window.used_pct, self._settings)
+        fill = self.MINI_BAR_WIDTH * max(0.0, min(1.0, shown / 100.0))
         if fill > 0:
-            painter.setBrush(self._bar_color(used))
-            painter.drawRoundedRect(QRectF(bar.left(), bar.top(), fill, bar.height()), 3, 3)
+            painter.setBrush(row_color(window))
+            painter.drawRoundedRect(QRectF(bar_left, bar_top, fill, BAR_HEIGHT), 3, 3)
 
-        painter.setPen(QColor(235, 235, 240))
-        pct_rect = QRectF(right - 36, row.top(), 36, row.height())
-        painter.drawText(pct_rect, vertical | Qt.AlignmentFlag.AlignRight, f"{shown:.0f}%")
+        painter.setPen(TEXT)
+        painter.drawText(
+            QRectF(
+                bar_left + self.MINI_BAR_WIDTH + self.MINI_GAP,
+                top,
+                self.MINI_PCT_WIDTH,
+                self.COMPACT_ROW_HEIGHT,
+            ),
+            vertical | Qt.AlignmentFlag.AlignRight,
+            f"{shown:.0f}%",
+        )
+
+    @classmethod
+    def _group_width(cls) -> int:
+        return (
+            cls.MINI_LABEL_WIDTH
+            + cls.MINI_GAP
+            + cls.MINI_BAR_WIDTH
+            + cls.MINI_GAP
+            + cls.MINI_PCT_WIDTH
+        )
 
     @staticmethod
-    def _status_text(snapshot: UsageSnapshot) -> str:
-        if snapshot.status is ProviderStatus.LOADING:
-            return "..."
-        if snapshot.status is ProviderStatus.NO_CREDENTIALS:
-            return "sign in"
-        if snapshot.status is ProviderStatus.EXPIRED:
-            return "expired"
-        return "error"
-
-    @staticmethod
-    def _bar_color(used_pct: float) -> QColor:
-        if used_pct >= 85:
-            return QColor(232, 92, 84)
-        if used_pct >= 60:
-            return QColor(232, 176, 74)
-        return QColor(94, 197, 132)
+    def _find(snapshot: UsageSnapshot, key: str) -> UsageWindow | None:
+        for window in snapshot.windows:
+            if window.key == key:
+                return window
+        return None
 
     def enterEvent(self, event) -> None:
         self._fade_timer.stop()
@@ -169,14 +236,15 @@ class BubbleWindow(QWidget):
         super().enterEvent(event)
 
     def leaveEvent(self, event) -> None:
-        if not self._dragging:
+        if not self._dragging and not self._expanded:
             self._fade_timer.start(self._settings.fade_delay_ms)
         super().leaveEvent(event)
 
     def mousePressEvent(self, event) -> None:
         if event.button() == Qt.MouseButton.LeftButton:
-            self._dragging = True
-            self._drag_offset = event.globalPosition().toPoint() - self.frameGeometry().topLeft()
+            self._press_pos = event.globalPosition().toPoint()
+            self._drag_offset = self._press_pos - self.frameGeometry().topLeft()
+            self._pending_click = True
             self._fade_timer.stop()
             self._animate_opacity(self._settings.hover_opacity)
             event.accept()
@@ -184,21 +252,36 @@ class BubbleWindow(QWidget):
         super().mousePressEvent(event)
 
     def mouseMoveEvent(self, event) -> None:
-        if self._dragging and event.buttons() & Qt.MouseButton.LeftButton:
-            self.move(event.globalPosition().toPoint() - self._drag_offset)
-            event.accept()
-            return
+        if self._dragging or self._pending_click:
+            if event.buttons() & Qt.MouseButton.LeftButton:
+                if not self._dragging:
+                    moved = (event.globalPosition().toPoint() - self._press_pos).manhattanLength()
+                    if moved >= QApplication.startDragDistance():
+                        self._dragging = True
+                        self._pending_click = False
+                if self._dragging:
+                    self.move(event.globalPosition().toPoint() - self._drag_offset)
+                    event.accept()
+                    return
         super().mouseMoveEvent(event)
 
     def mouseReleaseEvent(self, event) -> None:
-        if event.button() == Qt.MouseButton.LeftButton and self._dragging:
+        if event.button() == Qt.MouseButton.LeftButton:
+            was_dragging = self._dragging
+            was_pending = self._pending_click
             self._dragging = False
-            self._settings.position = (self.x(), self.y())
-            self._settings.save()
-            if not self.rect().contains(self.mapFromGlobal(QCursor.pos())):
-                self._fade_timer.start(self._settings.fade_delay_ms)
-            event.accept()
-            return
+            self._pending_click = False
+            if was_dragging:
+                self._settings.position = (self.x(), self.y())
+                self._settings.save()
+                if not self.rect().contains(self.mapFromGlobal(QCursor.pos())):
+                    self._fade_timer.start(self._settings.fade_delay_ms)
+                event.accept()
+                return
+            if was_pending:
+                self._toggle_expanded()
+                event.accept()
+                return
         super().mouseReleaseEvent(event)
 
     def contextMenuEvent(self, event) -> None:
@@ -220,8 +303,53 @@ class BubbleWindow(QWidget):
     def _request_settings(self) -> None:
         self.settings_requested.emit()
 
+    def _toggle_expanded(self) -> None:
+        self._expanded = not self._expanded
+        if self._expanded:
+            self._fade_timer.stop()
+            self._animate_opacity(self._settings.hover_opacity)
+        elif not self.underMouse():
+            self._fade_timer.start(self._settings.fade_delay_ms)
+        self._start_resize_animation()
+
+    def _start_resize_animation(self) -> None:
+        target = 1.0 if self._expanded else 0.0
+        self._resize_animation.stop()
+        self._resize_animation.setStartValue(self._expand_progress)
+        self._resize_animation.setEndValue(target)
+        self._resize_animation.start()
+
+    def _on_resize_value(self, value: object) -> None:
+        self._expand_progress = max(0.0, min(1.0, float(value)))
+        compact = self._compact_size()
+        expanded = self._expanded_size()
+        width = compact.width() + (expanded.width() - compact.width()) * self._expand_progress
+        height = compact.height() + (expanded.height() - compact.height()) * self._expand_progress
+        self.setFixedSize(round(width), max(1, round(height)))
+        if not self._dragging:
+            self._clamp_to_screen()
+        self.update()
+
+    def _compact_size(self) -> QSize:
+        rows = max(1, len(self._state.ordered()))
+        return QSize(self.COMPACT_WIDTH, PADDING * 2 + rows * self.COMPACT_ROW_HEIGHT)
+
+    def _expanded_size(self) -> QSize:
+        snapshots = self._state.ordered()
+        return QSize(self.EXPANDED_WIDTH, PADDING * 2 + expanded_content_height(snapshots))
+
+    def _target_size(self) -> QSize:
+        return self._expanded_size() if self._expanded else self._compact_size()
+
+    def _target_height(self) -> int:
+        return self._target_size().height()
+
+    def _apply_size(self) -> None:
+        self._expand_progress = 1.0 if self._expanded else 0.0
+        self.setFixedSize(self._target_size())
+
     def _handle_screen_change(self) -> None:
-        self.setFixedSize(self.sizeHint())
+        self._apply_size()
         self.update()
         if not self._dragging:
             self._clamp_to_screen()
@@ -236,7 +364,7 @@ class BubbleWindow(QWidget):
         self.move(x, y)
 
     def _fade_out(self) -> None:
-        if not self._dragging:
+        if not self._dragging and not self._expanded:
             self._animate_opacity(self._settings.idle_opacity)
 
     def _animate_opacity(self, value: float) -> None:

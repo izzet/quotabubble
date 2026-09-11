@@ -1,0 +1,24 @@
+{
+  "five_hour": {
+    "utilization": 9.0,
+    "resets_at": "2026-09-11T18:10:00+00:00"
+  },
+  "seven_day": {
+    "utilization": 90.0,
+    "resets_at": "2026-09-13T01:00:00+00:00"
+  },
+  "spend": {
+    "enabled": true,
+    "used": {
+      "amount_minor": 1359,
+      "currency": "USD",
+      "exponent": 2
+    },
+    "limit": {
+      "amount_minor": 5000,
+      "currency": "USD",
+      "exponent": 2
+    },
+    "percent": 27
+  }
+}

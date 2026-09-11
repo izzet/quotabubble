@@ -1,22 +1,22 @@
 {
   "rate_limit": {
     "primary_window": {
-      "used_percent": 67.0,
+      "used_percent": 20.0,
       "reset_at": 1800000000,
       "limit_window_seconds": 18000
     },
     "secondary_window": {
-      "used_percent": 54.0,
+      "used_percent": 10.0,
       "reset_at": 1800604800,
       "limit_window_seconds": 604800
     },
     "limit_reached": false
   },
-  "plan_type": "plus",
+  "plan_type": "pro",
   "credits": {
-    "has_credits": false,
+    "has_credits": true,
     "unlimited": false,
     "overage_limit_reached": false,
-    "balance": "0"
+    "balance": "12.5"
   }
 }

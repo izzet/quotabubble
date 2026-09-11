@@ -32,7 +32,7 @@ def test_missing_credentials_reports_no_credentials(tmp_path: Path) -> None:
     assert provider.fetch().status is ProviderStatus.NO_CREDENTIALS
 
 
-def test_fetch_parses_quota_windows(tmp_path: Path) -> None:
+def test_fetch_parses_quota_windows_and_plan(tmp_path: Path) -> None:
     body = (FIXTURES / "codex_usage.json").read_text(encoding="utf-8")
 
     def handler(request: httpx2.Request) -> httpx2.Response:
@@ -47,10 +47,25 @@ def test_fetch_parses_quota_windows(tmp_path: Path) -> None:
     snapshot = provider.fetch()
 
     assert snapshot.status is ProviderStatus.OK
-    assert [window.label for window in snapshot.windows] == ["5h", "7d"]
-    assert snapshot.windows[0].used_pct == 67.0
-    assert snapshot.windows[1].used_pct == 54.0
+    assert [window.label for window in snapshot.windows] == ["5h", "Weekly"]
+    assert [window.used_pct for window in snapshot.windows] == [67.0, 54.0]
     assert snapshot.windows[0].resets_at is not None
+    assert snapshot.plan == "plus"
+    assert snapshot.credits is None
+
+
+def test_credits_are_reported_when_present(tmp_path: Path) -> None:
+    body = (FIXTURES / "codex_usage_credits.json").read_text(encoding="utf-8")
+
+    provider = CodexProvider(
+        credentials_path=_write_credentials(tmp_path),
+        client=_client(lambda request: httpx2.Response(200, text=body)),
+    )
+    snapshot = provider.fetch()
+
+    assert snapshot.plan == "pro"
+    assert snapshot.credits is not None
+    assert snapshot.credits.display == "12.5"
 
 
 def test_weekly_window_in_primary_slot_is_classified_by_length(tmp_path: Path) -> None:
@@ -62,7 +77,7 @@ def test_weekly_window_in_primary_slot_is_classified_by_length(tmp_path: Path) -
     )
     snapshot = provider.fetch()
 
-    assert [window.label for window in snapshot.windows] == ["7d"]
+    assert [window.label for window in snapshot.windows] == ["Weekly"]
     assert snapshot.windows[0].used_pct == 30.0
 
 
