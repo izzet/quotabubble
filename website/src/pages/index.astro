@@ -5,6 +5,7 @@ const repo = "https://github.com/izzet/quotabubble";
 const releases = `${repo}/releases/latest`;
 const canonical = new URL(base, Astro.site).href;
 const ogImage = new URL(`${base}screenshot-expanded.png`, Astro.site).href;
+const ogCard = new URL(`${base}og.png`, Astro.site).href;
 const appVersion = "0.1.2";
 const structuredData = {
   "@context": "https://schema.org",
@@ -56,17 +57,21 @@ const providers = [
     <link rel="icon" type="image/png" href={`${base}favicon.png`} />
     <link rel="canonical" href={canonical} />
     <meta name="google-site-verification" content="xOAsL7kCK8dOoM2HfkWJWEI5kKUsRb97HRnRJ6P45cw" />
+    <meta name="msvalidate.01" content="8B1609FF4BA356F243940433A8127B56" />
     <meta name="theme-color" content="#0e0e11" />
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="QuotaBubble" />
     <meta property="og:url" content={canonical} />
     <meta property="og:title" content="QuotaBubble — your AI usage limits, always in sight" />
     <meta property="og:description" content="Your AI usage limits, always in sight." />
-    <meta property="og:image" content={ogImage} />
+    <meta property="og:image" content={ogCard} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="The QuotaBubble widget showing Claude, Codex and Copilot usage." />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="QuotaBubble — your AI usage limits, always in sight" />
     <meta name="twitter:description" content="Your AI usage limits, always in sight." />
-    <meta name="twitter:image" content={ogImage} />
+    <meta name="twitter:image" content={ogCard} />
     <script type="application/ld+json" set:html={JSON.stringify(structuredData)} />
   </head>
   <body>
