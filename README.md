@@ -1,363 +1,90 @@
 # QuotaBubble
 
-QuotaBubble is a lightweight cross-platform desktop utility that displays AI usage limits and remaining quota in a small floating widget.
+**Your AI usage limits, always in sight.**
 
-The goal is to make usage information for tools such as Claude Code, OpenAI Codex, and eventually other AI coding assistants continuously visible without requiring the user to open a dashboard, terminal command, or browser page.
+QuotaBubble is a small, frameless desktop widget that keeps the usage limits for your AI coding tools visible without opening a dashboard, terminal, or browser. It floats above your windows, fades to almost nothing when idle, and expands into a compact detail panel when you click it.
 
-## Core concept
+<p align="center">
+  <img src="assets/screenshot-compact.png" width="260" alt="Idle bubble">
+  <img src="assets/screenshot-expanded.png" width="300" alt="Expanded detail">
+</p>
 
-QuotaBubble should appear as a small frameless floating bubble or pill that can be placed anywhere on the desktop and moved freely between monitors.
+## Features
 
-The widget should remain visible above normal application windows, but stay visually unobtrusive.
+- **Frameless floating bubble** — translucent, rounded, always on top, and it never steals keyboard focus.
+- **Fades away when idle** — a configurable low opacity keeps it unobtrusive; hover to bring it back.
+- **Click to expand** — see each usage window, the percentage used, and a live reset countdown.
+- **Drag anywhere** — move it across monitors; the position is remembered.
+- **Tray icon** — show/hide, settings, open logs, and quit.
+- **Resilient** — refreshes every 5 minutes, caches the last good values, and keeps showing them (dimmed) through transient network or rate-limit errors.
+- **Local only** — it reuses the credentials your tools already store and talks straight to the providers. No telemetry, no QuotaBubble server.
 
-When idle, it should fade to very low opacity so it is still faintly visible without becoming distracting. When the mouse moves over it, it should smoothly become fully visible and optionally expand to show additional usage details.
+## Supported providers
 
-The experience should feel similar to a lightweight desktop HUD rather than a traditional application window.
+| Provider | Authentication |
+| --- | --- |
+| Claude Code | `~/.claude/.credentials.json` |
+| Codex | `~/.codex/auth.json` |
+| Google Antigravity | Windows Credential Manager (`gemini:antigravity`) |
+| GitHub Copilot | Windows Credential Manager (`…copilot-cli`) |
+| DeepSeek | API key |
+| OpenRouter | API key |
 
-## Primary UX
+Providers are detected automatically. Enable or disable them in Settings; API keys are entered there and validated inline with a **Test** button. On Windows, Antigravity and Copilot read their existing sign-ins from Credential Manager.
 
-Idle state:
+## Install
 
-* Small floating bubble or compact pill
-* Approximately 5–15% opacity
-* Shows only the most important usage indicator
-* Remains visible on the desktop
-* Always-on-top
-* Does not steal keyboard focus
+### Windows
 
-Hover state:
+Download the latest `QuotaBubble-windows-x64.zip` from the [Releases page](https://github.com/izzet/quotabubble/releases), unzip it, and run `QuotaBubble.exe`.
 
-* Smoothly fades to near-full opacity
-* Expands if necessary
-* Shows usage for each configured provider
-* Displays percentage used or percentage remaining
-* Shows reset countdowns where available
-* Allows the widget to be dragged to another location or monitor
+> The binary is not code-signed yet, so Windows SmartScreen may warn you. Choose **More info → Run anyway**.
 
-Example:
+### From source (Python 3.11+)
 
-Claude   42% remaining
-Codex    67% remaining
-Reset    1h 24m
-
-## Initial providers
-
-Version 1 should support:
-
-* Claude Code
-* OpenAI Codex
-
-The provider architecture should be modular so additional services can be added later without changing the UI architecture.
-
-Possible future providers include:
-
-* Gemini CLI
-* Cursor
-* GitHub Copilot
-* OpenAI API
-* Anthropic API
-* other AI development tools
-
-## Core requirements
-
-The first usable version should include:
-
-1. Frameless floating window
-2. Transparent or translucent background
-3. Rounded bubble/pill appearance
-4. Always-on-top behavior
-5. Dragging anywhere on the desktop
-6. Correct behavior across multiple monitors
-7. Smooth fade-in on hover
-8. Smooth fade-out after the cursor leaves
-9. Configurable idle opacity
-10. Position persistence between launches
-11. Claude Code usage display
-12. Codex usage display
-13. Usage percentage and reset time
-14. Automatic periodic refresh
-15. Right-click context menu
-16. Quit option
-17. Settings option
-18. Start-at-login option
-19. Minimal CPU usage while idle
-20. No taskbar entry unless intentionally enabled
-
-## Interaction details
-
-Dragging:
-
-The user should be able to click and drag the widget anywhere on the screen.
-
-The widget should move seamlessly across multiple monitors.
-
-Its last location should be restored after restarting the application.
-
-Optional later behavior:
-
-* snap to screen edges
-* snap to corners
-* lock position
-* reset position
-* remember separate positions for different monitor configurations
-
-Hover behavior:
-
-When the pointer enters the widget:
-
-* animate opacity from idle opacity to approximately 95–100%
-* optionally expand from compact mode to detailed mode
-
-When the pointer leaves:
-
-* wait for a short configurable delay
-* collapse if expanded
-* fade back to idle opacity
-
-The fade should feel smooth and subtle rather than abrupt.
-
-## Visual design
-
-The interface should be minimal and modern.
-
-Preferred style:
-
-* rounded corners
-* semi-transparent background
-* subtle border
-* compact typography
-* small progress bars or rings
-* no conventional title bar
-* no unnecessary buttons while idle
-
-The widget should be readable on both light and dark backgrounds.
-
-A future option could automatically adjust styling depending on the desktop theme.
-
-## Suggested display modes
-
-Compact:
-
-QuotaBubble only displays a small indicator such as:
-
-Claude 42%
-
-or:
-
-C 42% · X 67%
-
-Expanded:
-
-Claude
-5h      42% remaining
-Weekly  71% remaining
-Reset   1h 24m
-
-Codex
-5h      67% remaining
-Weekly  54% remaining
-Reset   2h 08m
-
-The user should eventually be able to choose between:
-
-* bubble
-* horizontal pill
-* vertical card
-* compact percentage-only mode
-
-## Architecture
-
-Keep the application separated into three main areas:
-
-### UI
-
-Responsible for:
-
-* floating window
-* animation
-* drag behavior
-* hover behavior
-* progress indicators
-* settings UI
-
-### Provider layer
-
-Each AI provider should implement a common interface.
-
-Conceptually:
-
-Provider
-
-* name
-* icon
-* fetch_usage()
-* session_limit
-* weekly_limit
-* reset_time
-* connection_status
-
-Implementations:
-
-* ClaudeProvider
-* CodexProvider
-
-Providers should be independent from the UI.
-
-### Application services
-
-Responsible for:
-
-* polling providers
-* caching results
-* configuration
-* persistence
-* logging
-* startup behavior
-* platform-specific functionality
-
-## Suggested project structure
-
-quotabubble/
-
-```
-app/
-    main
-    state
-    settings
-
-ui/
-    bubble
-    expanded_panel
-    animations
-    context_menu
-
-providers/
-    base
-    claude
-    codex
-
-platform/
-    windows
-    macos
-    linux
-
-services/
-    usage_polling
-    persistence
-    startup
-
-assets/
-
-tests/
+```bash
+git clone https://github.com/izzet/quotabubble.git
+cd quotabubble
+uv tool install --editable .
+quotabubble
 ```
 
-## Cross-platform considerations
+`pipx install quotabubble` works too once the package is published to PyPI.
 
-The common application should remain platform-independent where possible.
+## Usage
 
-Platform-specific behavior should live behind a small abstraction layer.
-
-Examples include:
-
-Windows:
-
-* always-on-top window flags
-* hiding the window from Alt-Tab
-* login startup
-* monitor work-area handling
-
-macOS:
-
-* NSWindow level
-* Spaces behavior
-* login items
-* menu bar considerations
-
-Linux:
-
-* X11/Wayland differences
-* always-on-top behavior
-* compositor differences
-
-Do not allow platform-specific code to leak heavily into the provider or application logic.
-
-## Performance goals
-
-QuotaBubble should behave like a small system utility.
-
-Targets:
-
-* near-zero CPU usage while idle
-* low memory usage
-* no constant redraw loop
-* usage polling performed infrequently
-* UI only updates when values change
-* no unnecessary network calls
-
-A reasonable default polling interval would be approximately 30–60 seconds unless a provider requires something different.
-
-## Security
-
-QuotaBubble should avoid collecting or transmitting user data.
-
-Authentication credentials should never be uploaded to a QuotaBubble server.
-
-Where possible, usage information should be read from:
-
-* official APIs
-* provider CLI commands
-* local configuration
-* locally stored authenticated sessions
-
-Secrets should never be written to logs.
-
-QuotaBubble should ideally function entirely locally.
+- **Idle** — a faint bubble; hover to make it fully visible.
+- **Click** — expand the detail panel; click again to collapse.
+- **Drag** — grab and move it anywhere, including across monitors.
+- **Right-click / tray** — Settings, Open logs, Show/Hide, Quit.
+- **Launch at login** — enable it in Settings.
 
 ## Settings
 
-Initial settings should include:
+Idle opacity, fade delay, refresh interval (default 5 minutes), show percentage used vs. remaining, launch at login, and which providers are visible.
 
-* launch at login
-* idle opacity
-* fade delay
-* refresh interval
-* show percentage used vs percentage remaining
-* compact vs expanded display
-* always-on-top toggle
-* provider visibility
-* progress bar vs text-only display
+## Where things live
 
-Future settings could include:
+On Windows:
 
-* custom colors
-* font size
-* edge snapping
-* click-through mode
-* hotkeys
-* notification thresholds
+| Path | Purpose |
+| --- | --- |
+| `%LOCALAPPDATA%\quotabubble\settings.json` | Settings |
+| `%LOCALAPPDATA%\quotabubble\Cache\last_good.json` | Last-good snapshots |
+| `%LOCALAPPDATA%\quotabubble\Logs\quotabubble.log` | Rotating log |
 
-## Future ideas
+On macOS and Linux these map to the standard platform directories.
 
-Possible later features:
+## Development
 
-* usage history graphs
-* burn-rate estimation
-* predicted time until quota exhaustion
-* alerts at configurable thresholds
-* system tray integration
-* provider health indicators
-* session cost estimates
-* token usage
-* context-window usage
-* per-project usage
-* keyboard shortcut to reveal/hide the bubble
-* multiple independent bubbles
-* plugin/provider SDK
+```bash
+uv sync
+uv run ruff check src tests
+uv run pytest -q
+```
 
-## MVP definition
+See [AGENTS.md](AGENTS.md) for architecture and contribution conventions. The provider layer (`src/quotabubble/providers/`) is pure Python behind a `Provider` protocol, and platform specifics live in `src/quotabubble/platform/`.
 
-The MVP is complete when a user can launch QuotaBubble, see Claude and Codex usage in a floating always-on-top widget, drag it between monitors, leave it somewhere on the desktop, have it fade almost invisible when idle, and have it become readable again when hovered.
+## Status
 
-The MVP should prioritize reliability and smooth desktop behavior over advanced settings or elaborate visual design.
-
-The application should feel like something the user can leave running all day and forget about until they need to glance at their remaining AI usage.
+Windows is the primary, fully supported platform. Claude, Codex, DeepSeek, and OpenRouter work anywhere; Antigravity and Copilot currently use the Windows credential store and need macOS/Linux implementations. API keys are stored in the local settings file for now — moving them to the OS keyring is tracked in [#3](https://github.com/izzet/quotabubble/issues/3).
