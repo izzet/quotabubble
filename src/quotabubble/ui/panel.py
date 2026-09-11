@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from PySide6.QtCore import QRectF, Qt
-from PySide6.QtGui import QColor, QPainter
+from PySide6.QtGui import QColor, QFont, QPainter
 
 from quotabubble.app.settings import Settings
 from quotabubble.providers.base import Credits, ProviderStatus, UsageSnapshot, UsageWindow
@@ -88,11 +88,17 @@ def paint_expanded(
     right = width - PADDING
     vertical = Qt.AlignmentFlag.AlignVCenter
 
+    base_font = painter.font()
+    bold_font = QFont(base_font)
+    bold_font.setBold(True)
+
     for snapshot in snapshots:
         y = top
         header = QRectF(left, y, right - left, HEADER_ROW_HEIGHT)
+        painter.setFont(bold_font)
         painter.setPen(TEXT_DIM if snapshot.stale else TEXT)
         painter.drawText(header, vertical | Qt.AlignmentFlag.AlignLeft, snapshot.display_name)
+        painter.setFont(base_font)
         trailing = " · ".join(
             label for label in (snapshot.plan, "stale" if snapshot.stale else None) if label
         )
