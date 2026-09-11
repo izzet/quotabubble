@@ -5,6 +5,32 @@ description = "A lightweight cross-platform floating widget that shows AI usage 
 readme = "README.md"
 license = "MIT"
 requires-python = ">=3.11"
+authors = [{ name = "izzet" }]
+keywords = [
+    "ai",
+    "usage",
+    "quota",
+    "claude-code",
+    "codex",
+    "copilot",
+    "antigravity",
+    "deepseek",
+    "openrouter",
+    "desktop-widget",
+    "pyside6",
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Environment :: X11 Applications :: Qt",
+    "Intended Audience :: Developers",
+    "Operating System :: MacOS",
+    "Operating System :: Microsoft :: Windows",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Utilities",
+]
 dependencies = [
     "httpx2>=2.12",
     "platformdirs>=4.0",
@@ -14,6 +40,12 @@ dependencies = [
 
 [project.gui-scripts]
 quotabubble = "quotabubble.app.main:main"
+
+[project.urls]
+Homepage = "https://izzet.github.io/quotabubble/"
+Repository = "https://github.com/izzet/quotabubble"
+Issues = "https://github.com/izzet/quotabubble/issues"
+Changelog = "https://github.com/izzet/quotabubble/releases"
 
 [dependency-groups]
 dev = [
