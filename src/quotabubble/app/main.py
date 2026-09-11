@@ -4,7 +4,7 @@ import sys
 
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QGuiApplication
-from PySide6.QtWidgets import QApplication
+from PySide6.QtWidgets import QApplication, QDialog
 
 from quotabubble.app.polling import PollingService
 from quotabubble.app.settings import Settings
@@ -14,6 +14,7 @@ from quotabubble.providers.claude import ClaudeProvider
 from quotabubble.providers.codex import CodexProvider
 from quotabubble.ui.bubble import BubbleWindow
 from quotabubble.ui.icon import app_icon
+from quotabubble.ui.settings_dialog import SettingsDialog
 from quotabubble.ui.tray import TrayIcon
 
 
@@ -47,7 +48,16 @@ def main() -> None:
     service.start()
     app.aboutToQuit.connect(service.stop)
 
+    def open_settings() -> None:
+        dialog = SettingsDialog(settings, window)
+        if dialog.exec() == QDialog.DialogCode.Accepted:
+            window.apply_settings()
+            service.set_interval(settings.refresh_interval_ms)
+
+    window.settings_requested.connect(open_settings)
+
     tray = TrayIcon(window)
+    tray.settings_requested.connect(open_settings)
     tray.show()
 
     sys.exit(app.exec())

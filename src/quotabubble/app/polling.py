@@ -34,6 +34,12 @@ class PollingWorker(QObject):
         for provider in self._providers:
             self.snapshot_ready.emit(provider.fetch())
 
+    @Slot(int)
+    def set_interval(self, interval_ms: int) -> None:
+        self._interval_ms = interval_ms
+        if self._timer is not None:
+            self._timer.setInterval(interval_ms)
+
     @Slot()
     def stop(self) -> None:
         if self._timer is not None:
@@ -43,6 +49,7 @@ class PollingWorker(QObject):
 
 class PollingService(QObject):
     snapshot_ready = Signal(object)
+    interval_changed = Signal(int)
 
     def __init__(
         self,
@@ -56,9 +63,13 @@ class PollingService(QObject):
         self._worker.moveToThread(self._thread)
         self._thread.started.connect(self._worker.start)
         self._worker.snapshot_ready.connect(self._relay)
+        self.interval_changed.connect(self._worker.set_interval)
 
     def start(self) -> None:
         self._thread.start()
+
+    def set_interval(self, interval_ms: int) -> None:
+        self.interval_changed.emit(interval_ms)
 
     @Slot(object)
     def _relay(self, snapshot: UsageSnapshot) -> None:

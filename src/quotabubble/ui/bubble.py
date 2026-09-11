@@ -10,6 +10,7 @@ from PySide6.QtCore import (
     QSize,
     Qt,
     QTimer,
+    Signal,
 )
 from PySide6.QtGui import (
     QColor,
@@ -30,6 +31,8 @@ from quotabubble.ui.context_menu import build_context_menu
 
 
 class BubbleWindow(QWidget):
+    settings_requested = Signal()
+
     ROW_HEIGHT = 24
     PADDING = 12
     BAR_WIDTH = 44
@@ -76,6 +79,11 @@ class BubbleWindow(QWidget):
     def apply_snapshot(self, snapshot: UsageSnapshot) -> None:
         self._state.update(snapshot)
         self.refresh()
+
+    def apply_settings(self) -> None:
+        if not self.underMouse() and not self._dragging:
+            self.setWindowOpacity(self._settings.idle_opacity)
+        self.update()
 
     def paintEvent(self, event: QPaintEvent) -> None:
         painter = QPainter(self)
@@ -194,7 +202,8 @@ class BubbleWindow(QWidget):
         super().mouseReleaseEvent(event)
 
     def contextMenuEvent(self, event) -> None:
-        build_context_menu(self).exec(event.globalPos())
+        menu = build_context_menu(self, self._request_settings)
+        menu.exec(event.globalPos())
 
     def showEvent(self, event) -> None:
         super().showEvent(event)
@@ -207,6 +216,9 @@ class BubbleWindow(QWidget):
         ):
             self._handle_screen_change()
         return super().event(event)
+
+    def _request_settings(self) -> None:
+        self.settings_requested.emit()
 
     def _handle_screen_change(self) -> None:
         self.setFixedSize(self.sizeHint())

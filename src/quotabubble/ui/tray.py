@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from PySide6.QtCore import Signal
 from PySide6.QtGui import QAction
 from PySide6.QtWidgets import QApplication, QMenu, QSystemTrayIcon, QWidget
 
@@ -7,6 +8,8 @@ from quotabubble.ui.icon import app_icon
 
 
 class TrayIcon(QSystemTrayIcon):
+    settings_requested = Signal()
+
     def __init__(self, window: QWidget) -> None:
         super().__init__(app_icon(), window)
         self._window = window
@@ -16,6 +19,11 @@ class TrayIcon(QSystemTrayIcon):
         toggle_action = QAction("Show / Hide", menu)
         toggle_action.triggered.connect(self._toggle_window)
         menu.addAction(toggle_action)
+
+        settings_action = QAction("Settings…", menu)
+        settings_action.triggered.connect(self._request_settings)
+        menu.addAction(settings_action)
+
         menu.addSeparator()
         quit_action = QAction("Quit QuotaBubble", menu)
         quit_action.triggered.connect(QApplication.quit)
@@ -37,3 +45,6 @@ class TrayIcon(QSystemTrayIcon):
             self._window.hide()
         else:
             self._window.show()
+
+    def _request_settings(self) -> None:
+        self.settings_requested.emit()
