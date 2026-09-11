@@ -10,6 +10,7 @@ on:
         default: testpypi
 
 permissions:
+  contents: read
   id-token: write
 
 jobs:
