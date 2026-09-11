@@ -5,8 +5,8 @@
 QuotaBubble is a small, frameless desktop widget that keeps the usage limits for your AI coding tools visible without opening a dashboard, terminal, or browser. It floats above your windows, fades to almost nothing when idle, and expands into a compact detail panel when you click it.
 
 <p align="center">
-  <img src="assets/screenshot-compact.png" width="260" alt="Idle bubble">
-  <img src="assets/screenshot-expanded.png" width="300" alt="Expanded detail">
+  <img src="https://izzet.github.io/quotabubble/screenshot-compact.png" width="260" alt="Idle bubble">
+  <img src="https://izzet.github.io/quotabubble/screenshot-expanded.png" width="300" alt="Expanded detail">
 </p>
 
 ## Features
@@ -49,7 +49,7 @@ uv tool install --editable .
 quotabubble
 ```
 
-`pipx install quotabubble` works too once the package is published to PyPI.
+Once published on PyPI, you can also install it as a standalone command with [pipx](https://pipx.pypa.io/): `pipx install quotabubble`.
 
 ## Usage
 
