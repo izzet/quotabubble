@@ -3,6 +3,26 @@ const rawBase = import.meta.env.BASE_URL;
 const base = rawBase.endsWith("/") ? rawBase : `${rawBase}/`;
 const repo = "https://github.com/izzet/quotabubble";
 const releases = `${repo}/releases/latest`;
+const canonical = new URL(base, Astro.site).href;
+const ogImage = new URL(`${base}screenshot-expanded.png`, Astro.site).href;
+const appVersion = "0.1.2";
+const structuredData = {
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  name: "QuotaBubble",
+  description:
+    "A tiny always-on-top desktop bubble that shows your AI coding usage limits: Claude Code, Codex, Antigravity, Copilot, DeepSeek, and OpenRouter.",
+  url: canonical,
+  applicationCategory: "DeveloperApplication",
+  operatingSystem: "Windows, macOS, Linux",
+  softwareVersion: appVersion,
+  isAccessibleForFree: true,
+  license: `${repo}/blob/main/LICENSE`,
+  author: { "@type": "Person", name: "Izzet Yildirim" },
+  sameAs: [repo, "https://pypi.org/project/quotabubble/"],
+  screenshot: ogImage,
+  downloadUrl: releases,
+};
 
 const features = [
   ["Frameless bubble", "Translucent, rounded, always on top — and it never steals keyboard focus."],
@@ -34,9 +54,20 @@ const providers = [
       content="A tiny always-on-top desktop bubble that shows your AI coding usage limits: Claude Code, Codex, Antigravity, Copilot, DeepSeek, and OpenRouter."
     />
     <link rel="icon" type="image/png" href={`${base}favicon.png`} />
-    <meta property="og:title" content="QuotaBubble" />
+    <link rel="canonical" href={canonical} />
+    <meta name="google-site-verification" content="xOAsL7kCK8dOoM2HfkWJWEI5kKUsRb97HRnRJ6P45cw" />
+    <meta name="theme-color" content="#0e0e11" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="QuotaBubble" />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:title" content="QuotaBubble — your AI usage limits, always in sight" />
     <meta property="og:description" content="Your AI usage limits, always in sight." />
-    <meta property="og:image" content={`${base}screenshot-expanded.png`} />
+    <meta property="og:image" content={ogImage} />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="QuotaBubble — your AI usage limits, always in sight" />
+    <meta name="twitter:description" content="Your AI usage limits, always in sight." />
+    <meta name="twitter:image" content={ogImage} />
+    <script type="application/ld+json" set:html={JSON.stringify(structuredData)} />
   </head>
   <body>
     <header class="nav">
