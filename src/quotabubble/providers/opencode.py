@@ -178,7 +178,7 @@ class OpenCodeProvider:
             weekly = UsageWindow(
                 key="weekly",
                 label="Weekly",
-                short="week",
+                short="wk",
                 used_pct=container.weekly.percent,
                 resets_at=weekly_resets,
             )
@@ -193,7 +193,7 @@ class OpenCodeProvider:
             monthly = UsageWindow(
                 key="monthly",
                 label="Monthly",
-                short="month",
+                short="mo",
                 used_pct=container.monthly.percent,
                 resets_at=monthly_resets,
             )

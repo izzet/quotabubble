@@ -60,7 +60,7 @@ def test_parses_rolling_weekly_monthly_windows() -> None:
     assert snapshot.status is ProviderStatus.OK
     # In fixture: weekly is 45%, monthly is 30% -> weekly is more constrained
     assert [w.label for w in snapshot.windows] == ["5h", "Weekly", "Monthly"]
-    assert [w.short for w in snapshot.windows] == ["5h", "week", "month"]
+    assert [w.short for w in snapshot.windows] == ["5h", "wk", "mo"]
     assert [w.used_pct for w in snapshot.windows] == [15.5, 45.0, 30.0]
     assert snapshot.windows[0].resets_at == datetime(2026, 9, 16, 14, 0, 0, tzinfo=UTC)
     assert snapshot.windows[1].resets_at == datetime(2026, 9, 18, 12, 0, 0, tzinfo=UTC)
@@ -85,7 +85,7 @@ def test_prefers_monthly_when_more_constrained_than_weekly() -> None:
     assert snapshot.status is ProviderStatus.OK
     # Monthly (80%) is more constrained than Weekly (25%) -> Monthly is second window
     assert [w.label for w in snapshot.windows] == ["5h", "Monthly", "Weekly"]
-    assert [w.short for w in snapshot.windows] == ["5h", "month", "week"]
+    assert [w.short for w in snapshot.windows] == ["5h", "mo", "wk"]
     assert [w.used_pct for w in snapshot.windows] == [10.0, 80.0, 25.0]
 
 
@@ -106,7 +106,7 @@ def test_handles_partial_windows() -> None:
 
     assert snapshot.status is ProviderStatus.OK
     assert [w.label for w in snapshot.windows] == ["5h", "Monthly"]
-    assert [w.short for w in snapshot.windows] == ["5h", "month"]
+    assert [w.short for w in snapshot.windows] == ["5h", "mo"]
 
 
 def test_auth_error_reports_expired() -> None:

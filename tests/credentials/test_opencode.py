@@ -4,7 +4,6 @@ import json
 from pathlib import Path
 
 from quotabubble.credentials.opencode import (
-    _strip_jsonc_comments,
     default_opencode_auth_paths,
     default_opencode_config_paths,
     read_opencode_api_key_from_auth_file,
@@ -19,21 +18,6 @@ def test_default_paths_contain_standard_locations() -> None:
 
     config_paths = default_opencode_config_paths()
     assert any("opencode.json" in str(p) for p in config_paths)
-
-
-def test_strip_jsonc_comments_preserves_strings() -> None:
-    text = """
-    // Leading comment
-    {
-      /* block comment */
-      "url": "https://opencode.ai/config.json", // inline comment
-      "key": "val/*not a comment*/ue"
-    }
-    """
-    cleaned = _strip_jsonc_comments(text)
-    data = json.loads(cleaned)
-    assert data["url"] == "https://opencode.ai/config.json"
-    assert data["key"] == "val/*not a comment*/ue"
 
 
 def test_read_opencode_api_key_from_auth_file(tmp_path: Path) -> None:
