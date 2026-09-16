@@ -140,6 +140,22 @@ def test_resolve_reads_db_when_env_absent(tmp_path: Path, monkeypatch) -> None:
     assert resolve_cursor_session_token(db_path) == f"user_db%3A%3A{token}"
 
 
+def test_resolve_falls_back_to_auth_json(tmp_path: Path, monkeypatch) -> None:
+    monkeypatch.delenv("CURSOR_SESSION_TOKEN", raising=False)
+    token = _fake_jwt("user_auth")
+    auth_path = tmp_path / "auth.json"
+    auth_path.write_text(json.dumps({"accessToken": token}), encoding="utf-8")
+    monkeypatch.setattr(
+        "quotabubble.credentials_cursor.default_cursor_db_path",
+        lambda: tmp_path / "missing.vscdb",
+    )
+    monkeypatch.setattr(
+        "quotabubble.credentials_cursor.default_cursor_auth_paths",
+        lambda: [auth_path],
+    )
+    assert resolve_cursor_session_token() == f"user_auth%3A%3A{token}"
+
+
 def test_read_access_token_copy_fallback(tmp_path: Path, monkeypatch) -> None:
     import quotabubble.credentials_cursor as cursor_creds
 

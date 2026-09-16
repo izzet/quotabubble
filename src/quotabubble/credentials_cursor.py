@@ -32,6 +32,25 @@ def default_cursor_db_path() -> Path:
     return Path.home() / ".config" / "Cursor" / "User" / "globalStorage" / "state.vscdb"
 
 
+def default_cursor_auth_paths() -> list[Path]:
+    if sys.platform == "win32":
+        appdata = os.environ.get("APPDATA")
+        base = Path(appdata) if appdata else Path.home() / "AppData" / "Roaming"
+        return [
+            base / "Cursor" / "auth.json",
+            base / "cursor" / "auth.json",
+        ]
+    if sys.platform == "darwin":
+        return [
+            Path.home() / "Library" / "Application Support" / "Cursor" / "auth.json",
+            Path.home() / ".config" / "cursor" / "auth.json",
+        ]
+    return [
+        Path.home() / ".config" / "Cursor" / "auth.json",
+        Path.home() / ".config" / "cursor" / "auth.json",
+    ]
+
+
 def _sanitize_token(raw: str) -> str | None:
     text = raw.strip()
     if len(text) >= 2 and text[0] == text[-1] and text[0] in "\"'":
@@ -66,7 +85,7 @@ def _copy_db_tree(source: Path, destination: Path) -> None:
             shutil.copy2(side, Path(str(destination) + suffix))
 
 
-def read_cursor_access_token(db_path: Path | None = None) -> str | None:
+def read_cursor_access_token_from_db(db_path: Path | None = None) -> str | None:
     path = db_path or default_cursor_db_path()
     if not path.is_file():
         return None
@@ -84,6 +103,34 @@ def read_cursor_access_token(db_path: Path | None = None) -> str | None:
             return _query_access_token(copied)
     except (OSError, sqlite3.Error):
         return None
+
+
+def read_cursor_access_token_from_auth_file(path: Path) -> str | None:
+    try:
+        raw = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return None
+    if not isinstance(raw, dict):
+        return None
+    token = raw.get("accessToken")
+    if not isinstance(token, str):
+        return None
+    return _sanitize_token(token)
+
+
+def read_cursor_access_token(db_path: Path | None = None) -> str | None:
+    token = read_cursor_access_token_from_db(db_path)
+    if token:
+        return token
+    if db_path is not None:
+        return None
+    for path in default_cursor_auth_paths():
+        if not path.is_file():
+            continue
+        token = read_cursor_access_token_from_auth_file(path)
+        if token:
+            return token
+    return None
 
 
 def _b64url_json(segment: str) -> dict | None:

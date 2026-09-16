@@ -27,11 +27,11 @@ QuotaBubble is a small, frameless desktop widget that keeps the usage limits for
 | Codex | `~/.codex/auth.json` |
 | Google Antigravity | Windows Credential Manager (`gemini:antigravity`) |
 | GitHub Copilot | Windows Credential Manager (`…copilot-cli`) |
-| Cursor | Cursor IDE `state.vscdb` session token (`CURSOR_SESSION_TOKEN` override) |
+| Cursor | Cursor IDE `state.vscdb` / `auth.json` (`CURSOR_SESSION_TOKEN` override) |
 | DeepSeek | API key |
 | OpenRouter | API key |
 
-Providers are detected automatically. Enable or disable them in Settings; API keys are entered there and validated inline with a **Test** button. On Windows, Antigravity and Copilot read their existing sign-ins from Credential Manager. Cursor reuses the session token from the IDE's local store (or `CURSOR_SESSION_TOKEN`).
+Providers are detected automatically. Enable or disable them in Settings; API keys are entered there and validated inline with a **Test** button. On Windows, Antigravity and Copilot read their existing sign-ins from Credential Manager. Cursor reuses the IDE session token from `state.vscdb` or `auth.json` (or `CURSOR_SESSION_TOKEN`).
 
 ## Install
 
