@@ -61,7 +61,7 @@ def test_resolve_api_key_falls_back_to_environment(monkeypatch) -> None:
     assert resolve_api_key(Settings(), "deepseek") == "from-env"
 
 
-def test_build_providers_registers_cursor() -> None:
+def test_build_providers_registers_all_expected_providers() -> None:
     providers = build_providers(Settings())
     assert [p.id for p in providers] == [
         "claude",
@@ -69,6 +69,7 @@ def test_build_providers_registers_cursor() -> None:
         "antigravity",
         "copilot",
         "cursor",
+        "opencode",
         "deepseek",
         "openrouter",
     ]

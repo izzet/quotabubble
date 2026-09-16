@@ -8,7 +8,7 @@ from pathlib import Path
 
 import httpx2
 
-from quotabubble.credentials_cursor import (
+from quotabubble.credentials.cursor import (
     read_cursor_access_token,
     resolve_cursor_session_token,
     session_cookie_from_access_token,
@@ -146,18 +146,18 @@ def test_resolve_falls_back_to_auth_json(tmp_path: Path, monkeypatch) -> None:
     auth_path = tmp_path / "auth.json"
     auth_path.write_text(json.dumps({"accessToken": token}), encoding="utf-8")
     monkeypatch.setattr(
-        "quotabubble.credentials_cursor.default_cursor_db_path",
+        "quotabubble.credentials.cursor.default_cursor_db_path",
         lambda: tmp_path / "missing.vscdb",
     )
     monkeypatch.setattr(
-        "quotabubble.credentials_cursor.default_cursor_auth_paths",
+        "quotabubble.credentials.cursor.default_cursor_auth_paths",
         lambda: [auth_path],
     )
     assert resolve_cursor_session_token() == f"user_auth%3A%3A{token}"
 
 
 def test_read_access_token_copy_fallback(tmp_path: Path, monkeypatch) -> None:
-    import quotabubble.credentials_cursor as cursor_creds
+    import quotabubble.credentials.cursor as cursor_creds
 
     token = _fake_jwt("user_locked")
     db_path = tmp_path / "state.vscdb"

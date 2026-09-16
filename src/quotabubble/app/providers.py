@@ -10,6 +10,7 @@ from quotabubble.providers.codex import CodexProvider
 from quotabubble.providers.copilot import CopilotProvider
 from quotabubble.providers.cursor import CursorProvider
 from quotabubble.providers.deepseek import DeepSeekProvider
+from quotabubble.providers.opencode import OpenCodeProvider
 from quotabubble.providers.openrouter import OpenRouterProvider
 
 
@@ -27,6 +28,7 @@ def build_providers(settings: Settings) -> list[Provider]:
         AntigravityProvider(),
         CopilotProvider(),
         CursorProvider(),
+        OpenCodeProvider(api_key=resolve_api_key(settings, "opencode")),
         DeepSeekProvider(api_key=resolve_api_key(settings, "deepseek")),
         OpenRouterProvider(api_key=resolve_api_key(settings, "openrouter")),
     ]

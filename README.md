@@ -28,6 +28,7 @@ QuotaBubble is a small, frameless desktop widget that keeps the usage limits for
 | Google Antigravity | Windows Credential Manager (`gemini:antigravity`) |
 | GitHub Copilot | Windows Credential Manager (`…copilot-cli`) |
 | Cursor | Cursor IDE `state.vscdb` / `auth.json` (`CURSOR_SESSION_TOKEN` override) |
+| OpenCode | `~/.local/share/opencode/auth.json` / `opencode.jsonc` (`OPENCODE_API_KEY` override) or API key |
 | DeepSeek | API key |
 | OpenRouter | API key |
 
@@ -94,7 +95,7 @@ See [AGENTS.md](AGENTS.md) for architecture and contribution conventions. The pr
 
 ## Status
 
-Windows is the primary, fully supported platform. Claude, Codex, Cursor, DeepSeek, and OpenRouter work anywhere; Antigravity and Copilot currently use the Windows credential store and need macOS/Linux implementations. API keys are stored in the local settings file for now — moving them to the OS keyring is tracked in [#3](https://github.com/izzet/quotabubble/issues/3).
+Windows is the primary, fully supported platform. Claude, Codex, Cursor, OpenCode, DeepSeek, and OpenRouter work anywhere; Antigravity and Copilot currently use the Windows credential store and need macOS/Linux implementations. API keys are stored in the local settings file for now — moving them to the OS keyring is tracked in [#3](https://github.com/izzet/quotabubble/issues/3).
 
 ## License
 
