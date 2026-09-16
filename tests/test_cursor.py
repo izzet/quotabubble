@@ -77,7 +77,7 @@ def test_parses_auto_and_api_windows() -> None:
 
     assert snapshot.status is ProviderStatus.OK
     assert [window.label for window in snapshot.windows] == ["Auto", "API"]
-    assert [window.short for window in snapshot.windows] == ["aut", "api"]
+    assert [window.short for window in snapshot.windows] == ["auto", "api"]
     assert [round(window.used_pct, 1) for window in snapshot.windows] == [42.5, 18.0]
     assert snapshot.plan == "Pro"
     assert snapshot.windows[0].resets_at == snapshot.windows[1].resets_at

@@ -50,7 +50,7 @@ class BubbleWindow(QWidget):
     EXPANDED_WIDTH = 300
     COMPACT_ROW_HEIGHT = 26
     NAME_GAP = 12
-    MINI_LABEL_WIDTH = 22
+    MINI_LABEL_WIDTH = 24
     MINI_BAR_WIDTH = 32
     MINI_PCT_WIDTH = 26
     MINI_GAP = 4
@@ -194,7 +194,7 @@ class BubbleWindow(QWidget):
         painter.setPen(TEXT_DIM)
         painter.drawText(
             QRectF(left, top, self.MINI_LABEL_WIDTH, self.COMPACT_ROW_HEIGHT),
-            vertical | Qt.AlignmentFlag.AlignLeft,
+            vertical | Qt.AlignmentFlag.AlignRight,
             window.short or window.label,
         )
 
