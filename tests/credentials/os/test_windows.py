@@ -7,9 +7,6 @@ from quotabubble.credentials.os import (
     read_generic_credential,
 )
 
-if sys.platform == "win32":
-    from quotabubble.credentials.os import windows as win_creds
-
 
 def test_generic_credentials_interface() -> None:
     creds = enumerate_generic_credentials("non_existent_quota_bubble_target_xyz_123")
@@ -21,7 +18,15 @@ def test_generic_credentials_interface() -> None:
 
 
 def test_windows_module_exports_on_win32() -> None:
-    if sys.platform == "win32":
-        assert win_creds.CRED_TYPE_GENERIC == 1
-        assert callable(win_creds.enumerate_generic_credentials)
-        assert callable(win_creds.read_generic_credential)
+    if sys.platform != "win32":
+        return
+
+    from quotabubble.credentials.os.windows import (
+        CRED_TYPE_GENERIC,
+        enumerate_generic_credentials,
+        read_generic_credential,
+    )
+
+    assert CRED_TYPE_GENERIC == 1
+    assert callable(enumerate_generic_credentials)
+    assert callable(read_generic_credential)
