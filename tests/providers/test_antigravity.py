@@ -13,7 +13,7 @@ from quotabubble.providers.antigravity import (
 )
 from quotabubble.providers.base import Provider, ProviderStatus
 
-FIXTURES = Path(__file__).parent / "fixtures"
+FIXTURES = Path(__file__).resolve().parents[1] / "fixtures"
 
 
 def _reader(blob: bytes | None) -> Callable[[str], bytes | None]:

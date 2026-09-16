@@ -8,7 +8,7 @@ import httpx2
 from quotabubble.providers.base import Provider, ProviderStatus
 from quotabubble.providers.claude import ClaudeProvider
 
-FIXTURES = Path(__file__).parent / "fixtures"
+FIXTURES = Path(__file__).resolve().parents[1] / "fixtures"
 
 
 def _write_credentials(tmp_path: Path) -> Path:

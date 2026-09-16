@@ -8,7 +8,7 @@ import httpx2
 from quotabubble.providers.base import Provider, ProviderStatus
 from quotabubble.providers.copilot import CopilotProvider
 
-FIXTURES = Path(__file__).parent / "fixtures"
+FIXTURES = Path(__file__).resolve().parents[1] / "fixtures"
 
 
 def _credentials(token: str) -> Callable[[str], list[tuple[str, bytes]]]:
