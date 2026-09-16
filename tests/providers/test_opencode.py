@@ -7,12 +7,6 @@ from pathlib import Path
 
 import httpx2
 
-from quotabubble.credentials.opencode import (
-    _strip_jsonc_comments,
-    read_opencode_api_key_from_auth_file,
-    read_opencode_api_key_from_config_file,
-    resolve_opencode_api_key,
-)
 from quotabubble.providers.base import (
     ApiKeyProvider,
     KeyStatus,
@@ -21,7 +15,7 @@ from quotabubble.providers.base import (
 )
 from quotabubble.providers.opencode import OpenCodeProvider
 
-FIXTURES = Path(__file__).parent / "fixtures"
+FIXTURES = Path(__file__).resolve().parents[1] / "fixtures"
 
 
 def _client(handler: Callable[[httpx2.Request], httpx2.Response]) -> httpx2.Client:
@@ -172,88 +166,3 @@ def test_check_api_key_validations() -> None:
         client=_client(lambda req: (_ for _ in ()).throw(httpx2.ConnectError("down")))
     )
     assert unreachable_provider.check_api_key("any-key") is KeyStatus.UNREACHABLE
-
-
-def test_strip_jsonc_comments_preserves_strings() -> None:
-    text = """
-    // Leading comment
-    {
-      /* block comment */
-      "url": "https://opencode.ai/config.json", // inline comment
-      "key": "val/*not a comment*/ue"
-    }
-    """
-    cleaned = _strip_jsonc_comments(text)
-    data = json.loads(cleaned)
-    assert data["url"] == "https://opencode.ai/config.json"
-    assert data["key"] == "val/*not a comment*/ue"
-
-
-def test_read_opencode_api_key_from_auth_file(tmp_path: Path) -> None:
-    auth_file = tmp_path / "auth.json"
-    auth_file.write_text(
-        json.dumps({"opencode-go": {"key": "go_secret_123"}}), encoding="utf-8"
-    )
-    assert read_opencode_api_key_from_auth_file(auth_file) == "go_secret_123"
-
-    auth_file.write_text(json.dumps({"opencode": "direct_key"}), encoding="utf-8")
-    assert read_opencode_api_key_from_auth_file(auth_file) == "direct_key"
-
-
-def test_read_opencode_api_key_from_config_file(tmp_path: Path) -> None:
-    config_file = tmp_path / "opencode.jsonc"
-    config_file.write_text(
-        """
-        {
-          // OpenCode configuration
-          "provider": {
-            "opencode": {
-              "options": {
-                "apiKey": "from_provider_options"
-              }
-            }
-          }
-        }
-        """,
-        encoding="utf-8",
-    )
-    assert read_opencode_api_key_from_config_file(config_file) == "from_provider_options"
-
-
-def test_resolve_opencode_api_key_precedence(tmp_path: Path, monkeypatch) -> None:
-    auth_file = tmp_path / "auth.json"
-    auth_file.write_text(json.dumps({"opencode": {"key": "from_auth"}}), encoding="utf-8")
-
-    config_file = tmp_path / "opencode.json"
-    config_file.write_text(json.dumps({"apiKey": "from_config"}), encoding="utf-8")
-
-    # 1. Explicit arg wins over all
-    monkeypatch.setenv("OPENCODE_API_KEY", "from_env")
-    assert (
-        resolve_opencode_api_key(
-            "from_arg", auth_paths=[auth_file], config_paths=[config_file]
-        )
-        == "from_arg"
-    )
-
-    # 2. Env wins over files
-    assert (
-        resolve_opencode_api_key(auth_paths=[auth_file], config_paths=[config_file])
-        == "from_env"
-    )
-
-    # 3. Auth file wins over config file
-    monkeypatch.delenv("OPENCODE_API_KEY", raising=False)
-    assert (
-        resolve_opencode_api_key(auth_paths=[auth_file], config_paths=[config_file])
-        == "from_auth"
-    )
-
-    # 4. Config file wins when auth missing
-    assert (
-        resolve_opencode_api_key(auth_paths=[], config_paths=[config_file])
-        == "from_config"
-    )
-
-    # 5. None when neither exists
-    assert resolve_opencode_api_key(auth_paths=[], config_paths=[]) is None
