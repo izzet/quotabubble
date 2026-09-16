@@ -109,7 +109,7 @@ class CursorProvider:
                 UsageWindow(
                     key="auto",
                     label="Auto",
-                    short="auto",
+                    short="aut",
                     used_pct=plan.auto_percent_used,
                     resets_at=parsed.billing_cycle_end,
                 )
