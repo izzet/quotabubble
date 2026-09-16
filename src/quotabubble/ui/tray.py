@@ -10,6 +10,7 @@ from quotabubble.ui.icon import app_icon
 
 class TrayIcon(QSystemTrayIcon):
     settings_requested = Signal()
+    refresh_requested = Signal()
 
     def __init__(self, window: QWidget) -> None:
         super().__init__(app_icon(), window)
@@ -20,6 +21,10 @@ class TrayIcon(QSystemTrayIcon):
         toggle_action = QAction("Show / Hide", menu)
         toggle_action.triggered.connect(self._toggle_window)
         menu.addAction(toggle_action)
+
+        refresh_action = QAction("Refresh", menu)
+        refresh_action.triggered.connect(self._request_refresh)
+        menu.addAction(refresh_action)
 
         settings_action = QAction("Settings…", menu)
         settings_action.triggered.connect(self._request_settings)
@@ -53,6 +58,9 @@ class TrayIcon(QSystemTrayIcon):
 
     def _request_settings(self) -> None:
         self.settings_requested.emit()
+
+    def _request_refresh(self) -> None:
+        self.refresh_requested.emit()
 
     def _open_logs(self) -> None:
         QDesktopServices.openUrl(QUrl.fromLocalFile(str(LOG_DIR)))

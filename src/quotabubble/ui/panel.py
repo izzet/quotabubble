@@ -5,7 +5,7 @@ from PySide6.QtGui import QColor, QFont, QPainter
 
 from quotabubble.app.settings import Settings
 from quotabubble.providers.base import Credits, ProviderStatus, UsageSnapshot, UsageWindow
-from quotabubble.ui.formatting import format_reset
+from quotabubble.ui.formatting import format_age, format_reset
 
 PADDING = 12
 HEADER_ROW_HEIGHT = 20
@@ -99,8 +99,9 @@ def paint_expanded(
         painter.setPen(TEXT_DIM if snapshot.stale else TEXT)
         painter.drawText(header, vertical | Qt.AlignmentFlag.AlignLeft, snapshot.display_name)
         painter.setFont(base_font)
+        stale_label = format_age(snapshot.fetched_at) if snapshot.stale else None
         trailing = " · ".join(
-            label for label in (snapshot.plan, "stale" if snapshot.stale else None) if label
+            label for label in (snapshot.plan, stale_label) if label
         )
         if trailing:
             painter.setPen(TEXT_DIM)
