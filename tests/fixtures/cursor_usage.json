@@ -1,0 +1,17 @@
+{
+  "billingCycleStart": "2026-09-01T00:00:00.000Z",
+  "billingCycleEnd": "2026-10-01T00:00:00.000Z",
+  "membershipType": "pro",
+  "isUnlimited": false,
+  "individualUsage": {
+    "plan": {
+      "enabled": true,
+      "autoPercentUsed": 42.5,
+      "apiPercentUsed": 18.0,
+      "totalPercentUsed": 35.0
+    },
+    "onDemand": {
+      "enabled": false
+    }
+  }
+}

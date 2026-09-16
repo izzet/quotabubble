@@ -27,10 +27,11 @@ QuotaBubble is a small, frameless desktop widget that keeps the usage limits for
 | Codex | `~/.codex/auth.json` |
 | Google Antigravity | Windows Credential Manager (`gemini:antigravity`) |
 | GitHub Copilot | Windows Credential Manager (`…copilot-cli`) |
+| Cursor | Cursor IDE `state.vscdb` / `auth.json` (`CURSOR_SESSION_TOKEN` override) |
 | DeepSeek | API key |
 | OpenRouter | API key |
 
-Providers are detected automatically. Enable or disable them in Settings; API keys are entered there and validated inline with a **Test** button. On Windows, Antigravity and Copilot read their existing sign-ins from Credential Manager.
+Providers are detected automatically. Enable or disable them in Settings; API keys are entered there and validated inline with a **Test** button. On Windows, Antigravity and Copilot read their existing sign-ins from Credential Manager. Cursor reuses the IDE session token from `state.vscdb` or `auth.json` (or `CURSOR_SESSION_TOKEN`).
 
 ## Install
 
@@ -93,7 +94,7 @@ See [AGENTS.md](AGENTS.md) for architecture and contribution conventions. The pr
 
 ## Status
 
-Windows is the primary, fully supported platform. Claude, Codex, DeepSeek, and OpenRouter work anywhere; Antigravity and Copilot currently use the Windows credential store and need macOS/Linux implementations. API keys are stored in the local settings file for now — moving them to the OS keyring is tracked in [#3](https://github.com/izzet/quotabubble/issues/3).
+Windows is the primary, fully supported platform. Claude, Codex, Cursor, DeepSeek, and OpenRouter work anywhere; Antigravity and Copilot currently use the Windows credential store and need macOS/Linux implementations. API keys are stored in the local settings file for now — moving them to the OS keyring is tracked in [#3](https://github.com/izzet/quotabubble/issues/3).
 
 ## License
 

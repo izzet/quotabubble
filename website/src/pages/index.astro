@@ -23,7 +23,7 @@ const structuredData = {
       "@id": `${canonical}#software`,
       name: "QuotaBubble",
       description:
-        "A tiny always-on-top desktop bubble that shows your AI coding usage limits: Claude Code, Codex, Antigravity, Copilot, DeepSeek, and OpenRouter.",
+        "A tiny always-on-top desktop bubble that shows your AI coding usage limits: Claude Code, Codex, Antigravity, Copilot, Cursor, DeepSeek, and OpenRouter.",
       url: canonical,
       applicationCategory: "DeveloperApplication",
       operatingSystem: "Windows, macOS, Linux",
@@ -54,6 +54,7 @@ const providers = [
   ["Codex", "~/.codex/auth.json"],
   ["Google Antigravity", "Windows Credential Manager"],
   ["GitHub Copilot", "Windows Credential Manager"],
+  ["Cursor", "Cursor IDE state.vscdb / auth.json"],
   ["DeepSeek", "API key"],
   ["OpenRouter", "API key"],
 ];
@@ -67,7 +68,7 @@ const providers = [
     <title>QuotaBubble — your AI usage limits, always in sight</title>
     <meta
       name="description"
-      content="A tiny always-on-top desktop bubble that shows your AI coding usage limits: Claude Code, Codex, Antigravity, Copilot, DeepSeek, and OpenRouter."
+      content="A tiny always-on-top desktop bubble that shows your AI coding usage limits: Claude Code, Codex, Antigravity, Copilot, Cursor, DeepSeek, and OpenRouter."
     />
     <link rel="icon" type="image/png" href={`${base}favicon.png`} />
     <link rel="canonical" href={canonical} />

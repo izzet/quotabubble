@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from quotabubble.app.providers import (
+    build_providers,
     loading_snapshot,
     resolve_api_key,
     select_providers,
@@ -58,3 +59,16 @@ def test_resolve_api_key_falls_back_to_environment(monkeypatch) -> None:
     monkeypatch.setenv("DEEPSEEK_API_KEY", "from-env")
 
     assert resolve_api_key(Settings(), "deepseek") == "from-env"
+
+
+def test_build_providers_registers_cursor() -> None:
+    providers = build_providers(Settings())
+    assert [p.id for p in providers] == [
+        "claude",
+        "codex",
+        "antigravity",
+        "copilot",
+        "cursor",
+        "deepseek",
+        "openrouter",
+    ]
