@@ -178,7 +178,17 @@ def test_cycle_reset_advances_resets_at(qapp: object, tmp_path: Path) -> None:
     )
     assert len(notifications) == 1
 
-    # New cycle with resets_at advanced, still at 80% -> re-arms and fires 75% for new cycle
+    # In new cycle, usage drops below threshold (e.g. to 10%)
+    mgr.process_snapshot(
+        UsageSnapshot(
+            provider="claude",
+            display_name="Claude",
+            windows=[UsageWindow(label="5h", key="5h", used_pct=10.0, resets_at=t2)],
+        )
+    )
+    assert len(notifications) == 1
+
+    # Usage climbs back to 80% in the new cycle -> fires 75% for the new cycle
     mgr.process_snapshot(
         UsageSnapshot(
             provider="claude",
@@ -188,6 +198,39 @@ def test_cycle_reset_advances_resets_at(qapp: object, tmp_path: Path) -> None:
     )
     assert len(notifications) == 2
     assert "Claude (5h): 80% quota used" in notifications[1][1]
+
+
+def test_cycle_reset_does_not_refire_if_usage_remained_above_threshold(
+    qapp: object, tmp_path: Path
+) -> None:
+    settings = Settings(thresholds=[75, 90])
+    mgr = NotificationManager(settings, state_path=tmp_path / "notifications.json")
+
+    notifications: list[tuple[str, str, object]] = []
+    mgr.notify.connect(lambda title, msg, icon: notifications.append((title, msg, icon)))
+
+    t1 = datetime.now(tz=UTC)
+    t2 = t1 + timedelta(hours=5)
+
+    # Reaches 78% (fires 75% once)
+    mgr.process_snapshot(
+        UsageSnapshot(
+            provider="claude",
+            display_name="Claude",
+            windows=[UsageWindow(label="Weekly", key="weekly", used_pct=78.0, resets_at=t1)],
+        )
+    )
+    assert len(notifications) == 1
+
+    # Even if resets_at advances, if usage stayed at 78%, it MUST NOT fire 75% again
+    mgr.process_snapshot(
+        UsageSnapshot(
+            provider="claude",
+            display_name="Claude",
+            windows=[UsageWindow(label="Weekly", key="weekly", used_pct=78.0, resets_at=t2)],
+        )
+    )
+    assert len(notifications) == 1
 
 
 def test_cycle_reset_ignores_microsecond_and_sub_minute_jitter(

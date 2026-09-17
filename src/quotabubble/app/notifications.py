@@ -173,12 +173,11 @@ class NotificationManager(QObject):
                 )
             win_state.depleted_notified = False
 
-        if cycle_reset:
-            win_state.fired_thresholds.clear()
-        else:
-            win_state.fired_thresholds = [
-                t for t in win_state.fired_thresholds if t <= window.used_pct
-            ]
+        # A threshold only re-arms if usage drops below it.
+        # Even across cycle resets, if usage has not dropped below a threshold, it must not re-fire.
+        win_state.fired_thresholds = [
+            t for t in win_state.fired_thresholds if t <= window.used_pct
+        ]
 
         if window.used_pct >= 100.0:
             if not win_state.depleted_notified:
@@ -197,7 +196,9 @@ class NotificationManager(QObject):
             newly_crossed = [
                 t
                 for t in sorted(thresholds)
-                if window.used_pct >= t and t not in win_state.fired_thresholds
+                if window.used_pct >= t
+                and t not in win_state.fired_thresholds
+                and (win_state.last_used_pct is None or win_state.last_used_pct < t)
             ]
             if newly_crossed:
                 highest = max(newly_crossed)
