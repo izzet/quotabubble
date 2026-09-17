@@ -64,3 +64,12 @@ class TrayIcon(QSystemTrayIcon):
 
     def _open_logs(self) -> None:
         QDesktopServices.openUrl(QUrl.fromLocalFile(str(LOG_DIR)))
+
+    def show_notification(
+        self,
+        title: str,
+        message: str,
+        icon: QSystemTrayIcon.MessageIcon = QSystemTrayIcon.MessageIcon.Information,
+        timeout_ms: int = 10_000,
+    ) -> None:
+        self.showMessage(title, message, icon, timeout_ms)
