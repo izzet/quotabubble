@@ -88,8 +88,10 @@ def test_transient_error_keeps_the_last_good_snapshot(qapp: object) -> None:
 
     assert received[0].status is ProviderStatus.OK
     assert received[0].stale is False
+    assert received[0].fetched_at is not None
     assert received[1].status is ProviderStatus.OK
     assert received[1].stale is True
+    assert received[1].fetched_at == received[0].fetched_at
 
 
 def test_error_without_last_good_is_emitted(qapp: object) -> None:
@@ -113,3 +115,22 @@ def test_error_backs_off_the_provider(qapp: object) -> None:
 
     assert len(received) == 1
     assert received[0].status is ProviderStatus.ERROR
+
+
+def test_force_poll_bypasses_backoff(qapp: object) -> None:
+    worker = PollingWorker([_SequencedProvider("claude", [_error(), _ok()])], 60000)
+    received: list[UsageSnapshot] = []
+    worker.snapshot_ready.connect(received.append)
+
+    worker.poll()
+    assert len(received) == 1
+    assert received[0].status is ProviderStatus.ERROR
+
+    # Regular poll does not run due to backoff
+    worker.poll()
+    assert len(received) == 1
+
+    # Force poll bypasses backoff
+    worker.poll(force=True)
+    assert len(received) == 2
+    assert received[1].status is ProviderStatus.OK

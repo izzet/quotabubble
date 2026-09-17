@@ -45,6 +45,7 @@ from quotabubble.ui.panel import (
 
 class BubbleWindow(QWidget):
     settings_requested = Signal()
+    refresh_requested = Signal()
 
     COMPACT_WIDTH = 260
     EXPANDED_WIDTH = 300
@@ -87,6 +88,10 @@ class BubbleWindow(QWidget):
         self._fade_timer = QTimer(self)
         self._fade_timer.setSingleShot(True)
         self._fade_timer.timeout.connect(self._fade_out)
+
+        self._tick_timer = QTimer(self)
+        self._tick_timer.setInterval(30_000)
+        self._tick_timer.timeout.connect(self.update)
 
         self.setWindowOpacity(self._settings.idle_opacity)
         self._apply_size()
@@ -306,7 +311,7 @@ class BubbleWindow(QWidget):
         super().mouseReleaseEvent(event)
 
     def contextMenuEvent(self, event) -> None:
-        menu = build_context_menu(self, self._request_settings)
+        menu = build_context_menu(self, self._request_settings, self._request_refresh)
         menu.exec(event.globalPos())
 
     def showEvent(self, event) -> None:
@@ -324,13 +329,19 @@ class BubbleWindow(QWidget):
     def _request_settings(self) -> None:
         self.settings_requested.emit()
 
+    def _request_refresh(self) -> None:
+        self.refresh_requested.emit()
+
     def _toggle_expanded(self) -> None:
         self._expanded = not self._expanded
         if self._expanded:
             self._fade_timer.stop()
+            self._tick_timer.start()
             self._animate_opacity(self._settings.hover_opacity)
-        elif not self.underMouse():
-            self._fade_timer.start(self._settings.fade_delay_ms)
+        else:
+            self._tick_timer.stop()
+            if not self.underMouse():
+                self._fade_timer.start(self._settings.fade_delay_ms)
         self._start_resize_animation()
 
     def _start_resize_animation(self) -> None:

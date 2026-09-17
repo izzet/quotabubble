@@ -87,6 +87,8 @@ def main() -> None:
 
     window.settings_requested.connect(open_settings)
     tray.settings_requested.connect(open_settings)
+    window.refresh_requested.connect(service.poll)
+    tray.refresh_requested.connect(service.poll)
     app.aboutToQuit.connect(service.stop)
 
     sys.exit(app.exec())

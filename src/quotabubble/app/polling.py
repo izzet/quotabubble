@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 import time
+from datetime import UTC, datetime
 
 from PySide6.QtCore import QMetaObject, QObject, Qt, QThread, QTimer, Signal, Slot
 
@@ -40,10 +41,13 @@ class PollingWorker(QObject):
         self.poll()
 
     @Slot()
-    def poll(self) -> None:
+    @Slot(bool)
+    def poll(self, force: bool = False) -> None:
+        if force:
+            self._retry_at.clear()
         now = time.monotonic()
         for provider in self._providers:
-            if now < self._retry_at.get(provider.id, 0.0):
+            if not force and now < self._retry_at.get(provider.id, 0.0):
                 continue
             try:
                 fresh = provider.fetch()
@@ -60,6 +64,8 @@ class PollingWorker(QObject):
     def _publish(self, fresh: UsageSnapshot) -> None:
         provider_id = fresh.provider
         if fresh.status is ProviderStatus.OK:
+            if fresh.fetched_at is None:
+                fresh = fresh.model_copy(update={"fetched_at": datetime.now(UTC)})
             self._failures.pop(provider_id, None)
             self._retry_at.pop(provider_id, None)
             self._last_good[provider_id] = fresh
@@ -120,6 +126,7 @@ class PollingService(QObject):
     snapshot_ready = Signal(object)
     interval_changed = Signal(int)
     providers_changed = Signal(object)
+    poll_requested = Signal(bool)
 
     def __init__(
         self,
@@ -135,6 +142,7 @@ class PollingService(QObject):
         self._worker.snapshot_ready.connect(self._relay)
         self.interval_changed.connect(self._worker.set_interval)
         self.providers_changed.connect(self._worker.set_providers)
+        self.poll_requested.connect(self._worker.poll)
 
     def start(self) -> None:
         self._thread.start()
@@ -144,6 +152,9 @@ class PollingService(QObject):
 
     def set_providers(self, providers: list[Provider]) -> None:
         self.providers_changed.emit(list(providers))
+
+    def poll(self, force: bool = True) -> None:
+        self.poll_requested.emit(force)
 
     @Slot(object)
     def _relay(self, snapshot: UsageSnapshot) -> None:

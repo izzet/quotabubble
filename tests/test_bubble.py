@@ -81,3 +81,98 @@ def test_drag_moves_the_window_without_expanding(qapp: object) -> None:
     assert window._dragging is False
 
     window.deleteLater()
+
+
+def test_expansion_controls_tick_timer(qapp: object) -> None:
+    window = BubbleWindow(_state(), Settings(position=(0, 0)))
+    assert window._tick_timer.isActive() is False
+
+    window._toggle_expanded()
+    assert window._expanded is True
+    assert window._tick_timer.isActive() is True
+
+    window._toggle_expanded()
+    assert window._expanded is False
+    assert window._tick_timer.isActive() is False
+
+    window.deleteLater()
+
+
+def test_request_refresh_emits_signal(qapp: object) -> None:
+    window = BubbleWindow(_state(), Settings(position=(0, 0)))
+    emitted = []
+    window.refresh_requested.connect(lambda: emitted.append(True))
+
+    window._request_refresh()
+    assert emitted == [True]
+
+    window.deleteLater()
+
+
+def test_build_context_menu_actions(qapp: object) -> None:
+    from PySide6.QtWidgets import QWidget
+
+    from quotabubble.ui.context_menu import build_context_menu
+
+    parent = QWidget()
+    refreshed = []
+    settings_opened = []
+    menu = build_context_menu(
+        parent,
+        on_settings=lambda: settings_opened.append(True),
+        on_refresh=lambda: refreshed.append(True),
+    )
+    action_texts = [action.text() for action in menu.actions() if not action.isSeparator()]
+    assert action_texts == ["Refresh", "Settings…", "Quit QuotaBubble"]
+
+    # Trigger actions
+    actions = {action.text(): action for action in menu.actions() if not action.isSeparator()}
+    actions["Refresh"].trigger()
+    assert refreshed == [True]
+    actions["Settings…"].trigger()
+    assert settings_opened == [True]
+    parent.deleteLater()
+
+
+def test_paint_expanded_stale_snapshot(qapp: object) -> None:
+    from datetime import UTC, datetime, timedelta
+
+    from PySide6.QtGui import QPainter, QPixmap
+
+    from quotabubble.ui.panel import paint_expanded
+
+    now = datetime.now(tz=UTC)
+    stale_snapshot = UsageSnapshot(
+        provider="claude",
+        display_name="Claude",
+        plan="Pro",
+        stale=True,
+        fetched_at=now - timedelta(minutes=5),
+        windows=[UsageWindow(key="session", label="5h", used_pct=40.0)],
+    )
+
+    pixmap = QPixmap(300, 200)
+    painter = QPainter(pixmap)
+    paint_expanded(painter, [stale_snapshot], Settings(), 0, 300)
+    painter.end()
+
+
+def test_tray_icon_actions_and_refresh_signal(qapp: object) -> None:
+    from PySide6.QtWidgets import QWidget
+
+    from quotabubble.ui.tray import TrayIcon
+
+    window = QWidget()
+    tray = TrayIcon(window)
+    emitted = []
+    tray.refresh_requested.connect(lambda: emitted.append(True))
+    tray._request_refresh()
+    assert emitted == [True]
+
+    menu = tray.contextMenu()
+    action_texts = [action.text() for action in menu.actions() if not action.isSeparator()]
+    assert "Refresh" in action_texts
+    assert "Settings…" in action_texts
+
+    tray.deleteLater()
+    window.deleteLater()
