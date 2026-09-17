@@ -18,6 +18,11 @@ logger = logging.getLogger(__name__)
 NOTIFICATIONS_CACHE_FILE = CACHE_DIR / "notifications.json"
 
 
+# A new reset cycle must advance resets_at by at least 3 minutes (180 seconds)
+# to ignore sub-second server timestamp jitter and 00:59:59 / 01:00:00 rounding differences.
+RESET_ADVANCE_MINIMUM_SECONDS = 180
+
+
 def _has_resets_at_advanced(new_dt: datetime | None, old_iso: str | None) -> bool:
     if new_dt is None or old_iso is None:
         return False
@@ -29,7 +34,7 @@ def _has_resets_at_advanced(new_dt: datetime | None, old_iso: str | None) -> boo
         new_dt = new_dt.replace(tzinfo=UTC)
     elif new_dt.tzinfo is not None and old_dt.tzinfo is None:
         old_dt = old_dt.replace(tzinfo=UTC)
-    return new_dt > old_dt
+    return (new_dt - old_dt).total_seconds() > RESET_ADVANCE_MINIMUM_SECONDS
 
 
 class WindowNotificationState(BaseModel):
@@ -212,7 +217,7 @@ class NotificationManager(QObject):
 
         win_state.last_used_pct = window.used_pct
         if window.resets_at is not None:
-            win_state.last_resets_at = window.resets_at.isoformat()
+            win_state.last_resets_at = window.resets_at.replace(microsecond=0).isoformat()
 
     def _persist(self) -> None:
         try:

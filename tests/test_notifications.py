@@ -190,6 +190,50 @@ def test_cycle_reset_advances_resets_at(qapp: object, tmp_path: Path) -> None:
     assert "Claude (5h): 80% quota used" in notifications[1][1]
 
 
+def test_cycle_reset_ignores_microsecond_and_sub_minute_jitter(
+    qapp: object, tmp_path: Path
+) -> None:
+    settings = Settings(thresholds=[75, 90])
+    mgr = NotificationManager(settings, state_path=tmp_path / "notifications.json")
+
+    notifications: list[tuple[str, str, object]] = []
+    mgr.notify.connect(lambda title, msg, icon: notifications.append((title, msg, icon)))
+
+    t1 = datetime(2026, 9, 20, 0, 59, 59, 100000, tzinfo=UTC)
+    t2 = datetime(2026, 9, 20, 0, 59, 59, 950000, tzinfo=UTC)
+    t3 = datetime(2026, 9, 20, 1, 0, 0, 0, tzinfo=UTC)
+
+    # Initial poll at 78%: fires 75% threshold once
+    mgr.process_snapshot(
+        UsageSnapshot(
+            provider="claude",
+            display_name="Claude",
+            windows=[UsageWindow(label="Weekly", key="weekly", used_pct=78.0, resets_at=t1)],
+        )
+    )
+    assert len(notifications) == 1
+
+    # Microsecond jitter in resets_at: must not re-notify
+    mgr.process_snapshot(
+        UsageSnapshot(
+            provider="claude",
+            display_name="Claude",
+            windows=[UsageWindow(label="Weekly", key="weekly", used_pct=78.0, resets_at=t2)],
+        )
+    )
+    assert len(notifications) == 1
+
+    # 1-second rounding variation in resets_at: must not re-notify
+    mgr.process_snapshot(
+        UsageSnapshot(
+            provider="claude",
+            display_name="Claude",
+            windows=[UsageWindow(label="Weekly", key="weekly", used_pct=78.0, resets_at=t3)],
+        )
+    )
+    assert len(notifications) == 1
+
+
 def test_usage_drop_below_threshold_rearms(qapp: object, tmp_path: Path) -> None:
     settings = Settings(thresholds=[75, 90])
     mgr = NotificationManager(settings, state_path=tmp_path / "notifications.json")
