@@ -107,3 +107,39 @@ def test_dialog_collects_api_keys(qapp: object, tmp_path: Path) -> None:
 
     assert settings.api_keys["deepseek"] == "secret-key"
     assert settings.enabled_providers == ["deepseek"]
+
+
+def test_dialog_notification_settings(qapp: object, tmp_path: Path) -> None:
+    path = tmp_path / "settings.json"
+    settings = Settings()
+    dialog = SettingsDialog(settings, path=path)
+
+    assert dialog.notify_usage.isChecked() is True
+    assert dialog.notify_status.isChecked() is True
+    assert dialog.thresholds_field.text() == "75, 90"
+    assert dialog.thresholds_field.isEnabled() is True
+
+    # Disable usage notifications -> disables thresholds field
+    dialog.notify_usage.setChecked(False)
+    assert dialog.thresholds_field.isEnabled() is False
+
+    dialog.notify_status.setChecked(False)
+    dialog.thresholds_field.setText("80, 95")
+    dialog.accept()
+
+    assert settings.notify_usage is False
+    assert settings.notify_status is False
+    assert settings.thresholds == [80, 95]
+
+
+def test_dialog_test_notification_button(qapp: object, tmp_path: Path) -> None:
+    settings = Settings()
+    dialog = SettingsDialog(settings, path=tmp_path / "settings.json")
+
+    emitted = []
+    dialog.test_notification_requested.connect(lambda: emitted.append(True))
+
+    dialog.test_notification_btn.click()
+
+    assert emitted == [True]
+    assert dialog.test_notification_status.text() == "Sent!"

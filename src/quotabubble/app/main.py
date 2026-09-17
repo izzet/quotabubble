@@ -10,6 +10,7 @@ from PySide6.QtWidgets import QApplication, QDialog
 from quotabubble.app.cache import load_snapshots
 from quotabubble.app.instance import SingleInstance
 from quotabubble.app.logging_setup import setup_logging
+from quotabubble.app.notifications import NotificationManager
 from quotabubble.app.polling import PollingService
 from quotabubble.app.providers import build_providers, loading_snapshot, select_providers
 from quotabubble.app.settings import Settings
@@ -63,12 +64,16 @@ def main() -> None:
     tray = TrayIcon(window)
     tray.show()
 
+    notification_manager = NotificationManager(settings)
+    notification_manager.notify.connect(tray.show_notification)
+
     providers = select_providers(build_providers(settings), settings)
     logger.info("providers: %s", [provider.id for provider in providers])
     seed_state(providers)
 
     service = PollingService(providers, settings.refresh_interval_ms)
     service.snapshot_ready.connect(window.apply_snapshot)
+    service.snapshot_ready.connect(notification_manager.process_snapshot)
     service.start()
 
     def apply_providers() -> None:
@@ -78,8 +83,12 @@ def main() -> None:
 
     def open_settings() -> None:
         dialog = SettingsDialog(settings, build_providers(settings), window)
+        dialog.test_notification_requested.connect(
+            notification_manager.send_test_notification
+        )
         if dialog.exec() == QDialog.DialogCode.Accepted:
             logger.info("settings applied")
+            notification_manager.set_settings(settings)
             apply_providers()
             service.set_interval(settings.refresh_interval_ms)
             window.apply_settings()

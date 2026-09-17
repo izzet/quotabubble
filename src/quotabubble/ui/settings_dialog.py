@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from PySide6.QtCore import QObject, QRunnable, Qt, QThreadPool, Signal
+from PySide6.QtCore import QObject, QRunnable, Qt, QThreadPool, QTimer, Signal
 from PySide6.QtWidgets import (
     QCheckBox,
     QDialog,
@@ -19,7 +19,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from quotabubble.app.settings import Settings
+from quotabubble.app.settings import Settings, format_thresholds, parse_thresholds
 from quotabubble.providers.base import ApiKeyProvider, KeyStatus, Provider
 
 _STATUS_STYLES = {
@@ -50,6 +50,8 @@ class _KeyCheckTask(QRunnable):
 
 
 class SettingsDialog(QDialog):
+    test_notification_requested = Signal()
+
     def __init__(
         self,
         settings: Settings,
@@ -97,6 +99,7 @@ class SettingsDialog(QDialog):
         form.addRow("Refresh interval", self.refresh)
         form.addRow("", self.show_remaining)
         form.addRow("", self.launch_at_login)
+        form.addRow(self._build_notifications())
 
         if self._providers:
             form.addRow(self._build_providers())
@@ -107,6 +110,46 @@ class SettingsDialog(QDialog):
         buttons.accepted.connect(self.accept)
         buttons.rejected.connect(self.reject)
         form.addRow(buttons)
+
+    def _build_notifications(self) -> QGroupBox:
+        group = QGroupBox("Notifications")
+        box = QVBoxLayout(group)
+
+        self.notify_usage = QCheckBox("Usage threshold alerts")
+        self.notify_usage.setChecked(self._settings.notify_usage)
+        box.addWidget(self.notify_usage)
+
+        thresh_row = QHBoxLayout()
+        thresh_label = QLabel("Alert thresholds (%):")
+        self.thresholds_field = QLineEdit()
+        self.thresholds_field.setPlaceholderText("e.g. 75, 90")
+        self.thresholds_field.setText(format_thresholds(self._settings.thresholds))
+        self.thresholds_field.setEnabled(self._settings.notify_usage)
+        self.notify_usage.toggled.connect(self.thresholds_field.setEnabled)
+        thresh_row.addWidget(thresh_label)
+        thresh_row.addWidget(self.thresholds_field)
+        box.addLayout(thresh_row)
+
+        self.notify_status = QCheckBox("Depletion and recovery alerts")
+        self.notify_status.setChecked(self._settings.notify_status)
+        box.addWidget(self.notify_status)
+
+        test_row = QHBoxLayout()
+        self.test_notification_btn = QPushButton("Test notification")
+        self.test_notification_btn.clicked.connect(self._on_test_notification_clicked)
+        self.test_notification_status = QLabel("")
+        self.test_notification_status.setStyleSheet("color: #5ec584")
+        test_row.addWidget(self.test_notification_btn)
+        test_row.addWidget(self.test_notification_status)
+        test_row.addStretch()
+        box.addLayout(test_row)
+
+        return group
+
+    def _on_test_notification_clicked(self) -> None:
+        self.test_notification_requested.emit()
+        self.test_notification_status.setText("Sent!")
+        QTimer.singleShot(3000, lambda: self.test_notification_status.setText(""))
 
     def _build_providers(self) -> QGroupBox:
         group = QGroupBox("Providers")
@@ -193,6 +236,16 @@ class SettingsDialog(QDialog):
         self._settings.refresh_interval_ms = self.refresh.value() * 1000
         self._settings.show_remaining = self.show_remaining.isChecked()
         self._settings.launch_at_login = self.launch_at_login.isChecked()
+        self._settings.notify_usage = self.notify_usage.isChecked()
+        self._settings.notify_status = self.notify_status.isChecked()
+        thresh_text = self.thresholds_field.text().strip()
+        if thresh_text:
+            try:
+                self._settings.thresholds = parse_thresholds(thresh_text)
+            except ValueError:
+                pass
+        else:
+            self._settings.thresholds = []
         if self.provider_checks:
             enabled = [
                 provider.id

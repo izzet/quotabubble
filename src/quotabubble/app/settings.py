@@ -15,6 +15,32 @@ def default_settings_path() -> Path:
     return CONFIG_DIR / "settings.json"
 
 
+def parse_thresholds(value: str | list[int] | None) -> list[int]:
+    if value is None:
+        return [75, 90]
+    if isinstance(value, list):
+        parsed = [int(v) for v in value if 1 <= int(v) <= 100]
+        return sorted(set(parsed))
+
+    parts = [p.strip() for p in value.replace(",", " ").split()]
+    thresholds = set()
+    for part in parts:
+        try:
+            val = int(part)
+        except ValueError:
+            raise ValueError(
+                f"Invalid threshold '{part}': must be an integer between 1 and 100"
+            ) from None
+        if not (1 <= val <= 100):
+            raise ValueError(f"Invalid threshold '{part}': must be between 1 and 100")
+        thresholds.add(val)
+    return sorted(thresholds)
+
+
+def format_thresholds(thresholds: list[int]) -> str:
+    return ", ".join(str(t) for t in sorted(set(thresholds)))
+
+
 class Settings(BaseModel):
     idle_opacity: float = 0.25
     hover_opacity: float = 1.0
@@ -26,6 +52,13 @@ class Settings(BaseModel):
     enabled_providers: list[str] | None = None
     api_keys: dict[str, str] = {}
     position: tuple[int, int] | None = None
+    notify_usage: bool = True
+    notify_status: bool = True
+    thresholds: list[int] = [75, 90]
+    provider_thresholds: dict[str, list[int]] = {}
+
+    def effective_thresholds(self, provider_id: str) -> list[int]:
+        return self.provider_thresholds.get(provider_id, self.thresholds)
 
     @classmethod
     def load(cls, path: Path | None = None) -> Settings:
