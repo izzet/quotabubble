@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import json
 import logging
-from datetime import UTC, datetime
 from pathlib import Path
 
 from pydantic import BaseModel, Field
@@ -18,27 +17,7 @@ logger = logging.getLogger(__name__)
 NOTIFICATIONS_CACHE_FILE = CACHE_DIR / "notifications.json"
 
 
-# A new reset cycle must advance resets_at by at least 3 minutes (180 seconds)
-# to ignore sub-second server timestamp jitter and 00:59:59 / 01:00:00 rounding differences.
-RESET_ADVANCE_MINIMUM_SECONDS = 180
-
-
-def _has_resets_at_advanced(new_dt: datetime | None, old_iso: str | None) -> bool:
-    if new_dt is None or old_iso is None:
-        return False
-    try:
-        old_dt = datetime.fromisoformat(old_iso)
-    except (ValueError, TypeError):
-        return False
-    if new_dt.tzinfo is None and old_dt.tzinfo is not None:
-        new_dt = new_dt.replace(tzinfo=UTC)
-    elif new_dt.tzinfo is not None and old_dt.tzinfo is None:
-        old_dt = old_dt.replace(tzinfo=UTC)
-    return (new_dt - old_dt).total_seconds() > RESET_ADVANCE_MINIMUM_SECONDS
-
-
 class WindowNotificationState(BaseModel):
-    last_resets_at: str | None = None
     last_used_pct: float | None = None
     fired_thresholds: list[int] = Field(default_factory=list)
     depleted_notified: bool = False
@@ -155,16 +134,25 @@ class NotificationManager(QObject):
         win_state: WindowNotificationState,
         thresholds: list[int],
     ) -> None:
-        cycle_reset = _has_resets_at_advanced(
-            window.resets_at, win_state.last_resets_at
-        )
-        if not cycle_reset and win_state.last_used_pct is not None:
-            if window.used_pct < win_state.last_used_pct - 15.0:
-                cycle_reset = True
+        current = window.used_pct
+        prev = win_state.last_used_pct
 
-        if win_state.depleted_notified and window.used_pct < 100.0:
+        # Zeroed out alert: usage transitioned from >0 to 0%
+        if prev is not None and prev > 0.0 and current == 0.0:
             if self._settings.notify_status:
-                pct = round(window.used_pct)
+                msg = f"{snapshot.display_name} ({window.label}): quota reset (0% used)"
+                self.notify.emit(
+                    f"QuotaBubble — {snapshot.display_name}",
+                    msg,
+                    QSystemTrayIcon.MessageIcon.Information,
+                )
+            win_state.fired_thresholds.clear()
+            win_state.depleted_notified = False
+
+        # Recovery from 100% depletion (when not zeroed out, e.g. dropped to 50%)
+        elif win_state.depleted_notified and current < 100.0:
+            if self._settings.notify_status:
+                pct = round(current)
                 msg = f"{snapshot.display_name} ({window.label}): quota recovered ({pct}% used)"
                 self.notify.emit(
                     f"QuotaBubble — {snapshot.display_name}",
@@ -173,13 +161,12 @@ class NotificationManager(QObject):
                 )
             win_state.depleted_notified = False
 
-        # A threshold only re-arms if usage drops below it.
-        # Even across cycle resets, if usage has not dropped below a threshold, it must not re-fire.
+        # Re-arm any threshold that current usage has dropped below
         win_state.fired_thresholds = [
-            t for t in win_state.fired_thresholds if t <= window.used_pct
+            t for t in win_state.fired_thresholds if t <= current
         ]
 
-        if window.used_pct >= 100.0:
+        if current >= 100.0:
             if not win_state.depleted_notified:
                 if self._settings.notify_status:
                     msg = f"{snapshot.display_name} ({window.label}): quota depleted (100% used)"
@@ -196,9 +183,9 @@ class NotificationManager(QObject):
             newly_crossed = [
                 t
                 for t in sorted(thresholds)
-                if window.used_pct >= t
+                if current >= t
                 and t not in win_state.fired_thresholds
-                and (win_state.last_used_pct is None or win_state.last_used_pct < t)
+                and (prev is None or prev < t)
             ]
             if newly_crossed:
                 highest = max(newly_crossed)
@@ -207,7 +194,7 @@ class NotificationManager(QObject):
                     if highest >= 90
                     else QSystemTrayIcon.MessageIcon.Information
                 )
-                pct = round(window.used_pct)
+                pct = round(current)
                 msg = f"{snapshot.display_name} ({window.label}): {pct}% quota used"
                 self.notify.emit(
                     f"QuotaBubble — {snapshot.display_name}",
@@ -216,9 +203,7 @@ class NotificationManager(QObject):
                 )
                 win_state.fired_thresholds.extend(newly_crossed)
 
-        win_state.last_used_pct = window.used_pct
-        if window.resets_at is not None:
-            win_state.last_resets_at = window.resets_at.replace(microsecond=0).isoformat()
+        win_state.last_used_pct = current
 
     def _persist(self) -> None:
         try:

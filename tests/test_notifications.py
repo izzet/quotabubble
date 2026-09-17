@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 from PySide6.QtWidgets import QSystemTrayIcon
@@ -158,49 +157,59 @@ def test_depletion_and_recovery_window(qapp: object, tmp_path: Path) -> None:
     assert "Copilot (Monthly): 78% quota used" in notifications[2][1]
 
 
-def test_cycle_reset_advances_resets_at(qapp: object, tmp_path: Path) -> None:
+def test_quota_zeroed_out_notification(qapp: object, tmp_path: Path) -> None:
     settings = Settings(thresholds=[75, 90])
     mgr = NotificationManager(settings, state_path=tmp_path / "notifications.json")
 
     notifications: list[tuple[str, str, object]] = []
     mgr.notify.connect(lambda title, msg, icon: notifications.append((title, msg, icon)))
 
-    t1 = datetime.now(tz=UTC)
-    t2 = t1 + timedelta(hours=5)
-
-    # First cycle, reaches 80% (75 fired)
+    # Usage reaches 80% (fires 75% threshold)
     mgr.process_snapshot(
         UsageSnapshot(
             provider="claude",
             display_name="Claude",
-            windows=[UsageWindow(label="5h", key="5h", used_pct=80.0, resets_at=t1)],
+            windows=[UsageWindow(label="5h", key="5h", used_pct=80.0)],
         )
     )
     assert len(notifications) == 1
+    assert "Claude (5h): 80% quota used" in notifications[0][1]
 
-    # In new cycle, usage drops below threshold (e.g. to 10%)
+    # Usage zeroes out (drops to 0% from >0%) -> fires quota reset alert!
     mgr.process_snapshot(
         UsageSnapshot(
             provider="claude",
             display_name="Claude",
-            windows=[UsageWindow(label="5h", key="5h", used_pct=10.0, resets_at=t2)],
-        )
-    )
-    assert len(notifications) == 1
-
-    # Usage climbs back to 80% in the new cycle -> fires 75% for the new cycle
-    mgr.process_snapshot(
-        UsageSnapshot(
-            provider="claude",
-            display_name="Claude",
-            windows=[UsageWindow(label="5h", key="5h", used_pct=80.0, resets_at=t2)],
+            windows=[UsageWindow(label="5h", key="5h", used_pct=0.0)],
         )
     )
     assert len(notifications) == 2
-    assert "Claude (5h): 80% quota used" in notifications[1][1]
+    assert "Claude (5h): quota reset (0% used)" in notifications[1][1]
+    assert notifications[1][2] == QSystemTrayIcon.MessageIcon.Information
+
+    # Stays at 0% -> does not repeat reset alert
+    mgr.process_snapshot(
+        UsageSnapshot(
+            provider="claude",
+            display_name="Claude",
+            windows=[UsageWindow(label="5h", key="5h", used_pct=0.0)],
+        )
+    )
+    assert len(notifications) == 2
+
+    # Climbs back up and crosses 75% again -> fires for the new cycle!
+    mgr.process_snapshot(
+        UsageSnapshot(
+            provider="claude",
+            display_name="Claude",
+            windows=[UsageWindow(label="5h", key="5h", used_pct=78.0)],
+        )
+    )
+    assert len(notifications) == 3
+    assert "Claude (5h): 78% quota used" in notifications[2][1]
 
 
-def test_cycle_reset_does_not_refire_if_usage_remained_above_threshold(
+def test_usage_staying_at_same_threshold_never_refires(
     qapp: object, tmp_path: Path
 ) -> None:
     settings = Settings(thresholds=[75, 90])
@@ -208,72 +217,26 @@ def test_cycle_reset_does_not_refire_if_usage_remained_above_threshold(
 
     notifications: list[tuple[str, str, object]] = []
     mgr.notify.connect(lambda title, msg, icon: notifications.append((title, msg, icon)))
-
-    t1 = datetime.now(tz=UTC)
-    t2 = t1 + timedelta(hours=5)
 
     # Reaches 78% (fires 75% once)
     mgr.process_snapshot(
         UsageSnapshot(
             provider="claude",
             display_name="Claude",
-            windows=[UsageWindow(label="Weekly", key="weekly", used_pct=78.0, resets_at=t1)],
+            windows=[UsageWindow(label="Weekly", key="weekly", used_pct=78.0)],
         )
     )
     assert len(notifications) == 1
 
-    # Even if resets_at advances, if usage stayed at 78%, it MUST NOT fire 75% again
-    mgr.process_snapshot(
-        UsageSnapshot(
-            provider="claude",
-            display_name="Claude",
-            windows=[UsageWindow(label="Weekly", key="weekly", used_pct=78.0, resets_at=t2)],
+    # Stays at 78% across multiple polls -> MUST NOT fire again
+    for _ in range(5):
+        mgr.process_snapshot(
+            UsageSnapshot(
+                provider="claude",
+                display_name="Claude",
+                windows=[UsageWindow(label="Weekly", key="weekly", used_pct=78.0)],
+            )
         )
-    )
-    assert len(notifications) == 1
-
-
-def test_cycle_reset_ignores_microsecond_and_sub_minute_jitter(
-    qapp: object, tmp_path: Path
-) -> None:
-    settings = Settings(thresholds=[75, 90])
-    mgr = NotificationManager(settings, state_path=tmp_path / "notifications.json")
-
-    notifications: list[tuple[str, str, object]] = []
-    mgr.notify.connect(lambda title, msg, icon: notifications.append((title, msg, icon)))
-
-    t1 = datetime(2026, 9, 20, 0, 59, 59, 100000, tzinfo=UTC)
-    t2 = datetime(2026, 9, 20, 0, 59, 59, 950000, tzinfo=UTC)
-    t3 = datetime(2026, 9, 20, 1, 0, 0, 0, tzinfo=UTC)
-
-    # Initial poll at 78%: fires 75% threshold once
-    mgr.process_snapshot(
-        UsageSnapshot(
-            provider="claude",
-            display_name="Claude",
-            windows=[UsageWindow(label="Weekly", key="weekly", used_pct=78.0, resets_at=t1)],
-        )
-    )
-    assert len(notifications) == 1
-
-    # Microsecond jitter in resets_at: must not re-notify
-    mgr.process_snapshot(
-        UsageSnapshot(
-            provider="claude",
-            display_name="Claude",
-            windows=[UsageWindow(label="Weekly", key="weekly", used_pct=78.0, resets_at=t2)],
-        )
-    )
-    assert len(notifications) == 1
-
-    # 1-second rounding variation in resets_at: must not re-notify
-    mgr.process_snapshot(
-        UsageSnapshot(
-            provider="claude",
-            display_name="Claude",
-            windows=[UsageWindow(label="Weekly", key="weekly", used_pct=78.0, resets_at=t3)],
-        )
-    )
     assert len(notifications) == 1
 
 
