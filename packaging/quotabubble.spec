@@ -9,7 +9,32 @@ a = Analysis(
     pathex=[str(ROOT / "src")],
     binaries=[],
     datas=[],
-    hiddenimports=[],
+    # keyring picks its backend via importlib.metadata entry points at
+    # runtime, so PyInstaller's static analysis never sees the Windows
+    # backend chain (keyring.backends.Windows -> win32ctypes.pywin32.* ->
+    # win32ctypes.core) as reachable and silently omits it, which makes the
+    # OS keyring unusable in the frozen build even though it works fine in
+    # dev. win32ctypes.core also redirects e.g. "win32ctypes.core._common"
+    # to "win32ctypes.core.ctypes._common" via a custom sys.meta_path finder
+    # at runtime, which static analysis (and PyInstaller's own built-in
+    # hook-win32ctypes.core.py) can't see through either, so the real
+    # win32ctypes.core.ctypes.* files are listed explicitly below.
+    hiddenimports=[
+        "keyring.backends.Windows",
+        "win32ctypes.core",
+        "win32ctypes.core.ctypes",
+        "win32ctypes.core.ctypes._authentication",
+        "win32ctypes.core.ctypes._common",
+        "win32ctypes.core.ctypes._dll",
+        "win32ctypes.core.ctypes._nl_support",
+        "win32ctypes.core.ctypes._resource",
+        "win32ctypes.core.ctypes._system_information",
+        "win32ctypes.core.ctypes._time",
+        "win32ctypes.core.ctypes._util",
+        "win32ctypes.pywin32.pywintypes",
+        "win32ctypes.pywin32.win32api",
+        "win32ctypes.pywin32.win32cred",
+    ],
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
