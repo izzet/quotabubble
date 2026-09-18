@@ -6,9 +6,16 @@ from pathlib import Path
 
 from platformdirs import user_log_dir
 
+from quotabubble.utils import redact_secrets
+
 LOG_DIR = Path(user_log_dir("quotabubble", appauthor=False))
 LOG_FILE = LOG_DIR / "quotabubble.log"
 _FORMAT = "%(asctime)s %(levelname)s %(name)s: %(message)s"
+
+
+class _RedactingFormatter(logging.Formatter):
+    def format(self, record: logging.LogRecord) -> str:
+        return redact_secrets(super().format(record))
 
 
 def setup_logging(level: int = logging.INFO, path: Path | None = None) -> Path:
@@ -25,7 +32,7 @@ def setup_logging(level: int = logging.INFO, path: Path | None = None) -> Path:
     handler = RotatingFileHandler(
         target, maxBytes=1_000_000, backupCount=3, encoding="utf-8"
     )
-    handler.setFormatter(logging.Formatter(_FORMAT))
+    handler.setFormatter(_RedactingFormatter(_FORMAT))
     root.addHandler(handler)
 
     logging.getLogger("httpx2").setLevel(logging.WARNING)

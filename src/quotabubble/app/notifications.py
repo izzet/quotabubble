@@ -11,6 +11,7 @@ from PySide6.QtWidgets import QSystemTrayIcon
 from quotabubble.app.cache import CACHE_DIR
 from quotabubble.app.settings import Settings
 from quotabubble.providers.base import ProviderStatus, UsageSnapshot, UsageWindow
+from quotabubble.utils import write_text_atomic
 
 logger = logging.getLogger(__name__)
 
@@ -44,8 +45,7 @@ def load_notification_state(path: Path | None = None) -> NotificationState:
 
 def save_notification_state(state: NotificationState, path: Path | None = None) -> None:
     target = path or NOTIFICATIONS_CACHE_FILE
-    target.parent.mkdir(parents=True, exist_ok=True)
-    target.write_text(state.model_dump_json(indent=2), encoding="utf-8")
+    write_text_atomic(target, state.model_dump_json(indent=2))
 
 
 class NotificationManager(QObject):
