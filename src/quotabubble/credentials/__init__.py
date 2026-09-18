@@ -18,13 +18,22 @@ from quotabubble.credentials.os import (
     enumerate_generic_credentials,
     read_generic_credential,
 )
+from quotabubble.credentials.secrets import (
+    delete_secret,
+    get_secret,
+    keyring_available,
+    set_secret,
+)
 
 __all__ = [
     "default_cursor_auth_paths",
     "default_cursor_db_path",
     "default_opencode_auth_paths",
     "default_opencode_config_paths",
+    "delete_secret",
     "enumerate_generic_credentials",
+    "get_secret",
+    "keyring_available",
     "read_cursor_access_token",
     "read_generic_credential",
     "read_opencode_api_key_from_auth_file",
@@ -32,4 +41,5 @@ __all__ = [
     "resolve_cursor_session_token",
     "resolve_opencode_api_key",
     "session_cookie_from_access_token",
+    "set_secret",
 ]

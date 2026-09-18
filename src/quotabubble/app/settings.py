@@ -50,6 +50,7 @@ class Settings(BaseModel):
     launch_at_login: bool = False
     refresh_interval_ms: int = 300_000
     enabled_providers: list[str] | None = None
+    # Fallback only: populated when the OS keyring is unavailable at save time.
     api_keys: dict[str, str] = {}
     position: tuple[int, int] | None = None
     notify_usage: bool = True

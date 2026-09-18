@@ -19,7 +19,9 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from quotabubble.app.providers import resolve_api_key
 from quotabubble.app.settings import Settings, format_thresholds, parse_thresholds
+from quotabubble.credentials import delete_secret, keyring_available, set_secret
 from quotabubble.providers.base import ApiKeyProvider, KeyStatus, Provider
 
 _STATUS_STYLES = {
@@ -154,6 +156,14 @@ class SettingsDialog(QDialog):
     def _build_providers(self) -> QGroupBox:
         group = QGroupBox("Providers")
         box = QVBoxLayout(group)
+        needs_key_storage = any(provider.uses_api_key for provider in self._providers)
+        if needs_key_storage and not keyring_available():
+            warning = QLabel(
+                "OS keyring unavailable — API keys will be stored in settings.json instead."
+            )
+            warning.setWordWrap(True)
+            warning.setStyleSheet("color: #e8b34c")
+            box.addWidget(warning)
         for provider in self._providers:
             detected = provider.detect()
             label = provider.display_name
@@ -173,7 +183,7 @@ class SettingsDialog(QDialog):
                 field = QLineEdit()
                 field.setEchoMode(QLineEdit.EchoMode.Password)
                 field.setPlaceholderText("API key")
-                field.setText(self._settings.api_keys.get(provider.id, ""))
+                field.setText(resolve_api_key(self._settings, provider.id) or "")
                 row.addWidget(field)
 
                 button = QPushButton("Test")
@@ -255,10 +265,14 @@ class SettingsDialog(QDialog):
             for provider, field, _button, _status in self.provider_keys:
                 value = field.text().strip()
                 if value:
-                    self._settings.api_keys[provider.id] = value
+                    if set_secret(provider.id, value):
+                        self._settings.api_keys.pop(provider.id, None)
+                    else:
+                        self._settings.api_keys[provider.id] = value
                     if provider.id not in enabled:
                         enabled.append(provider.id)
                 else:
+                    delete_secret(provider.id)
                     self._settings.api_keys.pop(provider.id, None)
             self._settings.enabled_providers = enabled
         self._settings.save(self._path)
