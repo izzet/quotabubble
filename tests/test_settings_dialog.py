@@ -116,6 +116,19 @@ def test_dialog_toggles_launch_at_login(qapp: object, tmp_path: Path) -> None:
     assert settings.launch_at_login is True
 
 
+def test_dialog_toggles_history_enabled(qapp: object, tmp_path: Path) -> None:
+    settings = Settings()
+    dialog = SettingsDialog(settings, path=tmp_path / "settings.json")
+
+    assert dialog.history_enabled.isChecked() is False
+
+    dialog.history_enabled.setChecked(True)
+    dialog.accept()
+
+    assert settings.history_enabled is True
+    assert Settings.load(tmp_path / "settings.json").history_enabled is True
+
+
 def test_dialog_lists_detected_providers(qapp: object, tmp_path: Path) -> None:
     path = tmp_path / "settings.json"
     settings = Settings()

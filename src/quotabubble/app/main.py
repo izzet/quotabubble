@@ -8,6 +8,7 @@ from PySide6.QtGui import QGuiApplication
 from PySide6.QtWidgets import QApplication, QDialog
 
 from quotabubble.app.cache import load_snapshots
+from quotabubble.app.history import HistoryRecorder
 from quotabubble.app.instance import SingleInstance
 from quotabubble.app.logging_setup import setup_logging
 from quotabubble.app.notifications import NotificationManager
@@ -67,6 +68,8 @@ def main() -> None:
     notification_manager = NotificationManager(settings)
     notification_manager.notify.connect(tray.show_notification)
 
+    history_recorder = HistoryRecorder(settings)
+
     providers = select_providers(build_providers(settings), settings)
     logger.info("providers: %s", [provider.id for provider in providers])
     seed_state(providers)
@@ -74,6 +77,7 @@ def main() -> None:
     service = PollingService(providers, settings.refresh_interval_ms)
     service.snapshot_ready.connect(window.apply_snapshot)
     service.snapshot_ready.connect(notification_manager.process_snapshot)
+    service.snapshot_ready.connect(history_recorder.record)
     service.start()
 
     def apply_providers() -> None:

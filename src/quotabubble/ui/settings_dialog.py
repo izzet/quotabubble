@@ -95,12 +95,16 @@ class SettingsDialog(QDialog):
         self.launch_at_login = QCheckBox("Launch at login")
         self.launch_at_login.setChecked(settings.launch_at_login)
 
+        self.history_enabled = QCheckBox("Collect local usage history (for future trends)")
+        self.history_enabled.setChecked(settings.history_enabled)
+
         form = QFormLayout(self)
         form.addRow("Idle opacity", self.opacity)
         form.addRow("Fade delay", self.fade_delay)
         form.addRow("Refresh interval", self.refresh)
         form.addRow("", self.show_remaining)
         form.addRow("", self.launch_at_login)
+        form.addRow("", self.history_enabled)
         form.addRow(self._build_notifications())
 
         if self._providers:
@@ -246,6 +250,7 @@ class SettingsDialog(QDialog):
         self._settings.refresh_interval_ms = self.refresh.value() * 1000
         self._settings.show_remaining = self.show_remaining.isChecked()
         self._settings.launch_at_login = self.launch_at_login.isChecked()
+        self._settings.history_enabled = self.history_enabled.isChecked()
         self._settings.notify_usage = self.notify_usage.isChecked()
         self._settings.notify_status = self.notify_status.isChecked()
         thresh_text = self.thresholds_field.text().strip()

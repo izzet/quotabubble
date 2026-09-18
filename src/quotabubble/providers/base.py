@@ -66,6 +66,17 @@ def format_plan(value: str | None) -> str | None:
     return value.replace("_", " ").title()
 
 
+def snapshot_windows(snapshot: UsageSnapshot) -> list[UsageWindow]:
+    """Windows to track for a snapshot, synthesizing a 'Credits' window for
+    credit-only providers (e.g. OpenRouter) that report no rate-limit windows."""
+    windows = list(snapshot.windows)
+    if not windows and snapshot.credits and snapshot.credits.used_pct is not None:
+        windows.append(
+            UsageWindow(label="Credits", key="credits", used_pct=snapshot.credits.used_pct)
+        )
+    return windows
+
+
 @runtime_checkable
 class Provider(Protocol):
     id: str

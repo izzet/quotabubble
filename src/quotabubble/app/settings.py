@@ -59,6 +59,7 @@ class Settings(BaseModel):
     notify_status: bool = True
     thresholds: list[int] = [75, 90]
     provider_thresholds: dict[str, list[int]] = {}
+    history_enabled: bool = False
 
     def effective_thresholds(self, provider_id: str) -> list[int]:
         return self.provider_thresholds.get(provider_id, self.thresholds)

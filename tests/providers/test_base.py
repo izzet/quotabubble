@@ -1,6 +1,13 @@
 from __future__ import annotations
 
-from quotabubble.providers.base import format_plan, parse_retry_after
+from quotabubble.providers.base import (
+    Credits,
+    UsageSnapshot,
+    UsageWindow,
+    format_plan,
+    parse_retry_after,
+    snapshot_windows,
+)
 
 
 def test_parse_retry_after_none_and_empty() -> None:
@@ -30,3 +37,38 @@ def test_format_plan_none_and_empty() -> None:
 def test_format_plan_normalizes_underscores_and_case() -> None:
     assert format_plan("max_20x") == "Max 20X"
     assert format_plan("pro") == "Pro"
+
+
+def _snapshot(**overrides: object) -> UsageSnapshot:
+    defaults: dict[str, object] = {"provider": "claude", "display_name": "Claude"}
+    defaults.update(overrides)
+    return UsageSnapshot(**defaults)
+
+
+def test_snapshot_windows_returns_real_windows_as_is() -> None:
+    windows = [UsageWindow(label="5h", key="5h", used_pct=42.0)]
+
+    assert snapshot_windows(_snapshot(windows=windows)) == windows
+
+
+def test_snapshot_windows_synthesizes_credits_when_no_windows() -> None:
+    snapshot = _snapshot(windows=[], credits=Credits(display="$5.00", used_pct=82.0))
+
+    windows = snapshot_windows(snapshot)
+
+    assert len(windows) == 1
+    assert windows[0].key == "credits"
+    assert windows[0].used_pct == 82.0
+
+
+def test_snapshot_windows_ignores_credits_without_used_pct() -> None:
+    snapshot = _snapshot(windows=[], credits=Credits(display="$5.00"))
+
+    assert snapshot_windows(snapshot) == []
+
+
+def test_snapshot_windows_prefers_real_windows_over_credits() -> None:
+    windows = [UsageWindow(label="5h", key="5h", used_pct=10.0)]
+    snapshot = _snapshot(windows=windows, credits=Credits(display="$5.00", used_pct=82.0))
+
+    assert snapshot_windows(snapshot) == windows
