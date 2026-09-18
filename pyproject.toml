@@ -53,6 +53,7 @@ Changelog = "https://github.com/izzet/quotabubble/releases"
 dev = [
     "pyinstaller>=6.0",
     "pytest>=8.0",
+    "pytest-cov>=5.0",
     "ruff>=0.6",
 ]
 
@@ -74,3 +75,12 @@ select = ["E", "F", "I", "UP", "B"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = ["--import-mode=importlib"]
+
+[tool.coverage.run]
+source = ["src/quotabubble"]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = false
+# Ratchet this up as coverage improves; current baseline is ~81%.
+fail_under = 78
