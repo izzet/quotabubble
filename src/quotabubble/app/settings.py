@@ -7,6 +7,8 @@ from pathlib import Path
 from platformdirs import user_config_dir
 from pydantic import BaseModel
 
+from quotabubble.utils import write_text_atomic
+
 CONFIG_DIR = Path(user_config_dir("quotabubble", appauthor=False))
 logger = logging.getLogger(__name__)
 
@@ -83,8 +85,7 @@ class Settings(BaseModel):
 
     def save(self, path: Path | None = None) -> None:
         target = path or default_settings_path()
-        target.parent.mkdir(parents=True, exist_ok=True)
-        target.write_text(self.model_dump_json(indent=2), encoding="utf-8")
+        write_text_atomic(target, self.model_dump_json(indent=2))
         logger.info(
             "settings saved to %s (providers=%s, keys=%d)",
             target,

@@ -6,6 +6,7 @@ from pathlib import Path
 from platformdirs import user_cache_dir
 
 from quotabubble.providers.base import UsageSnapshot
+from quotabubble.utils import write_text_atomic
 
 CACHE_DIR = Path(user_cache_dir("quotabubble", appauthor=False))
 LAST_GOOD_FILE = CACHE_DIR / "last_good.json"
@@ -30,9 +31,8 @@ def load_snapshots(path: Path | None = None) -> dict[str, UsageSnapshot]:
 
 def save_snapshots(snapshots: dict[str, UsageSnapshot], path: Path | None = None) -> None:
     target = path or LAST_GOOD_FILE
-    target.parent.mkdir(parents=True, exist_ok=True)
     payload = {
         provider_id: snapshot.model_dump(mode="json")
         for provider_id, snapshot in snapshots.items()
     }
-    target.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+    write_text_atomic(target, json.dumps(payload, indent=2))
