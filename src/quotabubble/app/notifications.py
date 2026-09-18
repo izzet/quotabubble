@@ -10,7 +10,12 @@ from PySide6.QtWidgets import QSystemTrayIcon
 
 from quotabubble.app.cache import CACHE_DIR
 from quotabubble.app.settings import Settings
-from quotabubble.providers.base import ProviderStatus, UsageSnapshot, UsageWindow
+from quotabubble.providers.base import (
+    ProviderStatus,
+    UsageSnapshot,
+    UsageWindow,
+    snapshot_windows,
+)
 from quotabubble.utils import write_text_atomic
 
 logger = logging.getLogger(__name__)
@@ -106,18 +111,8 @@ class NotificationManager(QObject):
         else:
             return
 
-        windows = list(snapshot.windows)
-        if not windows and snapshot.credits and snapshot.credits.used_pct is not None:
-            windows.append(
-                UsageWindow(
-                    label="Credits",
-                    key="credits",
-                    used_pct=snapshot.credits.used_pct,
-                )
-            )
-
         thresholds = self._settings.effective_thresholds(provider_id)
-        for window in windows:
+        for window in snapshot_windows(snapshot):
             window_key = window.key or window.label
             state_key = f"{provider_id}:{window_key}"
             win_state = self._state.windows.setdefault(

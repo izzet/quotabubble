@@ -20,6 +20,7 @@ def test_settings_roundtrip(tmp_path: Path) -> None:
         notify_status=True,
         thresholds=[80, 95],
         provider_thresholds={"claude": [90]},
+        history_enabled=True,
     ).save(path)
     loaded = Settings.load(path)
 
@@ -29,6 +30,7 @@ def test_settings_roundtrip(tmp_path: Path) -> None:
     assert loaded.notify_status is True
     assert loaded.thresholds == [80, 95]
     assert loaded.provider_thresholds == {"claude": [90]}
+    assert loaded.history_enabled is True
 
 
 def test_settings_load_missing_returns_defaults(tmp_path: Path) -> None:
@@ -41,6 +43,7 @@ def test_settings_load_missing_returns_defaults(tmp_path: Path) -> None:
     assert loaded.notify_status is True
     assert loaded.thresholds == [75, 90]
     assert loaded.provider_thresholds == {}
+    assert loaded.history_enabled is False
 
 
 def test_settings_load_invalid_schema_returns_defaults(tmp_path: Path) -> None:
