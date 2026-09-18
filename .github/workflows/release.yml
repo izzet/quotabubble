@@ -62,5 +62,5 @@ jobs:
         run: |
           $version = $env:GITHUB_REF_NAME -replace '^v', ''
           $zip = "https://github.com/izzet/quotabubble/releases/download/v$version/QuotaBubble-windows-x64.zip"
-          .\komac.exe update Izzet.QuotaBubble -v $version -u $zip --yes --token $env:WINGET_TOKEN
+          .\komac.exe update Izzet.QuotaBubble -v $version -u $zip --submit --token $env:WINGET_TOKEN
 
