@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import pytest
 from PySide6.QtWidgets import QSystemTrayIcon
 
 from quotabubble.app.notifications import (
@@ -657,6 +658,68 @@ def test_persistence_across_instances(qapp: object, tmp_path: Path) -> None:
         )
     )
     assert len(notifications) == 0
+
+
+def test_error_status_without_stale_flag_is_ignored(qapp: object, tmp_path: Path) -> None:
+    settings = Settings()
+    mgr = NotificationManager(settings, state_path=tmp_path / "notifications.json")
+
+    notifications: list[tuple[str, str, object]] = []
+    mgr.notify.connect(lambda title, msg, icon: notifications.append((title, msg, icon)))
+
+    # A non-stale ERROR snapshot (no last-good value to fall back on) must
+    # not be mistaken for an EXPIRED/depleted state.
+    mgr.process_snapshot(
+        UsageSnapshot(
+            provider="claude",
+            display_name="Claude",
+            status=ProviderStatus.ERROR,
+            message="network unreachable",
+        )
+    )
+    assert len(notifications) == 0
+
+
+def test_persist_failure_is_logged_not_raised(
+    qapp: object, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    settings = Settings(thresholds=[75, 90])
+    mgr = NotificationManager(settings, state_path=tmp_path / "notifications.json")
+
+    def _boom(*args: object, **kwargs: object) -> None:
+        raise OSError("disk full")
+
+    monkeypatch.setattr("quotabubble.app.notifications.save_notification_state", _boom)
+
+    # Should not raise despite the persistence failure.
+    mgr.process_snapshot(
+        UsageSnapshot(
+            provider="claude",
+            display_name="Claude",
+            windows=[UsageWindow(label="5h", key="5h", used_pct=80.0)],
+        )
+    )
+
+
+def test_load_notification_state_non_dict_top_level_returns_default(
+    tmp_path: Path,
+) -> None:
+    path = tmp_path / "notifications.json"
+    path.write_text("[1, 2, 3]", encoding="utf-8")
+
+    loaded = load_notification_state(path)
+
+    assert loaded.windows == {}
+    assert loaded.provider_expired == {}
+
+
+def test_load_notification_state_invalid_schema_returns_default(tmp_path: Path) -> None:
+    path = tmp_path / "notifications.json"
+    path.write_text('{"windows": "not-a-dict"}', encoding="utf-8")
+
+    loaded = load_notification_state(path)
+
+    assert loaded.windows == {}
 
 
 def test_save_and_load_notification_state_corrupt_fallback(tmp_path: Path) -> None:

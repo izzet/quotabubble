@@ -43,6 +43,15 @@ def test_settings_load_missing_returns_defaults(tmp_path: Path) -> None:
     assert loaded.provider_thresholds == {}
 
 
+def test_settings_load_invalid_schema_returns_defaults(tmp_path: Path) -> None:
+    path = tmp_path / "settings.json"
+    path.write_text('{"idle_opacity": "not-a-number"}', encoding="utf-8")
+
+    loaded = Settings.load(path)
+
+    assert loaded.idle_opacity == 0.25
+
+
 def test_config_dir_is_not_doubled() -> None:
     assert CONFIG_DIR.name == "quotabubble"
     assert CONFIG_DIR.parent.name != "quotabubble"

@@ -1,5 +1,8 @@
 # QuotaBubble
 
+[![ci](https://github.com/izzet/quotabubble/actions/workflows/ci.yml/badge.svg)](https://github.com/izzet/quotabubble/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/izzet/quotabubble/graph/badge.svg)](https://codecov.io/gh/izzet/quotabubble)
+
 **Your AI usage limits, always in sight.**
 
 QuotaBubble is a small, frameless desktop widget that keeps the usage limits for your AI coding tools visible without opening a dashboard, terminal, or browser. It floats above your windows, fades to almost nothing when idle, and expands into a compact detail panel when you click it.
@@ -89,7 +92,10 @@ On macOS and Linux these map to the standard platform directories.
 uv sync
 uv run ruff check src tests
 uv run pytest -q
+uv run pytest -q --cov=src/quotabubble --cov-report=term-missing  # with coverage
 ```
+
+CI gates on coverage (currently 78% minimum, see `[tool.coverage.report]` in `pyproject.toml`) and uploads results to Codecov.
 
 See [AGENTS.md](AGENTS.md) for architecture and contribution conventions. The provider layer (`src/quotabubble/providers/`) is pure Python behind a `Provider` protocol, and platform specifics live in `src/quotabubble/platform/`.
 
