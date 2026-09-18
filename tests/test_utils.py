@@ -136,3 +136,25 @@ def test_write_text_atomic_leaves_original_intact_on_failure(
     assert target.read_text(encoding="utf-8") == '{"a": 1}'
     leftovers = [p for p in tmp_path.iterdir() if p != target]
     assert leftovers == []
+
+
+def test_write_text_atomic_surfaces_original_error_when_cleanup_also_fails(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    target = tmp_path / "state.json"
+    target.write_text('{"a": 1}', encoding="utf-8")
+
+    def _replace_boom(*args: object, **kwargs: object) -> None:
+        raise OSError("disk full")
+
+    def _remove_boom(*args: object, **kwargs: object) -> None:
+        raise OSError("temp file already gone")
+
+    monkeypatch.setattr(os, "replace", _replace_boom)
+    monkeypatch.setattr(os, "remove", _remove_boom)
+
+    # The write failure must propagate, not the cleanup failure that follows it.
+    with pytest.raises(OSError, match="disk full"):
+        write_text_atomic(target, '{"a": 2}')
+
+    assert target.read_text(encoding="utf-8") == '{"a": 1}'
