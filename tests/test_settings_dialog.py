@@ -2,9 +2,43 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import pytest
+from PySide6.QtWidgets import QLabel
+
 from quotabubble.app.settings import Settings
 from quotabubble.providers.base import KeyStatus, UsageSnapshot
 from quotabubble.ui.settings_dialog import SettingsDialog
+
+
+@pytest.fixture
+def fake_keyring(monkeypatch: pytest.MonkeyPatch) -> dict[str, str]:
+    """A working in-memory keyring, wired into both the dialog (writes) and
+    app.providers.resolve_api_key (reads, used for prefill)."""
+    store: dict[str, str] = {}
+
+    monkeypatch.setattr(
+        "quotabubble.ui.settings_dialog.set_secret",
+        lambda provider_id, value: store.__setitem__(provider_id, value) or True,
+    )
+    monkeypatch.setattr(
+        "quotabubble.ui.settings_dialog.delete_secret",
+        lambda provider_id: store.pop(provider_id, None),
+    )
+    monkeypatch.setattr("quotabubble.ui.settings_dialog.is_keyring_available", lambda: True)
+    monkeypatch.setattr(
+        "quotabubble.app.providers.get_secret", lambda provider_id: store.get(provider_id)
+    )
+    return store
+
+
+@pytest.fixture
+def broken_keyring(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(
+        "quotabubble.ui.settings_dialog.set_secret", lambda provider_id, value: False
+    )
+    monkeypatch.setattr("quotabubble.ui.settings_dialog.delete_secret", lambda provider_id: None)
+    monkeypatch.setattr("quotabubble.ui.settings_dialog.is_keyring_available", lambda: False)
+    monkeypatch.setattr("quotabubble.app.providers.get_secret", lambda provider_id: None)
 
 
 class _FakeProvider:
@@ -40,7 +74,9 @@ class _KeyProvider:
         return UsageSnapshot(provider=self.id, display_name=self.display_name)
 
 
-def test_key_provider_has_test_button(qapp: object, tmp_path: Path) -> None:
+def test_key_provider_has_test_button(
+    qapp: object, tmp_path: Path, fake_keyring: dict[str, str]
+) -> None:
     dialog = SettingsDialog(
         Settings(), [_KeyProvider(False)], path=tmp_path / "settings.json"
     )
@@ -95,7 +131,9 @@ def test_dialog_lists_detected_providers(qapp: object, tmp_path: Path) -> None:
     assert settings.enabled_providers == []
 
 
-def test_dialog_collects_api_keys(qapp: object, tmp_path: Path) -> None:
+def test_dialog_collects_api_keys(
+    qapp: object, tmp_path: Path, fake_keyring: dict[str, str]
+) -> None:
     path = tmp_path / "settings.json"
     settings = Settings()
     dialog = SettingsDialog(settings, [_KeyProvider(False)], path=path)
@@ -105,8 +143,78 @@ def test_dialog_collects_api_keys(qapp: object, tmp_path: Path) -> None:
     dialog.provider_keys[0][1].setText("secret-key")
     dialog.accept()
 
-    assert settings.api_keys["deepseek"] == "secret-key"
+    # Stored via the keyring, not in the plaintext settings file.
+    assert fake_keyring["deepseek"] == "secret-key"
+    assert "deepseek" not in settings.api_keys
     assert settings.enabled_providers == ["deepseek"]
+
+
+def test_dialog_prefills_field_from_keyring(
+    qapp: object, tmp_path: Path, fake_keyring: dict[str, str]
+) -> None:
+    fake_keyring["deepseek"] = "existing-key"
+    settings = Settings()
+
+    dialog = SettingsDialog(settings, [_KeyProvider(False)], path=tmp_path / "settings.json")
+
+    _provider, field, _button, _status = dialog.provider_keys[0]
+    assert field.text() == "existing-key"
+
+
+def test_dialog_clearing_field_deletes_secret(
+    qapp: object, tmp_path: Path, fake_keyring: dict[str, str]
+) -> None:
+    fake_keyring["deepseek"] = "existing-key"
+    settings = Settings()
+    dialog = SettingsDialog(settings, [_KeyProvider(False)], path=tmp_path / "settings.json")
+
+    dialog.provider_keys[0][1].setText("")
+    dialog.accept()
+
+    assert "deepseek" not in fake_keyring
+    assert "deepseek" not in settings.api_keys
+
+
+def test_dialog_falls_back_to_plaintext_when_keyring_unavailable(
+    qapp: object, tmp_path: Path, broken_keyring: None
+) -> None:
+    settings = Settings()
+    dialog = SettingsDialog(settings, [_KeyProvider(False)], path=tmp_path / "settings.json")
+
+    dialog.provider_keys[0][1].setText("secret-key")
+    dialog.accept()
+
+    assert settings.api_keys["deepseek"] == "secret-key"
+
+
+def test_dialog_shows_warning_when_keyring_unavailable(
+    qapp: object, tmp_path: Path, broken_keyring: None
+) -> None:
+    dialog = SettingsDialog(
+        Settings(), [_KeyProvider(False)], path=tmp_path / "settings.json"
+    )
+
+    labels = [
+        label.text()
+        for label in dialog.findChildren(QLabel)
+        if "keyring unavailable" in label.text().lower()
+    ]
+    assert labels
+
+
+def test_dialog_no_warning_when_keyring_available(
+    qapp: object, tmp_path: Path, fake_keyring: dict[str, str]
+) -> None:
+    dialog = SettingsDialog(
+        Settings(), [_KeyProvider(False)], path=tmp_path / "settings.json"
+    )
+
+    labels = [
+        label.text()
+        for label in dialog.findChildren(QLabel)
+        if "keyring unavailable" in label.text().lower()
+    ]
+    assert not labels
 
 
 def test_dialog_notification_settings(qapp: object, tmp_path: Path) -> None:

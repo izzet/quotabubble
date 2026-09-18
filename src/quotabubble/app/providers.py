@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 
 from quotabubble.app.settings import Settings
+from quotabubble.credentials import get_secret
 from quotabubble.providers.antigravity import AntigravityProvider
 from quotabubble.providers.base import Provider, ProviderStatus, UsageSnapshot
 from quotabubble.providers.claude import ClaudeProvider
@@ -15,6 +16,9 @@ from quotabubble.providers.openrouter import OpenRouterProvider
 
 
 def resolve_api_key(settings: Settings, provider_id: str) -> str | None:
+    stored = get_secret(provider_id)
+    if stored:
+        return stored
     stored = settings.api_keys.get(provider_id)
     if stored:
         return stored
