@@ -2,6 +2,10 @@
 
 [![ci](https://github.com/izzet/quotabubble/actions/workflows/ci.yml/badge.svg)](https://github.com/izzet/quotabubble/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/gh/izzet/quotabubble/graph/badge.svg)](https://codecov.io/gh/izzet/quotabubble)
+[![PyPI](https://img.shields.io/pypi/v/quotabubble)](https://pypi.org/project/quotabubble/)
+[![Python versions](https://img.shields.io/pypi/pyversions/quotabubble)](https://pypi.org/project/quotabubble/)
+[![License](https://img.shields.io/github/license/izzet/quotabubble)](LICENSE)
+[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 
 **Your AI usage limits, always in sight.**
 
