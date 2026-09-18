@@ -21,7 +21,7 @@ from PySide6.QtWidgets import (
 
 from quotabubble.app.providers import resolve_api_key
 from quotabubble.app.settings import Settings, format_thresholds, parse_thresholds
-from quotabubble.credentials import delete_secret, keyring_available, set_secret
+from quotabubble.credentials import delete_secret, is_keyring_available, set_secret
 from quotabubble.providers.base import ApiKeyProvider, KeyStatus, Provider
 
 _STATUS_STYLES = {
@@ -157,7 +157,7 @@ class SettingsDialog(QDialog):
         group = QGroupBox("Providers")
         box = QVBoxLayout(group)
         needs_key_storage = any(provider.uses_api_key for provider in self._providers)
-        if needs_key_storage and not keyring_available():
+        if needs_key_storage and not is_keyring_available():
             warning = QLabel(
                 "OS keyring unavailable — API keys will be stored in settings.json instead."
             )

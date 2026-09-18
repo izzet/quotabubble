@@ -82,9 +82,9 @@ def test_delete_secret_swallows_backend_errors(unavailable_keyring: None) -> Non
     secrets.delete_secret("deepseek")  # must not raise
 
 
-def test_keyring_available_true_with_working_backend(fake_keyring: _FakeKeyring) -> None:
-    assert secrets.keyring_available() is True
+def test_is_keyring_available_true_with_working_backend(fake_keyring: _FakeKeyring) -> None:
+    assert secrets.is_keyring_available() is True
 
 
-def test_keyring_available_false_with_broken_backend(unavailable_keyring: None) -> None:
-    assert secrets.keyring_available() is False
+def test_is_keyring_available_false_with_broken_backend(unavailable_keyring: None) -> None:
+    assert secrets.is_keyring_available() is False

@@ -24,7 +24,7 @@ def fake_keyring(monkeypatch: pytest.MonkeyPatch) -> dict[str, str]:
         "quotabubble.ui.settings_dialog.delete_secret",
         lambda provider_id: store.pop(provider_id, None),
     )
-    monkeypatch.setattr("quotabubble.ui.settings_dialog.keyring_available", lambda: True)
+    monkeypatch.setattr("quotabubble.ui.settings_dialog.is_keyring_available", lambda: True)
     monkeypatch.setattr(
         "quotabubble.app.providers.get_secret", lambda provider_id: store.get(provider_id)
     )
@@ -37,7 +37,7 @@ def broken_keyring(monkeypatch: pytest.MonkeyPatch) -> None:
         "quotabubble.ui.settings_dialog.set_secret", lambda provider_id, value: False
     )
     monkeypatch.setattr("quotabubble.ui.settings_dialog.delete_secret", lambda provider_id: None)
-    monkeypatch.setattr("quotabubble.ui.settings_dialog.keyring_available", lambda: False)
+    monkeypatch.setattr("quotabubble.ui.settings_dialog.is_keyring_available", lambda: False)
     monkeypatch.setattr("quotabubble.app.providers.get_secret", lambda provider_id: None)
 
 

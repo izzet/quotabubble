@@ -34,7 +34,7 @@ def delete_secret(provider_id: str) -> None:
         pass
 
 
-def keyring_available() -> bool:
+def is_keyring_available() -> bool:
     try:
         keyring.get_password(SERVICE_NAME, _PROBE_KEY)
     except Exception:
