@@ -64,3 +64,36 @@ jobs:
           $zip = "https://github.com/izzet/quotabubble/releases/download/v$version/QuotaBubble-windows-x64.zip"
           .\komac.exe update Izzet.QuotaBubble -v $version -u $zip --submit --token $env:WINGET_TOKEN
 
+  chocolatey:
+    needs: windows
+    runs-on: windows-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    env:
+      CHOCOLATEY_API_KEY: ${{ secrets.CHOCOLATEY_API_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Skip when CHOCOLATEY_API_KEY is not configured
+        if: env.CHOCOLATEY_API_KEY == ''
+        shell: pwsh
+        run: Write-Output "CHOCOLATEY_API_KEY is not set; skipping Chocolatey submission."
+
+      - name: Pack and push
+        if: env.CHOCOLATEY_API_KEY != ''
+        shell: pwsh
+        run: |
+          $version = $env:GITHUB_REF_NAME -replace '^v', ''
+          $zipUrl = "https://github.com/izzet/quotabubble/releases/download/v$version/QuotaBubble-windows-x64.zip"
+
+          Invoke-WebRequest -Uri $zipUrl -OutFile QuotaBubble-windows-x64.zip
+          $checksum = (Get-FileHash QuotaBubble-windows-x64.zip -Algorithm SHA256).Hash
+
+          $installScript = "packaging/chocolatey/tools/chocolateyinstall.ps1"
+          (Get-Content $installScript -Raw) `
+            -replace '__URL__', $zipUrl `
+            -replace '__CHECKSUM__', $checksum |
+            Set-Content $installScript
+
+          choco pack packaging/chocolatey/quotabubble.nuspec --version $version --outputdirectory .
+          choco push "quotabubble.$version.nupkg" --source https://push.chocolatey.org/ --api-key $env:CHOCOLATEY_API_KEY
+
