@@ -55,7 +55,7 @@ const providers = [
   ["Google Antigravity", "Windows Credential Manager"],
   ["GitHub Copilot", "Windows Credential Manager"],
   ["Cursor", "Cursor IDE state.vscdb / auth.json"],
-  ["OpenCode", "~/.local/share/opencode/auth.json / API key"],
+  ["OpenCode", "~/.local/share/opencode/auth.json"],
   ["DeepSeek", "API key"],
   ["OpenRouter", "API key"],
 ];
@@ -350,6 +350,7 @@ quotabubble`}</code></pre>
   }
   .providers li {
     display: flex;
+    align-items: flex-start;
     justify-content: space-between;
     gap: 12px;
     background: var(--panel);
@@ -361,6 +362,7 @@ quotabubble`}</code></pre>
     font-weight: 600;
   }
   .pauth {
+    min-width: 0;
     color: var(--dim);
     font-size: 13px;
     text-align: right;
