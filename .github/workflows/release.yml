@@ -97,3 +97,41 @@ jobs:
           choco pack packaging/chocolatey/quotabubble.nuspec --version $version --outputdirectory .
           choco push "quotabubble.$version.nupkg" --source https://push.chocolatey.org/ --api-key $env:CHOCOLATEY_API_KEY
 
+  pypi:
+    # Deliberately no `needs:` on the windows job (or any future per-OS
+    # build): the published wheel is pure Python (py3-none-any, no compiled
+    # extensions), so it's identical regardless of which OS built it and
+    # doesn't depend on any platform-specific binary succeeding. Its own
+    # commit already went through the full test suite via ci.yml before
+    # being merged to main, so this job only needs to verify the *built
+    # wheel* is sound, not re-run the whole suite.
+    #
+    # That verification deliberately isn't the full pytest suite either:
+    # PySide6 needs system libraries (libGL, libglib, etc.) this runner
+    # doesn't have, and installing them just to satisfy Qt imports the
+    # package itself doesn't need here would be testing the wrong thing.
+    # A plain import of a non-Qt module is enough to catch real packaging
+    # mistakes (missing package data, broken entry points, bad metadata).
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    environment: pypi
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v5
+
+      - name: Build
+        run: uv build
+
+      - name: Smoke test the built wheel
+        run: |
+          uv venv /tmp/smoke
+          uv pip install --python /tmp/smoke/bin/python dist/*.whl
+          /tmp/smoke/bin/python -c "from quotabubble.app.settings import Settings; Settings()"
+
+      - name: Publish to PyPI
+        run: uv publish --trusted-publishing always
+
