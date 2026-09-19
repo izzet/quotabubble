@@ -51,6 +51,12 @@ With [winget](https://learn.microsoft.com/windows/package-manager/winget/):
 winget install Izzet.QuotaBubble
 ```
 
+Or with [Chocolatey](https://community.chocolatey.org/packages/quotabubble):
+
+```powershell
+choco install quotabubble
+```
+
 Or download the latest `QuotaBubble-windows-x64.zip` from the [Releases page](https://github.com/izzet/quotabubble/releases), unzip it, and run `QuotaBubble.exe`.
 
 > The binary is not code-signed yet, so Windows SmartScreen may warn you. Choose **More info → Run anyway**.
