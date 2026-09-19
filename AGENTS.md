@@ -27,20 +27,37 @@
 
 ## Distribution
 
-- **Windows binary:** `release.yml` runs on a `v*` tag, builds with PyInstaller, and attaches `QuotaBubble-windows-x64.zip` to the GitHub Release.
-- **PyPI:** the `pypi` job in `release.yml` runs `uv build`, a smoke test of the built wheel (installs it into a throwaway venv and imports a non-Qt module — not the full pytest suite, since PySide6 needs system libraries this runner doesn't have and the commit already passed the full suite via `ci.yml` before merge), then `uv publish --trusted-publishing always` on a `v*` tag. No separate manual step or token; auth is via PyPI Trusted Publishing (OIDC), scoped on pypi.org to this exact repo + workflow filename (`release.yml`) + `pypi` environment. If that job's auth fails, the Trusted Publisher config on pypi.org almost certainly still points at the old `publish.yml` (which this replaced) and needs updating to `release.yml`. Bump the version in `pyproject.toml` per release.
-  - Deliberately has no `needs:` on `windows` (or any future per-OS build job): the wheel is `py3-none-any` (pure Python, no compiled extensions), identical regardless of which OS built it, so it must never depend on an unrelated platform-specific binary build succeeding.
-- **winget:** the manifest for a version lives in `packaging/winget/<version>/` and is validated with `winget validate --manifest <dir>`. On a `v*` tag, the `winget` job in `release.yml` runs `komac update Izzet.QuotaBubble` to open a PR against `microsoft/winget-pkgs`.
+`release.yml` runs on a `v*` tag (or manual `workflow_dispatch`) in a fan-in shape:
+
+```
+build (matrix: windows-latest today; macos-latest/ubuntu-latest add here later)
+  each: checkout -> test -> PyInstaller build -> package -> upload-artifact
+  (no per-OS entry publishes anything itself)
+        |
+        v
+github-release (needs: build -- the whole matrix)
+  downloads every artifact, creates ONE GitHub Release with all of them attached
+        |
+   +----+----+---------------------------+
+   v         v                           v
+ winget   chocolatey   (future: homebrew, AUR, flatpak, ...)
+ needs:   needs:         each needs: github-release, cares only
+ github-  github-        about its own OS's asset from that release
+ release  release
+
+pypi (fully independent -- own checkout/build/publish, no needs on
+      build or github-release at all; see below for why)
+```
+
+- **`build`:** a matrix job (`strategy.matrix.include`, one entry per OS — currently just `{os: windows-latest, artifact: QuotaBubble-windows-x64.zip}`). Adding macOS/Linux later means adding an `include` entry here (and that OS's PyInstaller spec/hiddenimports and packaging step, e.g. `tar` instead of `Compress-Archive`) — nothing downstream needs to change, since `github-release` and everything after it already only cares about "whatever artifacts the matrix produced," not which OSes are in it.
+- **`github-release`:** fans in the whole matrix, downloads all artifacts (`actions/download-artifact@v4` with no `name:` filter + `merge-multiple: true`), and creates the GitHub Release with everything attached in one `softprops/action-gh-release@v2` call. Nothing else creates or touches the release.
+- **winget:** the manifest for a version lives in `packaging/winget/<version>/` and is validated with `winget validate --manifest <dir>`. The `winget` job (`needs: github-release`) runs `komac update Izzet.QuotaBubble` to open a PR against `microsoft/winget-pkgs`.
   - Needs a repository secret `WINGET_TOKEN`: a classic personal access token with `public_repo` (the default `GITHUB_TOKEN` cannot open PRs on another repository). Without it the job is skipped.
   - First submission is manual: `komac submit packaging/winget/<version> --yes --token <PAT>`.
   - Committing to `microsoft/winget-pkgs` requires signing the Microsoft CLA once by commenting `@microsoft-github-policy-service agree` on the PR.
-- In a winget multi-file manifest the default-locale file must declare `ManifestType: defaultLocale` (not `locale`), and each file should start with a `# yaml-language-server: $schema=...` header.
-- **Chocolatey:** the package lives in `packaging/chocolatey/` (`quotabubble.nuspec`, `tools/chocolateyinstall.ps1`). On a `v*` tag, the `chocolatey` job in `release.yml` downloads that version's release zip, computes its SHA256, substitutes the `__URL__`/`__CHECKSUM__` placeholders in `chocolateyinstall.ps1`, then runs `choco pack` and `choco push`.
+  - In a winget multi-file manifest the default-locale file must declare `ManifestType: defaultLocale` (not `locale`), and each file should start with a `# yaml-language-server: $schema=...` header.
+- **Chocolatey:** the package lives in `packaging/chocolatey/` (`quotabubble.nuspec`, `tools/chocolateyinstall.ps1`). The `chocolatey` job (`needs: github-release`) downloads that version's release zip, computes its SHA256, substitutes the `__URL__`/`__CHECKSUM__` placeholders in `chocolateyinstall.ps1`, then runs `choco pack` and `choco push`.
   - Needs a repository secret `CHOCOLATEY_API_KEY` (from a chocolatey.org account). Without it the job is skipped.
   - Unlike winget, there's no separate "first submission" step — `choco push` creates the package on first use. New packages go through Chocolatey's moderation queue before showing up in default search/`choco install` from the community feed.
-
-**When macOS/Linux binaries are added** (#37 and beyond), `release.yml` should restructure the binary side into a fan-in shape, not just add more independent per-OS jobs:
-- A matrix `build` job (`windows-latest`, `macos-latest`, `ubuntu-latest`) that tests, builds with PyInstaller, packages, and uploads each OS's archive as a CI artifact — none of them publish anything themselves.
-- One `github-release` job, `needs: [build]` (the whole matrix), that downloads every artifact and creates a single GitHub Release with all of them attached at once. This replaces the "Publish release" step that currently lives inside `windows` — that only works today because there's exactly one platform; it stops being correct the moment a second one exists.
-- `winget`, `chocolatey`, and any future macOS/Linux package-manager jobs (Homebrew tap, AUR, Flatpak, ...) each depend on `github-release` (not on the raw per-OS build jobs), and each only cares about its own OS's asset URL from that release.
-- `pypi` stays exactly as it is — outside this whole chain, no `needs:` on any of it, for the reason above.
+- **PyPI:** the `pypi` job runs `uv build`, a smoke test of the built wheel (installs it into a throwaway venv and imports a non-Qt module — not the full pytest suite, since PySide6 needs system libraries this runner doesn't have and the commit already passed the full suite via `ci.yml` before merge), then `uv publish --trusted-publishing always`. No separate manual step or token; auth is via PyPI Trusted Publishing (OIDC), scoped on pypi.org to this exact repo + workflow filename (`release.yml`) + `pypi` environment. If that job's auth fails, the Trusted Publisher config on pypi.org almost certainly still points at the old `publish.yml` (removed — folded into `release.yml`) and needs updating to `release.yml`. Bump the version in `pyproject.toml` per release.
+  - Deliberately has **no `needs:`** on `build`/`github-release`: the wheel is `py3-none-any` (pure Python, no compiled extensions), identical regardless of which OS built it, so it must never depend on an unrelated platform-specific binary build succeeding.
