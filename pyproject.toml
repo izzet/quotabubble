@@ -83,5 +83,5 @@ source = ["src/quotabubble"]
 [tool.coverage.report]
 show_missing = true
 skip_covered = false
-# Ratchet this up as coverage improves; current baseline is ~81%.
-fail_under = 78
+# Ratchet this up as coverage improves; current baseline is ~82%.
+fail_under = 82

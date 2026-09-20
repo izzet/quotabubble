@@ -12,7 +12,7 @@
 - Package manager: `uv`.
 - Lint: `uv run ruff check src tests`.
 - Test: `uv run pytest -q`.
-- Coverage: `uv run pytest -q --cov=src/quotabubble --cov-report=term-missing`. CI gates at `fail_under` in `pyproject.toml` `[tool.coverage.report]` (78%, ratchet up as coverage improves) and uploads to Codecov.
+- Coverage: `uv run pytest -q --cov=src/quotabubble --cov-report=term-missing`. CI gates at `fail_under` in `pyproject.toml` `[tool.coverage.report]` (82%, ratchet up as coverage improves) and uploads to Codecov.
 - Providers live in `src/quotabubble/providers/` behind the `Provider` protocol; they must not import Qt.
 - Platform-specific behavior (window flags, credential stores, autostart) lives in `src/quotabubble/platform/`.
 - The UI (`src/quotabubble/ui/`) renders `UsageSnapshot` objects and must not perform I/O or HTTP itself.

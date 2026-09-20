@@ -51,3 +51,27 @@ def loading_snapshot(provider: Provider) -> UsageSnapshot:
         display_name=provider.display_name,
         status=ProviderStatus.LOADING,
     )
+
+
+def merge_selected_snapshots(
+    selected: list[Provider],
+    current: list[UsageSnapshot],
+    cached: dict[str, UsageSnapshot],
+) -> list[UsageSnapshot]:
+    """Build the snapshot list for `selected`: keep whatever's already
+    displayed for providers still selected (so re-detecting, e.g. on
+    refresh, doesn't flash live numbers back to stale), seed a placeholder
+    (last-good cache marked stale, or a loading snapshot) for newly
+    selected providers, and drop anything no longer selected."""
+    current_by_id = {snapshot.provider: snapshot for snapshot in current}
+    snapshots = []
+    for provider in selected:
+        if provider.id in current_by_id:
+            snapshots.append(current_by_id[provider.id])
+            continue
+        previous = cached.get(provider.id)
+        if previous is not None:
+            snapshots.append(previous.model_copy(update={"stale": True}))
+        else:
+            snapshots.append(loading_snapshot(provider))
+    return snapshots
