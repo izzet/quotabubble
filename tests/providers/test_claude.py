@@ -8,7 +8,7 @@ import pytest
 
 import quotabubble.providers.claude as claude_module
 from quotabubble.providers.base import Provider, ProviderStatus
-from quotabubble.providers.claude import ClaudeProvider, read_keychain_credentials
+from quotabubble.providers.claude import ClaudeProvider
 
 FIXTURES = Path(__file__).resolve().parents[1] / "fixtures"
 
@@ -158,31 +158,6 @@ def test_detect_reflects_credential_presence(tmp_path: Path) -> None:
 
     assert present.detect() is True
     assert absent.detect() is False
-
-
-def test_keychain_credentials_are_read() -> None:
-    blob = (FIXTURES / "claude_credentials.json").read_bytes()
-
-    credentials = read_keychain_credentials(
-        lambda hint: [(f"{hint}-example:account", blob)]
-    )
-
-    assert credentials is not None
-    assert credentials.access_token == "test-token"
-    assert credentials.subscription_type == "max"
-
-
-def test_keychain_credentials_take_priority_on_macos(
-    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
-) -> None:
-    monkeypatch.setattr(claude_module.sys, "platform", "darwin")
-    blob = (FIXTURES / "claude_credentials.json").read_bytes()
-    provider = ClaudeProvider(
-        credentials_path=tmp_path / "absent.json",
-        keychain_credentials_provider=lambda _: [("Claude Code-credentials", blob)],
-    )
-
-    assert provider.detect() is True
 
 
 def test_plan_is_reported_from_credentials(tmp_path: Path) -> None:
