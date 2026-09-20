@@ -4,9 +4,9 @@ import St from 'gi://St';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import {Extension} from 'resource:///org/gnome/shell/extensions/extension.js';
 
-const BUS_NAME = 'org.izzet.QuotaBubble';
-const OBJECT_PATH = '/org/izzet/QuotaBubble';
-const INTERFACE_NAME = 'org.izzet.QuotaBubble1';
+const BUS_NAME = 'com.izzet.quotabubble';
+const OBJECT_PATH = '/com/izzet/quotabubble';
+const INTERFACE_NAME = 'com.izzet.quotabubble.Service1';
 
 export default class QuotaBubbleExtension extends Extension {
     enable() {

@@ -4,7 +4,9 @@ import json
 from pathlib import Path
 
 EXTENSION_DIR = Path(__file__).parents[1] / "gnome-shell-extension"
-DBUS_SERVICE = Path(__file__).parents[1] / "packaging" / "linux" / "org.izzet.QuotaBubble.service"
+DBUS_SERVICE = (
+    Path(__file__).parents[1] / "packaging" / "linux" / "com.izzet.quotabubble.service"
+)
 
 
 def test_extension_metadata_declares_the_installed_uuid() -> None:
@@ -18,11 +20,11 @@ def test_extension_has_its_required_entrypoint() -> None:
     source = (EXTENSION_DIR / "extension.js").read_text(encoding="utf-8")
 
     assert "export default class QuotaBubbleExtension" in source
-    assert "org.izzet.QuotaBubble1" in source
+    assert "com.izzet.quotabubble.Service1" in source
 
 
 def test_package_activates_the_extension_service_on_the_session_bus() -> None:
     payload = DBUS_SERVICE.read_text(encoding="utf-8")
 
-    assert "Name=org.izzet.QuotaBubble" in payload
+    assert "Name=com.izzet.quotabubble" in payload
     assert "Exec=/usr/lib/quotabubble/quotabubble-service" in payload

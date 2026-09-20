@@ -8,9 +8,9 @@ from dbus_fast.service import ServiceInterface, method, signal
 
 from quotabubble.service.runtime import ServiceRuntime
 
-BUS_NAME = "org.izzet.QuotaBubble"
-OBJECT_PATH = "/org/izzet/QuotaBubble"
-INTERFACE_NAME = "org.izzet.QuotaBubble1"
+BUS_NAME = "com.izzet.quotabubble"
+OBJECT_PATH = "/com/izzet/quotabubble"
+INTERFACE_NAME = "com.izzet.quotabubble.Service1"
 
 
 class QuotaBubbleInterface(ServiceInterface):
