@@ -18,18 +18,13 @@ def test_main_constructs_and_runs_service(monkeypatch) -> None:
             calls.append(received_settings)
             return runtime
 
-    class _Service:
-        def __init__(self, received_runtime: object) -> None:
-            calls.append(received_runtime)
-
-        async def run(self) -> None:
-            calls.append("run")
-
     monkeypatch.setattr(main, "setup_logging", lambda: calls.append("logging"))
     monkeypatch.setattr(main, "Settings", _Settings)
     monkeypatch.setattr(main, "ServiceRuntime", _Runtime)
-    monkeypatch.setattr(main, "DbusService", _Service)
+    monkeypatch.setattr(
+        main, "_run_service", lambda received_runtime: calls.append(received_runtime)
+    )
 
     main.main()
 
-    assert calls == ["logging", settings, runtime, "run"]
+    assert calls == ["logging", settings, runtime]

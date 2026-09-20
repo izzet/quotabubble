@@ -40,20 +40,29 @@ class DbusService:
     ) -> None:
         self.runtime = runtime
         self._bus_factory = bus_factory
+        self._bus: MessageBus | None = None
         self._interface = QuotaBubbleInterface(self)
         self._refresh_task: asyncio.Task[None] | None = None
 
     async def start(self) -> None:
-        bus = await self._bus_factory().connect()
-        bus.export(OBJECT_PATH, self._interface)
-        await bus.request_name(BUS_NAME)
+        self._bus = await self._bus_factory().connect()
+        self._bus.export(OBJECT_PATH, self._interface)
+        await self._bus.request_name(BUS_NAME)
 
     async def run(self) -> None:
-        await self.start()
-        await self.refresh()
-        while True:
-            await asyncio.sleep(self.runtime.refresh_interval_seconds)
+        try:
+            await self.start()
             await self.refresh()
+            while True:
+                await asyncio.sleep(self.runtime.refresh_interval_seconds)
+                await self.refresh()
+        finally:
+            self.close()
+
+    def close(self) -> None:
+        if self._bus is not None:
+            self._bus.disconnect()
+            self._bus = None
 
     def request_refresh(self) -> None:
         if self._refresh_task is None or self._refresh_task.done():

@@ -42,7 +42,7 @@ dependencies = [
     # while this remains a supported release target.
     "pyside6>=6.7,<6.10",
     "pyobjc-framework-Security>=12.0; sys_platform == 'darwin'",
-    "dbus-fast>=5.0.22",
+    "dbus-fast>=5.0.22; sys_platform == 'linux'",
 ]
 
 [project.gui-scripts]

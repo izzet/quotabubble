@@ -1,6 +1,12 @@
 from __future__ import annotations
 
 import asyncio
+import sys
+
+import pytest
+
+if sys.platform != "linux":
+    pytest.skip("D-Bus service is Linux only", allow_module_level=True)
 
 from quotabubble.service.dbus import BUS_NAME, OBJECT_PATH, DbusService
 
@@ -32,6 +38,9 @@ class _Bus:
     async def request_name(self, name: str) -> None:
         self.requested_name = name
 
+    def disconnect(self) -> None:
+        pass
+
 
 def test_service_exports_versioned_interface_and_current_state() -> None:
     runtime = _Runtime()
@@ -44,6 +53,9 @@ def test_service_exports_versioned_interface_and_current_state() -> None:
     assert bus.exported[0] == OBJECT_PATH
     assert bus.requested_name == BUS_NAME
     assert service._interface.GetState.__wrapped__(service._interface) == runtime.state_json()
+
+    service.close()
+    assert service._bus is None
 
 
 def test_requested_refresh_runs_in_the_background() -> None:
