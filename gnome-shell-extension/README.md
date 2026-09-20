@@ -8,7 +8,7 @@ The Linux package installs it under:
 ```
 
 The extension connects to the user-session D-Bus service
-`com.izzet.quotabubble.Service1`. It owns desktop rendering; the Python service owns
+`dev.izzet.quotabubble.Service1`. It owns desktop rendering; the Python service owns
 provider polling and persistence.
 
 During development, package the extension with:
