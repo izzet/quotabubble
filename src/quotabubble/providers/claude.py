@@ -2,12 +2,15 @@ from __future__ import annotations
 
 import json
 import re
+import sys
+from collections.abc import Callable
 from datetime import datetime
 from pathlib import Path
 
 import httpx2
 from pydantic import BaseModel
 
+from quotabubble.credentials import enumerate_generic_credentials
 from quotabubble.providers.base import (
     Credits,
     ProviderStatus,
@@ -21,6 +24,7 @@ USAGE_URL = "https://api.anthropic.com/api/oauth/usage"
 ANTHROPIC_BETA = "oauth-2025-04-20"
 REQUEST_TIMEOUT_SECONDS = 15.0
 _WINDOW_ORDER = {"session": 0, "weekly": 1}
+KEYCHAIN_CREDENTIAL_HINT = "Claude Code-credentials"
 
 
 class _Credentials(BaseModel):
@@ -80,6 +84,12 @@ def read_credentials(path: Path) -> _Credentials | None:
         raw = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, ValueError):
         return None
+    return _parse_credentials(raw)
+
+
+def _parse_credentials(raw: object) -> _Credentials | None:
+    if not isinstance(raw, dict):
+        return None
     oauth = raw.get("claudeAiOauth")
     if not isinstance(oauth, dict):
         return None
@@ -91,6 +101,20 @@ def read_credentials(path: Path) -> _Credentials | None:
         access_token=token,
         subscription_type=subscription if isinstance(subscription, str) else None,
     )
+
+
+def read_keychain_credentials(
+    credential_provider: Callable[[str], list[tuple[str, bytes]]] = enumerate_generic_credentials,
+) -> _Credentials | None:
+    for _target, blob in credential_provider(KEYCHAIN_CREDENTIAL_HINT):
+        try:
+            raw = json.loads(blob.decode("utf-8"))
+        except (UnicodeDecodeError, ValueError):
+            continue
+        credentials = _parse_credentials(raw)
+        if credentials is not None:
+            return credentials
+    return None
 
 
 def _as_float(value: object) -> float | None:
@@ -236,16 +260,29 @@ class ClaudeProvider:
     def __init__(
         self,
         credentials_path: Path | None = None,
+        keychain_credentials_provider: Callable[[str], list[tuple[str, bytes]]] | None = None,
         client: httpx2.Client | None = None,
     ) -> None:
         self._credentials_path = credentials_path or default_credentials_path()
+        self._keychain_credentials_provider = (
+            keychain_credentials_provider or enumerate_generic_credentials
+        )
         self._client = client
 
+    def _credentials(self) -> _Credentials | None:
+        if sys.platform == "darwin":
+            keychain_credentials = read_keychain_credentials(
+                self._keychain_credentials_provider
+            )
+            if keychain_credentials is not None:
+                return keychain_credentials
+        return read_credentials(self._credentials_path)
+
     def detect(self) -> bool:
-        return read_credentials(self._credentials_path) is not None
+        return self._credentials() is not None
 
     def fetch(self) -> UsageSnapshot:
-        credentials = read_credentials(self._credentials_path)
+        credentials = self._credentials()
         if credentials is None:
             return self._snapshot(
                 ProviderStatus.NO_CREDENTIALS, "No Claude Code credentials found"

@@ -4,10 +4,11 @@ import sys
 
 import pytest
 
-pytestmark = pytest.mark.skipif(sys.platform != "win32", reason="Windows only")
+pytestmark = pytest.mark.skipif(sys.platform != "darwin", reason="macOS only")
+
 
 def test_generic_credentials_interface() -> None:
-    from quotabubble.credentials.os.windows import (
+    from quotabubble.credentials.os.macos import (
         enumerate_generic_credentials,
         read_generic_credential,
     )

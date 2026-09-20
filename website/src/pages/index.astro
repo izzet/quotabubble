@@ -50,10 +50,10 @@ const features = [
 ];
 
 const providers = [
-  ["Claude Code", "~/.claude/.credentials.json"],
+  ["Claude Code", "macOS Keychain or ~/.claude/.credentials.json"],
   ["Codex", "~/.codex/auth.json"],
-  ["Google Antigravity", "Windows Credential Manager"],
-  ["GitHub Copilot", "Windows Credential Manager"],
+  ["Google Antigravity", "Windows Credential Manager or macOS Keychain"],
+  ["GitHub Copilot", "Windows Credential Manager or macOS Keychain"],
   ["Cursor", "Cursor IDE state.vscdb / auth.json"],
   ["OpenCode", "~/.local/share/opencode/auth.json"],
   ["DeepSeek", "API key"],
@@ -109,7 +109,7 @@ const providers = [
           idle and expands when you click it.
         </p>
         <div class="cta">
-          <a class="primary" href={releases}>Download for Windows</a>
+          <a class="primary" href={releases}>Download for Windows or macOS</a>
           <a class="secondary" href={repo}>View on GitHub</a>
         </div>
         <div class="shots">
@@ -159,6 +159,13 @@ const providers = [
         </p>
         <p class="note">
           The build is unsigned for now, so SmartScreen may warn you — choose “More info → Run anyway”.
+        </p>
+        <p>
+          <strong>macOS.</strong> Download the matching <code>QuotaBubble-macos-arm64.dmg</code>
+          (Apple Silicon) or <code>QuotaBubble-macos-x64.dmg</code> (Intel) from
+          <a href={releases}>Releases</a>, then drag QuotaBubble to Applications. The first macOS
+          builds are not yet Developer ID signed or notarized, so Control-click the app and choose
+          Open on first launch.
         </p>
         <p>
           <strong>From source.</strong> With Python 3.11+ and <a href="https://docs.astral.sh/uv/">uv</a>:

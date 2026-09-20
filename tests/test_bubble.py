@@ -176,3 +176,20 @@ def test_tray_icon_actions_and_refresh_signal(qapp: object) -> None:
 
     tray.deleteLater()
     window.deleteLater()
+
+
+def test_macos_tray_click_does_not_toggle_window(qapp: object, monkeypatch) -> None:
+    from PySide6.QtWidgets import QWidget
+
+    from quotabubble.ui import tray as tray_module
+    from quotabubble.ui.tray import TrayIcon
+
+    window = QWidget()
+    tray = TrayIcon(window)
+    monkeypatch.setattr(tray_module.sys, "platform", "darwin")
+
+    tray._on_activated(tray.ActivationReason.Trigger)
+
+    assert window.isVisible() is False
+    tray.deleteLater()
+    window.deleteLater()
