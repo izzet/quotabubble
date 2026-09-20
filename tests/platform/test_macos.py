@@ -3,6 +3,9 @@ from __future__ import annotations
 import plistlib
 from pathlib import Path
 
+from PySide6.QtCore import Qt
+from PySide6.QtWidgets import QWidget
+
 from quotabubble.platform import macos
 
 
@@ -22,6 +25,15 @@ def test_enabling_launch_at_login_writes_and_bootstraps_agent(
     assert payload["ProgramArguments"]
     assert payload["RunAtLoad"] is True
     assert calls == [("bootstrap", macos._service_target(), str(target))]
+
+
+def test_configure_window_keeps_tool_visible_while_inactive(qapp: object) -> None:
+    widget = QWidget()
+
+    macos.configure_window(widget)
+
+    assert widget.testAttribute(Qt.WidgetAttribute.WA_MacAlwaysShowToolWindow)
+    widget.deleteLater()
 
 
 def test_unchanged_loaded_agent_is_not_restarted(monkeypatch, tmp_path: Path) -> None:

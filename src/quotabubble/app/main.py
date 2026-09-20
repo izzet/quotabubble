@@ -20,7 +20,7 @@ from quotabubble.app.providers import (
 )
 from quotabubble.app.settings import Settings
 from quotabubble.app.state import AppState
-from quotabubble.platform import set_launch_at_login
+from quotabubble.platform import configure_application, set_launch_at_login
 from quotabubble.ui.bubble import BubbleWindow
 from quotabubble.ui.icon import app_icon
 from quotabubble.ui.settings_dialog import SettingsDialog
@@ -37,6 +37,7 @@ def main() -> None:
     app.setApplicationName("QuotaBubble")
     app.setWindowIcon(app_icon())
     app.setQuitOnLastWindowClosed(False)
+    configure_application()
 
     setup_logging()
     logger.info("QuotaBubble starting")
