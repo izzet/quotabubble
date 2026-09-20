@@ -9,10 +9,6 @@ from quotabubble.platform.launch import launch_command
 AUTOSTART_FILE = Path.home() / ".config" / "autostart" / "quotabubble.desktop"
 
 
-def configure_application() -> None:
-    return None
-
-
 def configure_window(widget: QWidget) -> None:
     return None
 

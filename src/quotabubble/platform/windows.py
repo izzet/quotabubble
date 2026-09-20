@@ -30,10 +30,6 @@ _set_window_long.argtypes = [wintypes.HWND, ctypes.c_int, ctypes.c_ssize_t]
 _set_window_long.restype = ctypes.c_ssize_t
 
 
-def configure_application() -> None:
-    return None
-
-
 def configure_window(widget: QWidget) -> None:
     hwnd = wintypes.HWND(int(widget.winId()))
     style = _get_window_long(hwnd, GWL_EXSTYLE)

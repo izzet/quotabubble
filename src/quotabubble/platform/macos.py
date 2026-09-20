@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import ctypes
 import logging
 import os
 import plistlib
@@ -16,29 +15,6 @@ from quotabubble.utils import write_text_atomic
 LAUNCH_AGENT_FILE = Path.home() / "Library" / "LaunchAgents" / "com.izzet.quotabubble.plist"
 LAUNCH_AGENT_LABEL = "com.izzet.quotabubble"
 logger = logging.getLogger(__name__)
-
-
-def configure_application() -> None:
-    """Hide source runs from the Dock, matching the bundled app's LSUIElement."""
-    objc = ctypes.CDLL("/usr/lib/libobjc.A.dylib")
-    objc.objc_getClass.argtypes = [ctypes.c_char_p]
-    objc.objc_getClass.restype = ctypes.c_void_p
-    objc.sel_registerName.argtypes = [ctypes.c_char_p]
-    objc.sel_registerName.restype = ctypes.c_void_p
-
-    send_id = ctypes.CFUNCTYPE(ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p)(
-        ("objc_msgSend", objc)
-    )
-    send_void_integer = ctypes.CFUNCTYPE(
-        None, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_long
-    )(("objc_msgSend", objc))
-    application_class = objc.objc_getClass(b"NSApplication")
-    shared_application = objc.sel_registerName(b"sharedApplication")
-    set_activation_policy = objc.sel_registerName(b"setActivationPolicy:")
-    application = send_id(application_class, shared_application)
-    # NSApplicationActivationPolicyAccessory hides the Dock icon while
-    # retaining the status item and floating tool window.
-    send_void_integer(application, set_activation_policy, 1)
 
 
 def configure_window(widget: QWidget) -> None:
