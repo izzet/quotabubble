@@ -78,6 +78,15 @@ Open the disk image and drag **QuotaBubble** to **Applications**. The initial ma
 yet Developer ID signed or notarized; Control-click the app, choose **Open**, then confirm the
 first-launch dialog. Signing and notarization will be added in a later release.
 
+### Linux
+
+Linux is currently supported from source on X11 desktop sessions. Native Linux release artifacts
+are not available yet; use the source-install instructions below.
+
+Wayland compositors control top-level window placement and stacking, which prevents QuotaBubble
+from reliably staying above other windows or being dragged by the app. GNOME Wayland is therefore
+not a supported session yet. Use an X11 session for the floating-widget experience.
+
 ### From source (Python 3.11+)
 
 ```bash
@@ -122,13 +131,20 @@ uv run pytest -q
 uv run pytest -q --cov=src/quotabubble --cov-report=term-missing  # with coverage
 ```
 
-CI gates on coverage (currently 78% minimum, see `[tool.coverage.report]` in `pyproject.toml`) and uploads results to Codecov.
+CI gates on coverage (currently 80% minimum, see `[tool.coverage.report]` in `pyproject.toml`) and uploads results to Codecov.
 
 See [AGENTS.md](AGENTS.md) for architecture and contribution conventions. The provider layer (`src/quotabubble/providers/`) is pure Python behind a `Provider` protocol, and platform specifics live in `src/quotabubble/platform/`.
 
 ## Status
 
-Windows and macOS have native release artifacts. Claude, Codex, Cursor, OpenCode, DeepSeek, and OpenRouter work anywhere. Antigravity and Copilot support Windows Credential Manager and macOS Keychain; Linux credential support is still to come. API keys entered in Settings are stored in the OS credential store (Windows Credential Manager, macOS Keychain, Linux Secret Service) via [`keyring`](https://pypi.org/project/keyring/); if no OS keyring backend is available, they fall back to the local settings file.
+Windows and macOS have native release artifacts. Linux currently supports X11 source installs;
+Wayland support is limited because its window-management model does not provide the floating-widget
+behavior QuotaBubble needs. Claude, Codex, Cursor, OpenCode, DeepSeek, and OpenRouter work
+anywhere. Antigravity and Copilot support Windows Credential Manager and macOS Keychain; Linux
+credential support is still to come. API keys entered in Settings are stored in the OS credential
+store (Windows Credential Manager, macOS Keychain, Linux Secret Service) via
+[`keyring`](https://pypi.org/project/keyring/); if no OS keyring backend is available, they fall
+back to the local settings file.
 
 ## License
 
