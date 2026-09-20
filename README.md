@@ -68,6 +68,12 @@ Download the matching disk image from the [Releases page](https://github.com/izz
 - `QuotaBubble-macos-arm64.dmg` for Apple Silicon Macs.
 - `QuotaBubble-macos-x64.dmg` for Intel Macs.
 
+Install or upgrade with Homebrew after adding the first-party tap:
+
+```bash
+brew install --cask izzet/tap/quotabubble
+```
+
 Open the disk image and drag **QuotaBubble** to **Applications**. The initial macOS builds are not
 yet Developer ID signed or notarized; Control-click the app, choose **Open**, then confirm the
 first-launch dialog. Signing and notarization will be added in a later release.
