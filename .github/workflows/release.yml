@@ -19,7 +19,7 @@ jobs:
           - os: windows-latest
             artifact: QuotaBubble-windows-x64.zip
             spec: packaging/quotabubble.windows.spec
-          - os: macos-13
+          - os: macos-15-intel
             artifact: QuotaBubble-macos-x64.dmg
             spec: packaging/quotabubble.macos.spec
           - os: macos-14
