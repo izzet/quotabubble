@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import sys
+
 from PySide6.QtCore import QUrl, Signal
 from PySide6.QtGui import QAction, QDesktopServices
 from PySide6.QtWidgets import QApplication, QMenu, QSystemTrayIcon, QWidget
@@ -44,6 +46,11 @@ class TrayIcon(QSystemTrayIcon):
         self.activated.connect(self._on_activated)
 
     def _on_activated(self, reason: QSystemTrayIcon.ActivationReason) -> None:
+        # macOS opens a status item's context menu on its primary click and
+        # emits Trigger for that same click. Toggling here would hide the
+        # bubble underneath the menu; macOS users use the Show / Hide action.
+        if sys.platform == "darwin":
+            return
         if reason in (
             QSystemTrayIcon.ActivationReason.Trigger,
             QSystemTrayIcon.ActivationReason.DoubleClick,
