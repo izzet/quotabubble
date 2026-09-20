@@ -1,0 +1,19 @@
+cask "quotabubble" do
+  version "__VERSION__"
+
+  on_arm do
+    sha256 "__ARM64_SHA256__"
+    url "https://github.com/izzet/quotabubble/releases/download/v#{version}/QuotaBubble-macos-arm64.dmg"
+  end
+
+  on_intel do
+    sha256 "__X64_SHA256__"
+    url "https://github.com/izzet/quotabubble/releases/download/v#{version}/QuotaBubble-macos-x64.dmg"
+  end
+
+  name "QuotaBubble"
+  desc "Desktop quota tracker for AI coding tools"
+  homepage "https://github.com/izzet/quotabubble"
+
+  app "QuotaBubble.app"
+end
