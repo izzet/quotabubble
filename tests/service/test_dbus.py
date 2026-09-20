@@ -1,0 +1,60 @@
+from __future__ import annotations
+
+import asyncio
+
+from quotabubble.service.dbus import BUS_NAME, OBJECT_PATH, DbusService
+
+
+class _Runtime:
+    refresh_interval_seconds = 60.0
+
+    def __init__(self) -> None:
+        self.refreshes: list[bool] = []
+
+    def refresh(self, *, force: bool = False) -> None:
+        self.refreshes.append(force)
+
+    def state_json(self) -> str:
+        return '{"version":1,"snapshots":[]}'
+
+
+class _Bus:
+    def __init__(self) -> None:
+        self.exported: tuple[str, object] | None = None
+        self.requested_name: str | None = None
+
+    async def connect(self) -> _Bus:
+        return self
+
+    def export(self, path: str, interface: object) -> None:
+        self.exported = (path, interface)
+
+    async def request_name(self, name: str) -> None:
+        self.requested_name = name
+
+
+def test_service_exports_versioned_interface_and_current_state() -> None:
+    runtime = _Runtime()
+    bus = _Bus()
+    service = DbusService(runtime, bus_factory=lambda: bus)  # type: ignore[arg-type]
+
+    asyncio.run(service.start())
+
+    assert bus.exported is not None
+    assert bus.exported[0] == OBJECT_PATH
+    assert bus.requested_name == BUS_NAME
+    assert service._interface.GetState.__wrapped__(service._interface) == runtime.state_json()
+
+
+def test_requested_refresh_runs_in_the_background() -> None:
+    runtime = _Runtime()
+    service = DbusService(runtime)
+
+    async def request_and_wait() -> None:
+        service.request_refresh()
+        assert service._refresh_task is not None
+        await service._refresh_task
+
+    asyncio.run(request_and_wait())
+
+    assert runtime.refreshes == [True]

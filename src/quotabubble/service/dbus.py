@@ -1,0 +1,64 @@
+# ruff: noqa: F821, UP037
+
+import asyncio
+from collections.abc import Callable
+
+from dbus_fast.aio import MessageBus
+from dbus_fast.service import ServiceInterface, method, signal
+
+from quotabubble.service.runtime import ServiceRuntime
+
+BUS_NAME = "org.izzet.QuotaBubble"
+OBJECT_PATH = "/org/izzet/QuotaBubble"
+INTERFACE_NAME = "org.izzet.QuotaBubble1"
+
+
+class QuotaBubbleInterface(ServiceInterface):
+    def __init__(self, service: "DbusService") -> None:
+        super().__init__(INTERFACE_NAME)
+        self._service = service
+
+    @method()
+    def GetState(self) -> "s":
+        return self._service.runtime.state_json()
+
+    @method()
+    def Refresh(self):
+        self._service.request_refresh()
+
+    @signal()
+    def StateChanged(self, state: "s") -> "s":
+        return state
+
+
+class DbusService:
+    def __init__(
+        self,
+        runtime: ServiceRuntime,
+        *,
+        bus_factory: Callable[[], MessageBus] = MessageBus,
+    ) -> None:
+        self.runtime = runtime
+        self._bus_factory = bus_factory
+        self._interface = QuotaBubbleInterface(self)
+        self._refresh_task: asyncio.Task[None] | None = None
+
+    async def start(self) -> None:
+        bus = await self._bus_factory().connect()
+        bus.export(OBJECT_PATH, self._interface)
+        await bus.request_name(BUS_NAME)
+
+    async def run(self) -> None:
+        await self.start()
+        await self.refresh()
+        while True:
+            await asyncio.sleep(self.runtime.refresh_interval_seconds)
+            await self.refresh()
+
+    def request_refresh(self) -> None:
+        if self._refresh_task is None or self._refresh_task.done():
+            self._refresh_task = asyncio.create_task(self.refresh())
+
+    async def refresh(self) -> None:
+        await asyncio.to_thread(self.runtime.refresh, force=True)
+        self._interface.StateChanged(self.runtime.state_json())

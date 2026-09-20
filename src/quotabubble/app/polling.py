@@ -1,18 +1,16 @@
 from __future__ import annotations
 
-import logging
-import time
-from datetime import UTC, datetime
-
 from PySide6.QtCore import QMetaObject, QObject, Qt, QThread, QTimer, Signal, Slot
 
 from quotabubble.app.cache import load_snapshots, save_snapshots
-from quotabubble.providers.base import Provider, ProviderStatus, UsageSnapshot
+from quotabubble.app.runtime import (  # noqa: F401
+    ERROR_BACKOFF_SECONDS,
+    MAX_BACKOFF_SECONDS,
+    PollingRuntime,
+)
+from quotabubble.providers.base import Provider, UsageSnapshot
 
 DEFAULT_REFRESH_INTERVAL_MS = 300_000
-ERROR_BACKOFF_SECONDS = 300.0
-MAX_BACKOFF_SECONDS = 3600.0
-logger = logging.getLogger(__name__)
 
 
 class PollingWorker(QObject):
@@ -25,12 +23,17 @@ class PollingWorker(QObject):
         parent: QObject | None = None,
     ) -> None:
         super().__init__(parent)
-        self._providers = list(providers)
         self._interval_ms = interval_ms
         self._timer: QTimer | None = None
-        self._last_good: dict[str, UsageSnapshot] = load_snapshots()
-        self._failures: dict[str, int] = {}
-        self._retry_at: dict[str, float] = {}
+        self._runtime = PollingRuntime(
+            providers,
+            last_good=load_snapshots(),
+            save_last_good=save_snapshots,
+        )
+        # Preserve these attributes for callers that inspect the worker's
+        # retry state while the implementation lives in PollingRuntime.
+        self._failures = self._runtime._failures
+        self._retry_at = self._runtime._retry_at
 
     @Slot()
     def start(self) -> None:
@@ -43,69 +46,12 @@ class PollingWorker(QObject):
     @Slot()
     @Slot(bool)
     def poll(self, force: bool = False) -> None:
-        if force:
-            self._retry_at.clear()
-        now = time.monotonic()
-        for provider in self._providers:
-            if not force and now < self._retry_at.get(provider.id, 0.0):
-                continue
-            try:
-                fresh = provider.fetch()
-            except Exception:
-                logger.exception("provider '%s' raised during fetch", provider.id)
-                fresh = UsageSnapshot(
-                    provider=provider.id,
-                    display_name=provider.display_name,
-                    status=ProviderStatus.ERROR,
-                    message="unexpected error",
-                )
-            self._publish(fresh)
-
-    def _publish(self, fresh: UsageSnapshot) -> None:
-        provider_id = fresh.provider
-        if fresh.status is ProviderStatus.OK:
-            if fresh.fetched_at is None:
-                fresh = fresh.model_copy(update={"fetched_at": datetime.now(UTC)})
-            self._failures.pop(provider_id, None)
-            self._retry_at.pop(provider_id, None)
-            self._last_good[provider_id] = fresh
-            save_snapshots(self._last_good)
-            logger.info("provider '%s' ok (%d windows)", provider_id, len(fresh.windows))
-            self.snapshot_ready.emit(fresh)
-            return
-        if fresh.status is ProviderStatus.ERROR:
-            failures = self._failures.get(provider_id, 0) + 1
-            self._failures[provider_id] = failures
-            if fresh.retry_after:
-                delay = min(max(fresh.retry_after, ERROR_BACKOFF_SECONDS), MAX_BACKOFF_SECONDS)
-            else:
-                delay = min(ERROR_BACKOFF_SECONDS * 2 ** (failures - 1), MAX_BACKOFF_SECONDS)
-            self._retry_at[provider_id] = time.monotonic() + delay
-            previous = self._last_good.get(provider_id)
-            if previous is not None:
-                logger.warning(
-                    "provider '%s' error (%s); keeping last-good, retry in %.0fs",
-                    provider_id,
-                    fresh.message,
-                    delay,
-                )
-                self.snapshot_ready.emit(previous.model_copy(update={"stale": True}))
-            else:
-                logger.warning("provider '%s' error (%s)", provider_id, fresh.message)
-                self.snapshot_ready.emit(fresh)
-            return
-        self._failures.pop(provider_id, None)
-        self._retry_at.pop(provider_id, None)
-        logger.warning("provider '%s' %s (%s)", provider_id, fresh.status, fresh.message)
-        self.snapshot_ready.emit(fresh)
+        for snapshot in self._runtime.poll(force=force):
+            self.snapshot_ready.emit(snapshot)
 
     @Slot(object)
     def set_providers(self, providers: list[Provider]) -> None:
-        changed = [provider.id for provider in providers] != [
-            provider.id for provider in self._providers
-        ]
-        self._providers = list(providers)
-        if changed:
+        if self._runtime.set_providers(providers):
             self.poll()
 
     @Slot(int)
