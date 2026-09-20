@@ -1,12 +1,16 @@
 from __future__ import annotations
 
 import plistlib
+import sys
 from pathlib import Path
 
+import pytest
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QWidget
 
 from quotabubble.platform import macos
+
+pytestmark = pytest.mark.skipif(sys.platform != "darwin", reason="macOS only")
 
 
 def test_enabling_launch_at_login_writes_and_bootstraps_agent(
