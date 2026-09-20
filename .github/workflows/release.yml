@@ -18,13 +18,13 @@ jobs:
         include:
           - os: windows-latest
             artifact: QuotaBubble-windows-x64.zip
-            spec: packaging/quotabubble.spec
+            spec: packaging/quotabubble.windows.spec
           - os: macos-13
             artifact: QuotaBubble-macos-x64.dmg
-            spec: packaging/quotabubble-macos.spec
+            spec: packaging/quotabubble.macos.spec
           - os: macos-14
             artifact: QuotaBubble-macos-arm64.dmg
-            spec: packaging/quotabubble-macos.spec
+            spec: packaging/quotabubble.macos.spec
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
