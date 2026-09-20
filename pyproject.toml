@@ -41,6 +41,7 @@ dependencies = [
     # PySide6 6.10+ ships macOS 13+ wheels only. Keep macOS 12 Intel support
     # while this remains a supported release target.
     "pyside6>=6.7,<6.10",
+    "pyobjc-framework-Security>=12.0; sys_platform == 'darwin'",
 ]
 
 [project.gui-scripts]
