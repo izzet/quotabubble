@@ -95,7 +95,7 @@ def main() -> None:
         seed_state(selected)
         service.set_providers(selected)
 
-    def refresh_providers() -> None:
+    def refresh_and_poll_providers() -> None:
         # Unlike a plain service.poll(), this re-runs provider detection
         # first, so e.g. logging into Codex for the first time after
         # QuotaBubble started gets picked up by clicking Refresh instead of
@@ -118,8 +118,8 @@ def main() -> None:
 
     window.settings_requested.connect(open_settings)
     tray.settings_requested.connect(open_settings)
-    window.refresh_requested.connect(refresh_providers)
-    tray.refresh_requested.connect(refresh_providers)
+    window.refresh_requested.connect(refresh_and_poll_providers)
+    tray.refresh_requested.connect(refresh_and_poll_providers)
     app.aboutToQuit.connect(service.stop)
 
     sys.exit(app.exec())
