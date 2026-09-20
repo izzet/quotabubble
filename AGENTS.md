@@ -12,7 +12,7 @@
 - Package manager: `uv`.
 - Lint: `uv run ruff check src tests`.
 - Test: `uv run pytest -q`.
-- Coverage: `uv run pytest -q --cov=src/quotabubble --cov-report=term-missing`. CI gates at `fail_under` in `pyproject.toml` `[tool.coverage.report]` (82%, ratchet up as coverage improves) and uploads to Codecov.
+- Coverage: `uv run pytest -q --cov=src/quotabubble --cov-report=term-missing`. CI gates at `fail_under` in `pyproject.toml` `[tool.coverage.report]` (80%, ratchet up as coverage improves) and uploads to Codecov.
 - **`main.py` is composition, not logic — and this is a policy, not a shortcut.** It's excluded from coverage (`[tool.coverage.run] omit`, `codecov.yml`'s `ignore`) and should only ever contain `QApplication` setup, object construction, and `.connect()` signal wiring. If a change to it needs a conditional, a merge, a transformation, or anything you'd want a test for, that logic belongs in a plain function or class in `app/` or elsewhere instead (see `app/providers.py`'s `merge_selected_snapshots` for the pattern: `AppState` and friends are plain Python, not `QObject`s, so almost nothing here actually needs Qt to be testable). Everything *around* main.py is expected to be thoroughly unit tested — the exclusion only covers genuine wiring, never an excuse to leave real logic uncovered.
 - Providers live in `src/quotabubble/providers/` behind the `Provider` protocol; they must not import Qt.
 - Platform-specific behavior (window flags, credential stores, autostart) lives in `src/quotabubble/platform/`.
