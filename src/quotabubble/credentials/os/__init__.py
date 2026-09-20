@@ -7,6 +7,11 @@ if sys.platform == "win32":
         enumerate_generic_credentials,
         read_generic_credential,
     )
+elif sys.platform == "darwin":
+    from quotabubble.credentials.os.macos import (
+        enumerate_generic_credentials,
+        read_generic_credential,
+    )
 else:
 
     def read_generic_credential(target: str) -> bytes | None:

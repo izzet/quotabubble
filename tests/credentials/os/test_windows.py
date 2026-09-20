@@ -30,3 +30,16 @@ def test_windows_module_exports_on_win32() -> None:
     assert CRED_TYPE_GENERIC == 1
     assert callable(enumerate_generic_credentials)
     assert callable(read_generic_credential)
+
+
+def test_macos_module_exports_on_darwin() -> None:
+    if sys.platform != "darwin":
+        return
+
+    from quotabubble.credentials.os.macos import (
+        enumerate_generic_credentials,
+        read_generic_credential,
+    )
+
+    assert callable(enumerate_generic_credentials)
+    assert callable(read_generic_credential)
