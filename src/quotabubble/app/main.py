@@ -13,7 +13,11 @@ from quotabubble.app.instance import SingleInstance
 from quotabubble.app.logging_setup import setup_logging
 from quotabubble.app.notifications import NotificationManager
 from quotabubble.app.polling import PollingService
-from quotabubble.app.providers import build_providers, loading_snapshot, select_providers
+from quotabubble.app.providers import (
+    build_providers,
+    merge_selected_snapshots,
+    select_providers,
+)
 from quotabubble.app.settings import Settings
 from quotabubble.app.state import AppState
 from quotabubble.platform import set_launch_at_login
@@ -47,23 +51,7 @@ def main() -> None:
         return select_providers(build_providers(settings), settings)
 
     def seed_state(selected: list) -> None:
-        # Keep whatever's already displayed for providers still selected, so
-        # re-detecting (e.g. on refresh) doesn't flash live numbers back to
-        # stale; only newly-detected providers get a placeholder, and
-        # providers no longer detected are dropped.
-        cached = load_snapshots()
-        current = {snapshot.provider: snapshot for snapshot in state.ordered()}
-        snapshots = []
-        for provider in selected:
-            if provider.id in current:
-                snapshots.append(current[provider.id])
-                continue
-            previous = cached.get(provider.id)
-            if previous is not None:
-                snapshots.append(previous.model_copy(update={"stale": True}))
-            else:
-                snapshots.append(loading_snapshot(provider))
-        state.replace(snapshots)
+        state.replace(merge_selected_snapshots(selected, state.ordered(), load_snapshots()))
         window.refresh()
 
     instance = SingleInstance(window.show)

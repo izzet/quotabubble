@@ -79,13 +79,9 @@ addopts = ["--import-mode=importlib"]
 
 [tool.coverage.run]
 source = ["src/quotabubble"]
-# Pure Qt wiring, deliberately verified by running the app rather than
-# unit-tested (see AGENTS.md); leaving it in would just drag the number down
-# for a file that was never meant to hit 0% via pytest.
-omit = ["src/quotabubble/app/main.py"]
 
 [tool.coverage.report]
 show_missing = true
 skip_covered = false
-# Ratchet this up as coverage improves; current baseline is ~84%.
+# Ratchet this up as coverage improves; current baseline is ~82%.
 fail_under = 82
