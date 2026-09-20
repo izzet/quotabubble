@@ -32,6 +32,12 @@ jobs:
         with:
           enable-cache: true
 
+      - name: Install Linux Qt runtime dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes libegl1
+
       - name: Sync dependencies
         run: uv sync
 
