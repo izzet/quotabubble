@@ -6,3 +6,20 @@
     font-size: 11pt;
     padding: 10px 14px;
 }
+
+.quotabubble:hover {
+    background-color: rgba(38, 38, 44, 0.96);
+}
+
+.quotabubble-summary {
+    font-weight: 600;
+}
+
+.quotabubble-details {
+    margin-top: 8px;
+    spacing: 5px;
+}
+
+.quotabubble-row {
+    color: rgba(245, 245, 247, 0.82);
+}

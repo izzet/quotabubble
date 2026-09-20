@@ -21,6 +21,9 @@ def test_extension_has_its_required_entrypoint() -> None:
 
     assert "export default class QuotaBubbleExtension" in source
     assert "dev.izzet.quotabubble.Service1" in source
+    assert "Main.layoutManager.addChrome" in source
+    assert "_setExpanded" in source
+    assert "_beginPointerAction" in source
 
 
 def test_package_activates_the_extension_service_on_the_session_bus() -> None:
