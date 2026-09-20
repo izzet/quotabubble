@@ -43,10 +43,21 @@ def main() -> None:
     state = AppState()
     window = BubbleWindow(state, settings)
 
+    def detect_providers() -> list:
+        return select_providers(build_providers(settings), settings)
+
     def seed_state(selected: list) -> None:
+        # Keep whatever's already displayed for providers still selected, so
+        # re-detecting (e.g. on refresh) doesn't flash live numbers back to
+        # stale; only newly-detected providers get a placeholder, and
+        # providers no longer detected are dropped.
         cached = load_snapshots()
+        current = {snapshot.provider: snapshot for snapshot in state.ordered()}
         snapshots = []
         for provider in selected:
+            if provider.id in current:
+                snapshots.append(current[provider.id])
+                continue
             previous = cached.get(provider.id)
             if previous is not None:
                 snapshots.append(previous.model_copy(update={"stale": True}))
@@ -70,7 +81,7 @@ def main() -> None:
 
     history_recorder = HistoryRecorder(settings)
 
-    providers = select_providers(build_providers(settings), settings)
+    providers = detect_providers()
     logger.info("providers: %s", [provider.id for provider in providers])
     seed_state(providers)
 
@@ -80,10 +91,17 @@ def main() -> None:
     service.snapshot_ready.connect(history_recorder.record)
     service.start()
 
-    def apply_providers() -> None:
-        selected = select_providers(build_providers(settings), settings)
+    def apply_providers(selected: list) -> None:
         seed_state(selected)
         service.set_providers(selected)
+
+    def refresh_providers() -> None:
+        # Unlike a plain service.poll(), this re-runs provider detection
+        # first, so e.g. logging into Codex for the first time after
+        # QuotaBubble started gets picked up by clicking Refresh instead of
+        # needing a Settings save or an app restart.
+        apply_providers(detect_providers())
+        service.poll(force=True)
 
     def open_settings() -> None:
         dialog = SettingsDialog(settings, build_providers(settings), window)
@@ -93,15 +111,15 @@ def main() -> None:
         if dialog.exec() == QDialog.DialogCode.Accepted:
             logger.info("settings applied")
             notification_manager.set_settings(settings)
-            apply_providers()
+            apply_providers(detect_providers())
             service.set_interval(settings.refresh_interval_ms)
             window.apply_settings()
             set_launch_at_login(settings.launch_at_login)
 
     window.settings_requested.connect(open_settings)
     tray.settings_requested.connect(open_settings)
-    window.refresh_requested.connect(service.poll)
-    tray.refresh_requested.connect(service.poll)
+    window.refresh_requested.connect(refresh_providers)
+    tray.refresh_requested.connect(refresh_providers)
     app.aboutToQuit.connect(service.stop)
 
     sys.exit(app.exec())
