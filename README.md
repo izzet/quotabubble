@@ -61,6 +61,17 @@ Or download the latest `QuotaBubble-windows-x64.zip` from the [Releases page](ht
 
 > The binary is not code-signed yet, so Windows SmartScreen may warn you. Choose **More info → Run anyway**.
 
+### macOS
+
+Download the matching disk image from the [Releases page](https://github.com/izzet/quotabubble/releases):
+
+- `QuotaBubble-macos-arm64.dmg` for Apple Silicon Macs.
+- `QuotaBubble-macos-x64.dmg` for Intel Macs.
+
+Open the disk image and drag **QuotaBubble** to **Applications**. The initial macOS builds are not
+yet Developer ID signed or notarized; Control-click the app, choose **Open**, then confirm the
+first-launch dialog. Signing and notarization will be added in a later release.
+
 ### From source (Python 3.11+)
 
 ```bash
@@ -111,7 +122,7 @@ See [AGENTS.md](AGENTS.md) for architecture and contribution conventions. The pr
 
 ## Status
 
-Windows is the primary, fully supported platform. Claude, Codex, Cursor, OpenCode, DeepSeek, and OpenRouter work anywhere; Antigravity and Copilot currently use the Windows credential store and need macOS/Linux implementations. API keys entered in Settings are stored in the OS credential store (Windows Credential Manager, macOS Keychain, Linux Secret Service) via [`keyring`](https://pypi.org/project/keyring/); if no OS keyring backend is available, they fall back to the local settings file.
+Windows and macOS have native release artifacts. Claude, Codex, Cursor, OpenCode, DeepSeek, and OpenRouter work anywhere; Antigravity and Copilot currently use the Windows credential store and need macOS/Linux implementations. API keys entered in Settings are stored in the OS credential store (Windows Credential Manager, macOS Keychain, Linux Secret Service) via [`keyring`](https://pypi.org/project/keyring/); if no OS keyring backend is available, they fall back to the local settings file.
 
 ## License
 

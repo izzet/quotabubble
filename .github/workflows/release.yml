@@ -9,18 +9,22 @@ permissions:
   contents: write
 
 jobs:
-  # Matrix of per-OS binary builds. Each entry tests, builds with
-  # PyInstaller, packages an archive, and uploads it as a CI artifact --
-  # none of them publish anything themselves. Only windows-latest exists
-  # today; adding macos-latest/ubuntu-latest later means adding an `include`
-  # entry (and that OS's packaging step) here, not restructuring anything
-  # downstream.
+  # Matrix of per-OS binary builds. Each entry tests, builds with PyInstaller,
+  # packages a platform-native artifact, and uploads it as a CI artifact.
+  # None of them publish anything themselves.
   build:
     strategy:
       matrix:
         include:
           - os: windows-latest
             artifact: QuotaBubble-windows-x64.zip
+            spec: packaging/quotabubble.spec
+          - os: macos-13
+            artifact: QuotaBubble-macos-x64.dmg
+            spec: packaging/quotabubble-macos.spec
+          - os: macos-14
+            artifact: QuotaBubble-macos-arm64.dmg
+            spec: packaging/quotabubble-macos.spec
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
@@ -35,12 +39,24 @@ jobs:
       - name: Test
         run: uv run pytest -q
 
-      - name: Build
-        run: uv run pyinstaller --noconfirm packaging/quotabubble.spec
+      - name: Generate macOS icon
+        if: runner.os == 'macOS'
+        run: uv run python scripts/make_icon.py
 
-      - name: Package
+      - name: Build
+        run: uv run pyinstaller --noconfirm ${{ matrix.spec }}
+
+      - name: Package Windows build
+        if: runner.os == 'Windows'
         shell: pwsh
         run: Compress-Archive -Path dist/QuotaBubble/* -DestinationPath ${{ matrix.artifact }}
+
+      # These initial public builds use PyInstaller's ad hoc signatures. Add
+      # Developer ID signing, notarization, and stapling here once the
+      # repository has the Apple Developer credentials required to do so.
+      - name: Package macOS build
+        if: runner.os == 'macOS'
+        run: hdiutil create -volname QuotaBubble -srcfolder dist/QuotaBubble.app -ov -format UDZO ${{ matrix.artifact }}
 
       - uses: actions/upload-artifact@v4
         with:
