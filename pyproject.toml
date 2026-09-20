@@ -79,9 +79,12 @@ addopts = ["--import-mode=importlib"]
 
 [tool.coverage.run]
 source = ["src/quotabubble"]
+# Composition root only -- see AGENTS.md's "main.py is composition, not logic"
+# policy. Any real logic belongs in a tested module instead, not here.
+omit = ["src/quotabubble/app/main.py"]
 
 [tool.coverage.report]
 show_missing = true
 skip_covered = false
-# Ratchet this up as coverage improves; current baseline is ~82%.
+# Ratchet this up as coverage improves; current baseline is ~84%.
 fail_under = 82
