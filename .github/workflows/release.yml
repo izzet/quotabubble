@@ -203,7 +203,10 @@ jobs:
           Path("homebrew-tap/Casks").mkdir(parents=True, exist_ok=True)
           Path("homebrew-tap/Casks/quotabubble.rb").write_text(cask)
           PY
-          brew audit --cask --strict homebrew-tap/Casks/quotabubble.rb
+          brew tap izzet/tap
+          tap_path="$(brew --repository izzet/tap)"
+          cp homebrew-tap/Casks/quotabubble.rb "$tap_path/Casks/quotabubble.rb"
+          brew audit --cask --strict quotabubble
 
       - name: Commit cask update
         if: env.HOMEBREW_TAP_TOKEN != ''
