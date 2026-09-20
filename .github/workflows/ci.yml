@@ -21,6 +21,9 @@ jobs:
             coverage_flag: macos-x64
           - os: macos-15
             coverage: false
+          - os: ubuntu-latest
+            coverage: true
+            coverage_flag: linux
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
