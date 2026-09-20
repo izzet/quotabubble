@@ -57,15 +57,7 @@ export default class QuotaBubbleExtension extends Extension {
 
     async _connectService() {
         try {
-            const proxy = await Gio.DBusProxy.new_for_bus(
-                Gio.BusType.SESSION,
-                Gio.DBusProxyFlags.NONE,
-                null,
-                BUS_NAME,
-                OBJECT_PATH,
-                INTERFACE_NAME,
-                null,
-            );
+            const proxy = await this._createProxy();
             if (!this._enabled)
                 return;
             this._proxy = proxy;
@@ -86,6 +78,27 @@ export default class QuotaBubbleExtension extends Extension {
             console.error(`QuotaBubble could not connect to its service: ${error.message}`);
             this._summary?.set_text('QuotaBubble  ·  Service unavailable');
         }
+    }
+
+    _createProxy() {
+        return new Promise((resolve, reject) => {
+            Gio.DBusProxy.new_for_bus(
+                Gio.BusType.SESSION,
+                Gio.DBusProxyFlags.NONE,
+                null,
+                BUS_NAME,
+                OBJECT_PATH,
+                INTERFACE_NAME,
+                null,
+                (_source, result) => {
+                    try {
+                        resolve(Gio.DBusProxy.new_for_bus_finish(result));
+                    } catch (error) {
+                        reject(error);
+                    }
+                },
+            );
+        });
     }
 
     _beginPointerAction(event) {

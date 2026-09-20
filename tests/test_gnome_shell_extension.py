@@ -24,6 +24,7 @@ def test_extension_has_its_required_entrypoint() -> None:
     assert "Main.layoutManager.addChrome" in source
     assert "_setExpanded" in source
     assert "_beginPointerAction" in source
+    assert "Gio.DBusProxy.new_for_bus_finish" in source
 
 
 def test_package_activates_the_extension_service_on_the_session_bus() -> None:
