@@ -65,13 +65,7 @@ export default class QuotaBubbleExtension extends Extension {
                 'StateChanged',
                 (_proxy, _sender, _name, parameters) => this._render(parameters.deepUnpack()[0]),
             );
-            const result = await proxy.call(
-                'GetState',
-                null,
-                Gio.DBusCallFlags.NONE,
-                -1,
-                null,
-            );
+            const result = await this._getState(proxy);
             if (this._enabled)
                 this._render(result.deepUnpack()[0]);
         } catch (error) {
@@ -93,6 +87,25 @@ export default class QuotaBubbleExtension extends Extension {
                 (_source, result) => {
                     try {
                         resolve(Gio.DBusProxy.new_for_bus_finish(result));
+                    } catch (error) {
+                        reject(error);
+                    }
+                },
+            );
+        });
+    }
+
+    _getState(proxy) {
+        return new Promise((resolve, reject) => {
+            proxy.call(
+                'GetState',
+                null,
+                Gio.DBusCallFlags.NONE,
+                -1,
+                null,
+                (_proxy, result) => {
+                    try {
+                        resolve(proxy.call_finish(result));
                     } catch (error) {
                         reject(error);
                     }

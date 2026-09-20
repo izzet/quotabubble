@@ -25,6 +25,7 @@ def test_extension_has_its_required_entrypoint() -> None:
     assert "_setExpanded" in source
     assert "_beginPointerAction" in source
     assert "Gio.DBusProxy.new_for_bus_finish" in source
+    assert "proxy.call_finish" in source
 
 
 def test_package_activates_the_extension_service_on_the_session_bus() -> None:
