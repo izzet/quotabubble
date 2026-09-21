@@ -8,7 +8,7 @@
     <title>QuotaBubble</title>
     <authors>Izzet Yildirim</authors>
     <projectUrl>https://izzet.github.io/quotabubble/</projectUrl>
-    <iconUrl>https://raw.githubusercontent.com/izzet/quotabubble/main/website/public/icon.png</iconUrl>
+    <iconUrl>__ICON_URL__</iconUrl>
     <copyright>2026 Izzet Yildirim</copyright>
     <licenseUrl>https://github.com/izzet/quotabubble/blob/main/LICENSE</licenseUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>

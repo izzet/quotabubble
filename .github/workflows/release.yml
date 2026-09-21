@@ -164,6 +164,7 @@ jobs:
         run: |
           $version = $env:GITHUB_REF_NAME -replace '^v', ''
           $zipUrl = "https://github.com/izzet/quotabubble/releases/download/v$version/QuotaBubble-windows-x64.zip"
+          $iconUrl = "https://cdn.jsdelivr.net/gh/izzet/quotabubble@v$version/website/public/icon.png"
 
           Invoke-WebRequest -Uri $zipUrl -OutFile QuotaBubble-windows-x64.zip
           $checksum = (Get-FileHash QuotaBubble-windows-x64.zip -Algorithm SHA256).Hash
@@ -174,7 +175,16 @@ jobs:
             -replace '__CHECKSUM__', $checksum |
             Set-Content $installScript
 
-          choco pack packaging/chocolatey/quotabubble.nuspec --version $version --outputdirectory .
+          $nuspec = "packaging/chocolatey/quotabubble.nuspec"
+          (Get-Content $nuspec -Raw) `
+            -replace '__ICON_URL__', $iconUrl |
+            Set-Content $nuspec
+
+          if ((Get-Content $nuspec -Raw) -match '__[A-Z]+__') {
+            throw "Unresolved Chocolatey package placeholder."
+          }
+
+          choco pack $nuspec --version $version --outputdirectory .
           choco push "quotabubble.$version.nupkg" --source https://push.chocolatey.org/ --api-key $env:CHOCOLATEY_API_KEY
 
 
