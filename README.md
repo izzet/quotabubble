@@ -32,14 +32,14 @@ QuotaBubble is a small, frameless desktop widget that keeps the usage limits for
 | --- | --- |
 | Claude Code | macOS Keychain or `~/.claude/.credentials.json` |
 | Codex | `~/.codex/auth.json` |
-| Google Antigravity | Windows Credential Manager or macOS Keychain |
-| GitHub Copilot | Windows Credential Manager or macOS Keychain |
+| Google Antigravity | Windows Credential Manager, macOS Keychain, or Linux Secret Service |
+| GitHub Copilot | Windows Credential Manager, macOS Keychain, or Linux Secret Service |
 | Cursor | Cursor IDE `state.vscdb` / `auth.json` (`CURSOR_SESSION_TOKEN` override) |
 | OpenCode | `~/.local/share/opencode/auth.json` / `opencode.jsonc` (`OPENCODE_API_KEY` override) or API key |
 | DeepSeek | API key |
 | OpenRouter | API key |
 
-Providers are detected automatically. Enable or disable them in Settings; API keys are entered there and validated inline with a **Test** button. Antigravity and Copilot reuse their existing Windows Credential Manager or macOS Keychain sign-ins. Cursor reuses the IDE session token from `state.vscdb` or `auth.json` (or `CURSOR_SESSION_TOKEN`).
+Providers are detected automatically. Enable or disable them in Settings; API keys are entered there and validated inline with a **Test** button. Antigravity and Copilot reuse their existing OS keychain sign-ins, including Linux Secret Service. Cursor reuses the IDE session token from `state.vscdb` or `auth.json` (or `CURSOR_SESSION_TOKEN`).
 
 ## Install
 
@@ -61,7 +61,18 @@ Or download the latest `QuotaBubble-windows-x64.zip` from the [Releases page](ht
 
 > The binary is not code-signed yet, so Windows SmartScreen may warn you. Choose **More info → Run anyway**.
 
-### macOS
+### Ubuntu GNOME
+
+Download `QuotaBubble-linux-amd64.deb` from the matching GitHub Release, then install it:
+
+```bash
+sudo apt install ./QuotaBubble-linux-amd64.deb
+gnome-extensions enable quotabubble@izzet.dev
+```
+
+The extension activates the user-session service on demand. Open `quotabubble-settings` to configure providers, notifications, and launch at login.
+
+## macOS
 
 Download the matching disk image from the [Releases page](https://github.com/izzet/quotabubble/releases):
 

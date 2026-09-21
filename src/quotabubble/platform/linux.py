@@ -1,13 +1,17 @@
 from __future__ import annotations
 
+import os
 from pathlib import Path
 
-from platformdirs import user_config_dir
 from PySide6.QtWidgets import QWidget
 
 from quotabubble.utils import write_text_atomic
 
-AUTOSTART_FILE = Path(user_config_dir()) / "autostart" / "quotabubble.desktop"
+AUTOSTART_FILE = (
+    Path(os.environ.get("XDG_CONFIG_HOME", Path.home() / ".config"))
+    / "autostart"
+    / "quotabubble.desktop"
+)
 
 
 def configure_window(widget: QWidget) -> None:
