@@ -26,6 +26,10 @@ class QuotaBubbleInterface(ServiceInterface):
     def Refresh(self):
         self._service.request_refresh()
 
+    @method()
+    def ReloadSettings(self):
+        self._service.request_settings_reload()
+
     @signal()
     def StateChanged(self, state: "s") -> "s":
         return state
@@ -68,6 +72,14 @@ class DbusService:
         if self._refresh_task is None or self._refresh_task.done():
             self._refresh_task = asyncio.create_task(self.refresh())
 
+    def request_settings_reload(self) -> None:
+        if self._refresh_task is None or self._refresh_task.done():
+            self._refresh_task = asyncio.create_task(self.reload_settings())
+
     async def refresh(self) -> None:
         await asyncio.to_thread(self.runtime.refresh, force=True)
         self._interface.StateChanged(self.runtime.state_json())
+
+    async def reload_settings(self) -> None:
+        await asyncio.to_thread(self.runtime.reload_settings)
+        await self.refresh()

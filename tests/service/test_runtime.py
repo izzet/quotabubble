@@ -34,3 +34,16 @@ def test_service_runtime_seeds_and_serializes_selected_providers(monkeypatch) ->
     assert initial["providers"][0]["expanded_metrics"][0]["label"] == "..."
     assert refreshed["version"] == 1
     assert refreshed["providers"][0]["expanded_metrics"][0]["label"] == "—"
+
+
+def test_service_runtime_reloads_saved_settings(monkeypatch) -> None:
+    monkeypatch.setattr("quotabubble.app.runtime.save_snapshots", lambda snapshots: None)
+    monkeypatch.setattr(
+        "quotabubble.service.runtime.Settings.load",
+        lambda: Settings(show_remaining=True, enabled_providers=[]),
+    )
+    runtime = ServiceRuntime(Settings(), providers=[_Provider()], cached={})
+
+    runtime.reload_settings()
+
+    assert json.loads(runtime.state_json())["providers"] == []

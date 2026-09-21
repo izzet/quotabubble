@@ -37,5 +37,15 @@ class ServiceRuntime:
             self._state.update(snapshot)
         return snapshots
 
+    def reload_settings(self) -> None:
+        """Apply saved settings without requiring the GNOME extension to restart."""
+        self._settings = Settings.load()
+        self._providers = select_providers(build_providers(self._settings), self._settings)
+        previous = {snapshot.provider: snapshot for snapshot in self._state.ordered()}
+        self._state.replace(
+            merge_selected_snapshots(self._providers, self._state.ordered(), self._cached)
+        )
+        self._polling = PollingRuntime(self._providers, last_good=previous)
+
     def state_json(self) -> str:
         return build_bubble_view(self._state.ordered(), self._settings).model_dump_json()

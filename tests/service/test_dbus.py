@@ -23,6 +23,9 @@ class _Runtime:
     def state_json(self) -> str:
         return '{"version":1,"snapshots":[]}'
 
+    def reload_settings(self) -> None:
+        self.refreshes.append(False)
+
 
 class _Bus:
     def __init__(self) -> None:
@@ -70,3 +73,17 @@ def test_requested_refresh_runs_in_the_background() -> None:
     asyncio.run(request_and_wait())
 
     assert runtime.refreshes == [True]
+
+
+def test_requested_settings_reload_refreshes_the_shared_state() -> None:
+    runtime = _Runtime()
+    service = DbusService(runtime)
+
+    async def reload_and_wait() -> None:
+        service.request_settings_reload()
+        assert service._refresh_task is not None
+        await service._refresh_task
+
+    asyncio.run(reload_and_wait())
+
+    assert runtime.refreshes == [False, True]

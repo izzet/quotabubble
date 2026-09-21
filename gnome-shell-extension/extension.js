@@ -1,8 +1,10 @@
 import Clutter from 'gi://Clutter';
 import Gio from 'gi://Gio';
+import St from 'gi://St';
 
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import {Extension} from 'resource:///org/gnome/shell/extensions/extension.js';
+import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
 import {BubbleRenderer} from './renderer.js';
 
 const BUS_NAME = 'dev.izzet.quotabubble';
@@ -16,6 +18,11 @@ export default class QuotaBubbleExtension extends Extension {
         this._expanded = false;
         this._renderer = new BubbleRenderer();
         this._actor = this._renderer.actor;
+        this._menu = new PopupMenu.PopupMenu(this._actor, 0.5, St.Side.TOP);
+        this._menu.addAction('Refresh', () => this._requestRefresh());
+        this._menu.addAction('Settings…', () => this._openSettings());
+        Main.uiGroup.add_child(this._menu.actor);
+        this._menu.actor.hide();
         this._buttonPressId = this._actor.connect(
             'button-press-event',
             (_actor, event) => this._beginPointerAction(event),
@@ -25,22 +32,31 @@ export default class QuotaBubbleExtension extends Extension {
             trackFullscreen: false,
         });
         this._actor.set_position(24, 24);
-        this._connectService();
+        this._nameWatchId = Gio.bus_watch_name(
+            Gio.BusType.SESSION,
+            BUS_NAME,
+            Gio.BusNameWatcherFlags.NONE,
+            () => this._connectService(),
+            () => this._serviceVanished(),
+        );
     }
 
     disable() {
         this._enabled = false;
         this._endPointerAction();
-        if (this._signalId !== undefined)
-            this._proxy?.disconnectSignal(this._signalId);
-        this._signalId = undefined;
-        this._proxy = null;
+        if (this._nameWatchId)
+            Gio.bus_unwatch_name(this._nameWatchId);
+        this._nameWatchId = null;
+        this._disconnectService();
+        this._menu?.destroy();
+        this._menu = null;
         this._actor?.disconnect(this._buttonPressId);
         this._actor?.destroy();
         this._actor = null;
     }
 
     async _connectService() {
+        this._disconnectService();
         try {
             const proxy = await this._createProxy();
             if (!this._enabled)
@@ -57,6 +73,19 @@ export default class QuotaBubbleExtension extends Extension {
             console.error(`QuotaBubble could not connect to its service: ${error.message}`);
             this._renderFallback('Service unavailable');
         }
+    }
+
+    _disconnectService() {
+        if (this._signalId !== undefined)
+            this._proxy?.disconnectSignal(this._signalId);
+        this._signalId = undefined;
+        this._proxy = null;
+    }
+
+    _serviceVanished() {
+        this._disconnectService();
+        if (this._enabled)
+            this._renderFallback('Service unavailable');
     }
 
     _createProxy() {
@@ -100,6 +129,10 @@ export default class QuotaBubbleExtension extends Extension {
     }
 
     _beginPointerAction(event) {
+        if (event.get_button() === Clutter.BUTTON_SECONDARY) {
+            this._menu.open();
+            return Clutter.EVENT_STOP;
+        }
         if (event.get_button() !== Clutter.BUTTON_PRIMARY)
             return Clutter.EVENT_PROPAGATE;
 
@@ -179,5 +212,30 @@ export default class QuotaBubbleExtension extends Extension {
                 expanded_metrics: [{label: message, detail: message}],
             }],
         });
+    }
+
+    _requestRefresh() {
+        this._proxy?.call(
+            'Refresh',
+            null,
+            Gio.DBusCallFlags.NONE,
+            -1,
+            null,
+            (_proxy, result) => {
+                try {
+                    this._proxy?.call_finish(result);
+                } catch (error) {
+                    console.error(`QuotaBubble could not refresh: ${error.message}`);
+                }
+            },
+        );
+    }
+
+    _openSettings() {
+        const application = Gio.DesktopAppInfo.new('dev.izzet.QuotaBubbleSettings.desktop');
+        if (application)
+            application.launch([], null);
+        else
+            console.error('QuotaBubble settings application is not installed');
     }
 }

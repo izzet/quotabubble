@@ -27,6 +27,9 @@ def test_extension_has_its_required_entrypoint() -> None:
     assert "Gio.DBusProxy.new_for_bus_finish" in source
     assert "proxy.call_finish" in source
     assert "BubbleRenderer" in source
+    assert "Gio.bus_watch_name" in source
+    assert "Settings…" in source
+    assert "dev.izzet.QuotaBubbleSettings.desktop" in source
 
 
 def test_extension_renderer_uses_the_presentation_contract() -> None:
@@ -43,3 +46,14 @@ def test_package_activates_the_extension_service_on_the_session_bus() -> None:
 
     assert "Name=dev.izzet.quotabubble" in payload
     assert "Exec=/usr/lib/quotabubble/quotabubble-service" in payload
+
+
+def test_linux_settings_desktop_entry_uses_the_settings_launcher() -> None:
+    payload = (
+        Path(__file__).parents[1]
+        / "packaging"
+        / "linux"
+        / "dev.izzet.QuotaBubbleSettings.desktop"
+    ).read_text(encoding="utf-8")
+
+    assert "Exec=quotabubble-settings" in payload

@@ -47,6 +47,7 @@ dependencies = [
 
 [project.gui-scripts]
 quotabubble = "quotabubble.app.main:main"
+quotabubble-settings = "quotabubble.settings_main:main"
 
 [project.scripts]
 quotabubble-service = "quotabubble.service.main:main"
