@@ -36,6 +36,7 @@ def test_extension_has_its_required_entrypoint() -> None:
     assert "NotificationRaised" in source
     assert "Main.notify" in source
     assert "_notificationSignalId" in source
+    assert "this._actor.sync_hover()" in source
 
 
 def test_extension_renderer_uses_the_presentation_contract() -> None:

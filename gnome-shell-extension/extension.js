@@ -233,6 +233,7 @@ export default class QuotaBubbleExtension extends Extension {
             this._renderer?.setView(state);
             if (!this._expanded && !this._pointerAction) {
                 this._cancelFade();
+                this._actor.sync_hover();
                 this._setOpacity(
                     this._actor.get_hover()
                         ? this._appearance.hover_opacity
