@@ -3,6 +3,6 @@
   "name": "QuotaBubble",
   "description": "Keep AI coding usage quotas visible on the desktop.",
   "version": 1,
-  "shell-version": ["46"],
+  "shell-version": ["45", "46", "47", "48"],
   "url": "https://github.com/izzet/quotabubble"
 }

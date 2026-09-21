@@ -25,9 +25,48 @@ Section: utils
 Priority: optional
 Architecture: amd64
 Depends: libegl1, libglib2.0-0, libgl1, libxkbcommon0
+Recommends: gnome-shell
 Maintainer: Izzet Yildirim <izzet@izzet.dev>
 Description: Desktop AI coding quota monitor for GNOME
  QuotaBubble displays coding-agent usage quotas through a native GNOME Shell extension.
+"""
+
+
+def postinst_script() -> str:
+    return """#!/bin/sh
+set -e
+
+case "$1" in
+    configure)
+        if command -v update-desktop-database >/dev/null 2>&1; then
+            update-desktop-database -q /usr/share/applications || true
+        fi
+        if command -v gtk-update-icon-cache >/dev/null 2>&1; then
+            gtk-update-icon-cache -q -t -f /usr/share/icons/hicolor || true
+        fi
+        ;;
+esac
+
+exit 0
+"""
+
+
+def postrm_script() -> str:
+    return """#!/bin/sh
+set -e
+
+case "$1" in
+    remove|purge)
+        if command -v update-desktop-database >/dev/null 2>&1; then
+            update-desktop-database -q /usr/share/applications || true
+        fi
+        if command -v gtk-update-icon-cache >/dev/null 2>&1; then
+            gtk-update-icon-cache -q -t -f /usr/share/icons/hicolor || true
+        fi
+        ;;
+esac
+
+exit 0
 """
 
 
@@ -68,6 +107,12 @@ def build_package(source: Path, output: Path, version: str) -> None:
         debian = root / "DEBIAN"
         debian.mkdir()
         (debian / "control").write_text(control_file(version), encoding="utf-8")
+        postinst = debian / "postinst"
+        postinst.write_text(postinst_script(), encoding="utf-8")
+        postinst.chmod(0o755)
+        postrm = debian / "postrm"
+        postrm.write_text(postrm_script(), encoding="utf-8")
+        postrm.chmod(0o755)
         output.parent.mkdir(parents=True, exist_ok=True)
         subprocess.run(
             ["dpkg-deb", "--root-owner-group", "--build", str(root), str(output)],
