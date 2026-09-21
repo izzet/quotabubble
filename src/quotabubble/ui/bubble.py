@@ -161,7 +161,7 @@ class BubbleWindow(QWidget):
         if not metrics:
             return
         if metrics[0].percent is None:
-            painter.setPen(TEXT if metrics[0].detail != "—" else TEXT_DIM)
+            painter.setPen(TEXT if metrics[0].detail is not None else TEXT_DIM)
             painter.drawText(
                 QRectF(left, top, right - left, self.COMPACT_ROW_HEIGHT),
                 vertical | Qt.AlignmentFlag.AlignRight,
