@@ -133,13 +133,13 @@ uv run pytest -q
 uv run pytest -q --cov=src/quotabubble --cov-report=term-missing  # with coverage
 ```
 
-CI gates on coverage (currently 78% minimum, see `[tool.coverage.report]` in `pyproject.toml`) and uploads results to Codecov.
+CI gates on coverage (currently 80% minimum, see `[tool.coverage.report]` in `pyproject.toml`) and uploads results to Codecov.
 
 See [AGENTS.md](AGENTS.md) for architecture and contribution conventions. The provider layer (`src/quotabubble/providers/`) is pure Python behind a `Provider` protocol, and platform specifics live in `src/quotabubble/platform/`.
 
 ## Status
 
-Windows and macOS have native release artifacts. Claude, Codex, Cursor, OpenCode, DeepSeek, and OpenRouter work anywhere. Antigravity and Copilot support Windows Credential Manager and macOS Keychain; Linux credential support is still to come. API keys entered in Settings are stored in the OS credential store (Windows Credential Manager, macOS Keychain, Linux Secret Service) via [`keyring`](https://pypi.org/project/keyring/); if no OS keyring backend is available, they fall back to the local settings file.
+Windows, macOS, and Ubuntu GNOME 24.04 (amd64) have native release artifacts. Claude, Codex, Cursor, OpenCode, DeepSeek, and OpenRouter work anywhere. Antigravity and Copilot reuse Windows Credential Manager, macOS Keychain, and Linux Secret Service credentials. API keys entered in Settings are stored in the OS credential store via [`keyring`](https://pypi.org/project/keyring/); if no OS keyring backend is available, they fall back to the local settings file.
 
 ## License
 
