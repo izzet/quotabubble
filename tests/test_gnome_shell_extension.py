@@ -55,6 +55,10 @@ def test_extension_renderer_uses_the_presentation_contract() -> None:
     assert "size.miniPercentWidth" in source
     assert "size.compactGroupGap" in source
     assert "width - size.padding - 85" not in source
+    assert "new Cairo.ImageSurface" in source
+    assert "size.nameGap" in source
+    assert "this._compactWidth(providers)" in source
+    assert "Math.max(size.expandedWidth, compactWidth)" in source
 
 
 def test_package_activates_the_extension_service_on_the_session_bus() -> None:

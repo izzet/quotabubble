@@ -42,6 +42,16 @@ function text(cr, value, x, y, options = {}) {
     cr.showText(value);
 }
 
+function textWidth(value) {
+    const surface = new Cairo.ImageSurface(Cairo.Format.ARGB32, 1, 1);
+    const cr = new Cairo.Context(surface);
+    cr.selectFontFace('Sans', Cairo.FontSlant.NORMAL, Cairo.FontWeight.NORMAL);
+    cr.setFontSize(11);
+    const width = cr.textExtents(value).xAdvance;
+    cr.$dispose();
+    return width;
+}
+
 export class BubbleRenderer {
     constructor() {
         this.actor = new St.DrawingArea({
@@ -72,10 +82,17 @@ export class BubbleRenderer {
         const contentHeight = this._expanded
             ? this._expandedContentHeight(providers)
             : Math.max(1, providers.length) * size.compactRowHeight;
+        const compactWidth = this._compactWidth(providers);
         this.actor.set_size(
-            this._expanded ? size.expandedWidth : size.compactWidth,
+            this._expanded ? Math.max(size.expandedWidth, compactWidth) : compactWidth,
             size.padding * 2 + contentHeight,
         );
+    }
+
+    _compactWidth(providers) {
+        const widestName = Math.max(0, ...providers.map(provider => textWidth(provider.name)));
+        const groups = 2 * this._miniGroupWidth() + size.compactGroupGap;
+        return Math.max(size.compactWidth, size.padding * 2 + widestName + size.nameGap + groups);
     }
 
     _expandedContentHeight(providers) {
