@@ -7,7 +7,7 @@ from PySide6.QtGui import QMouseEvent
 
 from quotabubble.app.settings import Settings
 from quotabubble.app.state import AppState
-from quotabubble.providers.base import UsageSnapshot, UsageWindow
+from quotabubble.providers.base import Credits, ProviderStatus, UsageSnapshot, UsageWindow
 from quotabubble.ui.bubble import BubbleWindow
 
 
@@ -175,6 +175,34 @@ def test_window_paints_the_shared_view_in_both_states(qapp: object) -> None:
 
     assert compact.isNull() is False
     assert expanded.isNull() is False
+    window.deleteLater()
+
+
+def test_expanded_status_renders_with_credits_without_duplicate_detail(qapp: object) -> None:
+    from PySide6.QtGui import QPixmap
+
+    state = AppState()
+    state.update(
+        UsageSnapshot(
+            provider="claude",
+            display_name="Claude",
+            status=ProviderStatus.EXPIRED,
+            credits=Credits(display="$4.20"),
+        )
+    )
+    window = BubbleWindow(state, Settings(position=(0, 0)))
+    window._toggle_expanded()
+
+    view = window._view()
+    assert [metric.label for metric in view.providers[0].expanded_metrics] == [
+        "expired",
+        "Credits",
+    ]
+    assert view.providers[0].expanded_metrics[0].detail is None
+
+    pixmap = QPixmap(window._target_size())
+    window.render(pixmap)
+    assert pixmap.isNull() is False
     window.deleteLater()
 
 

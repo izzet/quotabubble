@@ -26,25 +26,30 @@ def build_bubble_view(
 def _provider_view(
     snapshot: UsageSnapshot, settings: Settings, *, now: datetime | None
 ) -> ProviderView:
+    trailing = snapshot.plan
+    if snapshot.stale:
+        age = format_age(snapshot.fetched_at, now=now)
+        trailing = " · ".join(value for value in (trailing, age) if value)
+
     if snapshot.status is not ProviderStatus.OK:
         status = _status_text(snapshot.status)
-        metric = MetricView(label=status, detail=status)
+        metrics = [MetricView(label=status)]
+        if snapshot.credits is not None:
+            metrics.append(MetricView(label="Credits", detail=snapshot.credits.display))
         return ProviderView(
             name=snapshot.display_name,
+            trailing=trailing,
             stale=snapshot.stale,
-            expanded_metrics=[metric],
+            compact_metrics=metrics[:1],
+            expanded_metrics=metrics,
         )
 
     metrics = [_metric_view(window, settings, now=now) for window in snapshot.windows]
     if snapshot.credits is not None:
         metrics.append(MetricView(label="Credits", detail=snapshot.credits.display))
     if not metrics:
-        metrics.append(MetricView(label="—", detail="—"))
+        metrics.append(MetricView(label="—"))
 
-    trailing = snapshot.plan
-    if snapshot.stale:
-        age = format_age(snapshot.fetched_at, now=now)
-        trailing = " · ".join(value for value in (trailing, age) if value)
     return ProviderView(
         name=snapshot.display_name,
         trailing=trailing,

@@ -67,20 +67,29 @@ def _paint_metric_row(
     painter: QPainter, metric: MetricView, top: int, left: int, right: int
 ) -> None:
     vertical = Qt.AlignmentFlag.AlignVCenter
+    if metric.percent is None:
+        painter.setPen(TEXT_LABEL if metric.detail is not None else TEXT_DIM)
+        painter.drawText(
+            QRectF(left, top, LABEL_WIDTH, WINDOW_ROW_HEIGHT),
+            vertical | Qt.AlignmentFlag.AlignLeft,
+            metric.label,
+        )
+        if metric.detail is None:
+            return
+        painter.setPen(TEXT_DIM)
+        painter.drawText(
+            QRectF(left + LABEL_WIDTH, top, right - left - LABEL_WIDTH, WINDOW_ROW_HEIGHT),
+            vertical | Qt.AlignmentFlag.AlignLeft,
+            metric.detail,
+        )
+        return
+
     painter.setPen(TEXT_LABEL)
     painter.drawText(
         QRectF(left, top, LABEL_WIDTH, WINDOW_ROW_HEIGHT),
         vertical | Qt.AlignmentFlag.AlignLeft,
         metric.label,
     )
-    if metric.percent is None:
-        painter.setPen(TEXT_DIM)
-        painter.drawText(
-            QRectF(left + LABEL_WIDTH, top, right - left - LABEL_WIDTH, WINDOW_ROW_HEIGHT),
-            vertical | Qt.AlignmentFlag.AlignLeft,
-            metric.detail or "—",
-        )
-        return
 
     bar_left = left + LABEL_WIDTH
     bar = QRectF(bar_left, top + (WINDOW_ROW_HEIGHT - BAR_HEIGHT) / 2, BAR_WIDTH, BAR_HEIGHT)
