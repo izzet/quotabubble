@@ -4,7 +4,6 @@ on:
   push:
     branches: [main]
   pull_request:
-    branches: [main]
   workflow_dispatch:
 
 jobs:
@@ -21,6 +20,9 @@ jobs:
             coverage_flag: macos-x64
           - os: macos-15
             coverage: false
+          - os: ubuntu-latest
+            coverage: true
+            coverage_flag: linux
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
@@ -28,6 +30,12 @@ jobs:
       - uses: astral-sh/setup-uv@v5
         with:
           enable-cache: true
+
+      - name: Install Linux Qt runtime dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes libegl1
 
       - name: Sync dependencies
         run: uv sync

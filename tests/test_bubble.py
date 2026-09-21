@@ -139,6 +139,7 @@ def test_paint_expanded_stale_snapshot(qapp: object) -> None:
 
     from PySide6.QtGui import QPainter, QPixmap
 
+    from quotabubble.presentation.builder import build_bubble_view
     from quotabubble.ui.panel import paint_expanded
 
     now = datetime.now(tz=UTC)
@@ -153,8 +154,25 @@ def test_paint_expanded_stale_snapshot(qapp: object) -> None:
 
     pixmap = QPixmap(300, 200)
     painter = QPainter(pixmap)
-    paint_expanded(painter, [stale_snapshot], Settings(), 0, 300)
+    view = build_bubble_view([stale_snapshot], Settings(), now=now)
+    paint_expanded(painter, view.providers, 0, 300)
     painter.end()
+
+
+def test_window_paints_the_shared_view_in_both_states(qapp: object) -> None:
+    from PySide6.QtGui import QPixmap
+
+    window = BubbleWindow(_state(), Settings(position=(0, 0)))
+    compact = QPixmap(window.size())
+    window.render(compact)
+
+    window._toggle_expanded()
+    expanded = QPixmap(window._target_size())
+    window.render(expanded)
+
+    assert compact.isNull() is False
+    assert expanded.isNull() is False
+    window.deleteLater()
 
 
 def test_tray_icon_actions_and_refresh_signal(qapp: object) -> None:

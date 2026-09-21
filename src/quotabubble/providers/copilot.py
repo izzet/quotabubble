@@ -7,6 +7,7 @@ import httpx2
 from pydantic import BaseModel
 
 from quotabubble.credentials import enumerate_generic_credentials
+from quotabubble.credentials.copilot import read_copilot_cli_credentials
 from quotabubble.providers.base import (
     ProviderStatus,
     UsageSnapshot,
@@ -44,13 +45,13 @@ class _UserResponse(BaseModel):
 
 
 def _decode_token(blob: bytes) -> str | None:
-    for encoding in ("utf-16-le", "utf-8"):
+    for encoding in ("utf-8", "utf-16-le"):
         try:
             text = blob.decode(encoding)
         except UnicodeDecodeError:
             continue
         text = text.strip("\x00").strip()
-        if text:
+        if text and "\x00" not in text:
             return text
     return None
 
@@ -65,6 +66,11 @@ def _used_percent(snapshot: _QuotaSnapshot | None) -> float | None:
     return None
 
 
+def _default_credentials(name_contains: str) -> list[tuple[str, bytes]]:
+    linux_credentials = read_copilot_cli_credentials()
+    return linux_credentials or enumerate_generic_credentials(name_contains)
+
+
 class CopilotProvider:
     id = "copilot"
     display_name = "Copilot"
@@ -75,7 +81,7 @@ class CopilotProvider:
         credential_provider: Callable[[str], list[tuple[str, bytes]]] | None = None,
         client: httpx2.Client | None = None,
     ) -> None:
-        self._credentials = credential_provider or enumerate_generic_credentials
+        self._credentials = credential_provider or _default_credentials
         self._client = client
 
     def detect(self) -> bool:
