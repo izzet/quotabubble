@@ -12,9 +12,22 @@ export const TOKENS = {
   },
   "size": {
     "barHeight": 6,
+    "compactRowHeight": 26,
     "compactWidth": 260,
     "expandedWidth": 300,
+    "headerRowHeight": 20,
+    "metricBarWidth": 100,
+    "metricLabelWidth": 60,
+    "metricPercentWidth": 42,
+    "metricResetWidth": 64,
+    "metricRowHeight": 22,
+    "miniBarWidth": 32,
+    "miniGap": 4,
+    "miniLabelWidth": 24,
+    "miniPercentWidth": 26,
+    "nameGap": 12,
     "padding": 12,
+    "providerGap": 6,
     "radius": 14
   }
 };

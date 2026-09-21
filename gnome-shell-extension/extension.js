@@ -1,9 +1,9 @@
 import Clutter from 'gi://Clutter';
 import Gio from 'gi://Gio';
-import St from 'gi://St';
 
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import {Extension} from 'resource:///org/gnome/shell/extensions/extension.js';
+import {BubbleRenderer} from './renderer.js';
 
 const BUS_NAME = 'dev.izzet.quotabubble';
 const OBJECT_PATH = '/dev/izzet/quotabubble';
@@ -14,23 +14,8 @@ export default class QuotaBubbleExtension extends Extension {
     enable() {
         this._enabled = true;
         this._expanded = false;
-        this._actor = new St.BoxLayout({
-            style_class: 'quotabubble',
-            vertical: true,
-            reactive: true,
-            track_hover: true,
-        });
-        this._summary = new St.Label({
-            style_class: 'quotabubble-summary',
-            text: 'QuotaBubble  ·  Loading…',
-        });
-        this._details = new St.BoxLayout({
-            style_class: 'quotabubble-details',
-            vertical: true,
-        });
-        this._actor.add_child(this._summary);
-        this._actor.add_child(this._details);
-        this._details.hide();
+        this._renderer = new BubbleRenderer();
+        this._actor = this._renderer.actor;
         this._buttonPressId = this._actor.connect(
             'button-press-event',
             (_actor, event) => this._beginPointerAction(event),
@@ -70,7 +55,7 @@ export default class QuotaBubbleExtension extends Extension {
                 this._render(result.deepUnpack()[0]);
         } catch (error) {
             console.error(`QuotaBubble could not connect to its service: ${error.message}`);
-            this._summary?.set_text('QuotaBubble  ·  Service unavailable');
+            this._renderFallback('Service unavailable');
         }
     }
 
@@ -169,30 +154,30 @@ export default class QuotaBubbleExtension extends Extension {
 
     _setExpanded(expanded) {
         this._expanded = expanded;
-        if (expanded)
-            this._details.show();
-        else
-            this._details.hide();
+        this._renderer?.setExpanded(expanded);
     }
 
     _render(payload) {
         try {
             const state = JSON.parse(payload);
-            const rows = state.snapshots.map(snapshot => this._snapshotText(snapshot));
-            this._summary?.set_text(rows.length ? rows.join('  ·  ') : 'QuotaBubble  ·  No providers');
-            this._details?.destroy_all_children();
-            for (const row of rows)
-                this._details?.add_child(new St.Label({style_class: 'quotabubble-row', text: row}));
+            if (state.version !== 1 || !Array.isArray(state.providers))
+                throw new Error('unsupported presentation contract');
+            this._renderer?.setView(state);
         } catch (error) {
             console.error(`QuotaBubble received an invalid service state: ${error.message}`);
-            this._summary?.set_text('QuotaBubble  ·  Invalid service data');
+            this._renderFallback('Invalid service data');
         }
     }
 
-    _snapshotText(snapshot) {
-        if (snapshot.status !== 'ok')
-            return `${snapshot.display_name}  ${snapshot.message ?? snapshot.status}`;
-        const windows = snapshot.windows.map(window => `${window.label} ${Math.round(window.used_pct)}%`);
-        return windows.length ? `${snapshot.display_name}  ${windows.join('  ·  ')}` : snapshot.display_name;
+    _renderFallback(message) {
+        this._renderer?.setView({
+            version: 1,
+            providers: [{
+                name: 'QuotaBubble',
+                stale: false,
+                compact_metrics: [{label: message, detail: message}],
+                expanded_metrics: [{label: message, detail: message}],
+            }],
+        });
     }
 }

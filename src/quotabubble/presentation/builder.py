@@ -4,8 +4,8 @@ from datetime import datetime
 
 from quotabubble.app.settings import Settings
 from quotabubble.providers.base import ProviderStatus, UsageSnapshot, UsageWindow
-from quotabubble.ui.formatting import format_age, format_reset
 
+from .formatting import format_age, format_reset
 from .models import BubbleView, MetricView, ProviderView
 
 
@@ -54,15 +54,15 @@ def _metric_view(window: UsageWindow, settings: Settings, *, now: datetime | Non
         label=window.short or window.label,
         percent=round(percent),
         bar_fraction=max(0, min(1, percent / 100)),
-        tone=_tone(window, percent),
+        tone=_tone(window),
         reset_text=format_reset(window.resets_at, now=now),
     )
 
 
-def _tone(window: UsageWindow, percent: float) -> str:
-    if window.severity == "critical" or percent >= 85:
+def _tone(window: UsageWindow) -> str:
+    if window.severity == "critical" or window.used_pct >= 85:
         return "critical"
-    if percent >= 60:
+    if window.used_pct >= 60:
         return "warning"
     return "ok"
 

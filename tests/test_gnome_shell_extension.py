@@ -26,6 +26,16 @@ def test_extension_has_its_required_entrypoint() -> None:
     assert "_beginPointerAction" in source
     assert "Gio.DBusProxy.new_for_bus_finish" in source
     assert "proxy.call_finish" in source
+    assert "BubbleRenderer" in source
+
+
+def test_extension_renderer_uses_the_presentation_contract() -> None:
+    source = (EXTENSION_DIR / "renderer.js").read_text(encoding="utf-8")
+
+    assert "St.DrawingArea" in source
+    assert "expanded_metrics" in source
+    assert "compact_metrics" in source
+    assert "./generated/tokens.js" in source
 
 
 def test_package_activates_the_extension_service_on_the_session_bus() -> None:

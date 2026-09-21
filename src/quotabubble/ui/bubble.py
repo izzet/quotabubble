@@ -28,18 +28,19 @@ from PySide6.QtWidgets import QApplication, QWidget
 from quotabubble.app.settings import Settings
 from quotabubble.app.state import AppState
 from quotabubble.platform import configure_window
-from quotabubble.providers.base import ProviderStatus, UsageSnapshot, UsageWindow
+from quotabubble.presentation.builder import build_bubble_view
+from quotabubble.presentation.generated_tokens import TOKENS
+from quotabubble.presentation.models import MetricView, ProviderView
+from quotabubble.providers.base import UsageSnapshot
 from quotabubble.ui.context_menu import build_context_menu
 from quotabubble.ui.panel import (
     BAR_HEIGHT,
     PADDING,
     TEXT,
     TEXT_DIM,
-    display_pct,
+    TONES,
     expanded_content_height,
     paint_expanded,
-    row_color,
-    status_text,
 )
 
 
@@ -47,16 +48,16 @@ class BubbleWindow(QWidget):
     settings_requested = Signal()
     refresh_requested = Signal()
 
-    COMPACT_WIDTH = 260
-    EXPANDED_WIDTH = 300
-    COMPACT_ROW_HEIGHT = 26
-    NAME_GAP = 12
-    MINI_LABEL_WIDTH = 24
-    MINI_BAR_WIDTH = 32
-    MINI_PCT_WIDTH = 26
-    MINI_GAP = 4
+    COMPACT_WIDTH = TOKENS["size"]["compactWidth"]
+    EXPANDED_WIDTH = TOKENS["size"]["expandedWidth"]
+    COMPACT_ROW_HEIGHT = TOKENS["size"]["compactRowHeight"]
+    NAME_GAP = TOKENS["size"]["nameGap"]
+    MINI_LABEL_WIDTH = TOKENS["size"]["miniLabelWidth"]
+    MINI_BAR_WIDTH = TOKENS["size"]["miniBarWidth"]
+    MINI_PCT_WIDTH = TOKENS["size"]["miniPercentWidth"]
+    MINI_GAP = TOKENS["size"]["miniGap"]
     GROUP_GAP = 8
-    CORNER_RADIUS = 14
+    CORNER_RADIUS = TOKENS["size"]["radius"]
 
     def __init__(self, state: AppState, settings: Settings) -> None:
         super().__init__()
@@ -118,61 +119,53 @@ class BubbleWindow(QWidget):
         painter = QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
         background = QRectF(self.rect()).adjusted(0.5, 0.5, -0.5, -0.5)
-        painter.setPen(QPen(QColor(255, 255, 255, 40), 1))
-        painter.setBrush(QColor(22, 22, 26, 235))
+        painter.setPen(QPen(QColor(TOKENS["color"]["border"]), 1))
+        painter.setBrush(QColor(TOKENS["color"]["surface"]))
         painter.drawRoundedRect(background, self.CORNER_RADIUS, self.CORNER_RADIUS)
 
         font = QFont(self.font())
         font.setPointSize(9)
         painter.setFont(font)
 
-        snapshots = self._state.ordered()
-        if not snapshots:
+        view = self._view()
+        if not view.providers:
             painter.setPen(TEXT_DIM)
             painter.drawText(self.rect(), Qt.AlignmentFlag.AlignCenter, "No providers")
             return
 
         if self._expanded:
             paint_expanded(
-                painter, snapshots, self._settings, PADDING, self.EXPANDED_WIDTH
+                painter, view.providers, PADDING, self.width()
             )
             return
 
         top = PADDING
-        for snapshot in snapshots:
-            self._paint_compact_row(painter, snapshot, top)
+        for provider in view.providers:
+            self._paint_compact_row(painter, provider, top)
             top += self.COMPACT_ROW_HEIGHT
 
-    def _paint_compact_row(self, painter: QPainter, snapshot: UsageSnapshot, top: int) -> None:
+    def _paint_compact_row(self, painter: QPainter, provider: ProviderView, top: int) -> None:
         left = PADDING
         right = self.width() - PADDING
         vertical = Qt.AlignmentFlag.AlignVCenter
         center = top + self.COMPACT_ROW_HEIGHT / 2
 
-        painter.setPen(TEXT_DIM if snapshot.stale else TEXT)
+        painter.setPen(TEXT_DIM if provider.stale else TEXT)
         painter.drawText(
             QRectF(left, top, self._name_width(), self.COMPACT_ROW_HEIGHT),
             vertical | Qt.AlignmentFlag.AlignLeft,
-            snapshot.display_name,
+            provider.name,
         )
 
-        if snapshot.status is not ProviderStatus.OK:
-            painter.setPen(TEXT_DIM)
-            painter.drawText(
-                QRectF(left, top, right - left, self.COMPACT_ROW_HEIGHT),
-                vertical | Qt.AlignmentFlag.AlignRight,
-                status_text(snapshot),
-            )
+        metrics = provider.compact_metrics
+        if not metrics:
             return
-
-        if not snapshot.windows:
-            has_credits = snapshot.credits is not None
-            text = snapshot.credits.display if has_credits else "—"
-            painter.setPen(TEXT if has_credits else TEXT_DIM)
+        if metrics[0].percent is None:
+            painter.setPen(TEXT if metrics[0].detail != "—" else TEXT_DIM)
             painter.drawText(
                 QRectF(left, top, right - left, self.COMPACT_ROW_HEIGHT),
                 vertical | Qt.AlignmentFlag.AlignRight,
-                text,
+                metrics[0].detail or metrics[0].label,
             )
             return
 
@@ -180,15 +173,14 @@ class BubbleWindow(QWidget):
         second_left = right - group_width
         first_left = second_left - self.GROUP_GAP - group_width
 
-        windows = snapshot.windows
-        self._paint_mini(painter, windows[0], first_left, top, center, snapshot.stale)
-        if len(windows) > 1:
-            self._paint_mini(painter, windows[1], second_left, top, center, snapshot.stale)
+        self._paint_mini(painter, metrics[0], first_left, top, center, provider.stale)
+        if len(metrics) > 1 and metrics[1].percent is not None:
+            self._paint_mini(painter, metrics[1], second_left, top, center, provider.stale)
 
     def _paint_mini(
         self,
         painter: QPainter,
-        window: UsageWindow,
+        metric: MetricView,
         left: int,
         top: int,
         center: float,
@@ -200,7 +192,7 @@ class BubbleWindow(QWidget):
         painter.drawText(
             QRectF(left, top, self.MINI_LABEL_WIDTH, self.COMPACT_ROW_HEIGHT),
             vertical | Qt.AlignmentFlag.AlignRight,
-            window.short or window.label,
+            metric.label,
         )
 
         bar_left = left + self.MINI_LABEL_WIDTH + self.MINI_GAP
@@ -211,10 +203,9 @@ class BubbleWindow(QWidget):
             QRectF(bar_left, bar_top, self.MINI_BAR_WIDTH, BAR_HEIGHT), 3, 3
         )
 
-        shown = display_pct(window.used_pct, self._settings)
-        fill = self.MINI_BAR_WIDTH * max(0.0, min(1.0, shown / 100.0))
+        fill = self.MINI_BAR_WIDTH * (metric.bar_fraction or 0)
         if fill > 0:
-            painter.setBrush(row_color(window))
+            painter.setBrush(TONES[metric.tone])
             painter.drawRoundedRect(QRectF(bar_left, bar_top, fill, BAR_HEIGHT), 3, 3)
 
         painter.setPen(TEXT_DIM if stale else TEXT)
@@ -226,7 +217,7 @@ class BubbleWindow(QWidget):
                 self.COMPACT_ROW_HEIGHT,
             ),
             vertical | Qt.AlignmentFlag.AlignRight,
-            f"{shown:.0f}%",
+            f"{metric.percent}%",
         )
 
     @classmethod
@@ -245,11 +236,11 @@ class BubbleWindow(QWidget):
         return font
 
     def _name_width(self) -> int:
-        snapshots = self._state.ordered()
-        if not snapshots:
+        providers = self._view().providers
+        if not providers:
             return 0
         metrics = QFontMetrics(self._content_font())
-        return max(metrics.horizontalAdvance(snapshot.display_name) for snapshot in snapshots)
+        return max(metrics.horizontalAdvance(provider.name) for provider in providers)
 
     def _compact_width(self) -> int:
         groups = 2 * self._group_width() + self.GROUP_GAP
@@ -363,13 +354,16 @@ class BubbleWindow(QWidget):
         self.update()
 
     def _compact_size(self) -> QSize:
-        rows = max(1, len(self._state.ordered()))
+        rows = max(1, len(self._view().providers))
         return QSize(self._compact_width(), PADDING * 2 + rows * self.COMPACT_ROW_HEIGHT)
 
     def _expanded_size(self) -> QSize:
-        snapshots = self._state.ordered()
+        providers = self._view().providers
         width = max(self.EXPANDED_WIDTH, self._compact_width())
-        return QSize(width, PADDING * 2 + expanded_content_height(snapshots))
+        return QSize(width, PADDING * 2 + expanded_content_height(providers))
+
+    def _view(self):
+        return build_bubble_view(self._state.ordered(), self._settings)
 
     def _target_size(self) -> QSize:
         return self._expanded_size() if self._expanded else self._compact_size()
