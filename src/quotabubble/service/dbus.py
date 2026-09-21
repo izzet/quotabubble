@@ -34,6 +34,10 @@ class QuotaBubbleInterface(ServiceInterface):
     def StateChanged(self, state: "s") -> "s":
         return state
 
+    @signal()
+    def NotificationRaised(self, title: "s", message: "s", urgency: "s") -> "sss":
+        return [title, message, urgency]
+
 
 class DbusService:
     def __init__(
@@ -79,6 +83,8 @@ class DbusService:
     async def refresh(self) -> None:
         await asyncio.to_thread(self.runtime.refresh, force=True)
         self._interface.StateChanged(self.runtime.state_json())
+        for event in self.runtime.take_notifications():
+            self._interface.NotificationRaised(event.title, event.message, event.urgency)
 
     async def reload_settings(self) -> None:
         await asyncio.to_thread(self.runtime.reload_settings)

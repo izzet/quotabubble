@@ -26,6 +26,9 @@ class _Runtime:
     def reload_settings(self) -> None:
         self.refreshes.append(False)
 
+    def take_notifications(self) -> list[object]:
+        return []
+
 
 class _Bus:
     def __init__(self) -> None:
@@ -87,3 +90,12 @@ def test_requested_settings_reload_refreshes_the_shared_state() -> None:
     asyncio.run(reload_and_wait())
 
     assert runtime.refreshes == [False, True]
+
+
+def test_interface_declares_notification_signal() -> None:
+    runtime = _Runtime()
+    service = DbusService(runtime)
+
+    assert service._interface.NotificationRaised.__wrapped__(
+        service._interface, "QuotaBubble", "Quota warning", "critical"
+    ) == ["QuotaBubble", "Quota warning", "critical"]
