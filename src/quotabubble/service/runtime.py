@@ -60,6 +60,10 @@ class ServiceRuntime:
         )
         self._polling = PollingRuntime(self._providers, last_good=previous)
 
+    def set_position(self, x: int, y: int) -> None:
+        self._settings.position = (x, y)
+        self._settings.save()
+
     def state_json(self) -> str:
         return build_bubble_view(self._state.ordered(), self._settings).model_dump_json()
 

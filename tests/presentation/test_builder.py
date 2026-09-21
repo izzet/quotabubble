@@ -92,3 +92,11 @@ def test_build_bubble_view_preserves_usage_severity_when_showing_remaining() -> 
     metric = view.providers[0].compact_metrics[0]
     assert metric.percent == 10
     assert metric.tone == "critical"
+
+
+def test_build_bubble_view_includes_saved_position() -> None:
+    view = build_bubble_view([], Settings(position=(120, 340)))
+    assert view.position == (120, 340)
+
+    view_none = build_bubble_view([], Settings())
+    assert view_none.position is None
