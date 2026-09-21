@@ -23,6 +23,9 @@ class _Runtime:
     def state_json(self) -> str:
         return '{"version":1,"snapshots":[]}'
 
+    def appearance_json(self) -> str:
+        return '{"idle_opacity":0.6}'
+
     def reload_settings(self) -> None:
         self.refreshes.append(False)
 
@@ -90,6 +93,15 @@ def test_requested_settings_reload_refreshes_the_shared_state() -> None:
     asyncio.run(reload_and_wait())
 
     assert runtime.refreshes == [False, True]
+
+
+def test_interface_declares_appearance_signal() -> None:
+    runtime = _Runtime()
+    service = DbusService(runtime)
+
+    assert service._interface.AppearanceChanged.__wrapped__(
+        service._interface, '{"idle_opacity":0.6}'
+    ) == '{"idle_opacity":0.6}'
 
 
 def test_interface_declares_notification_signal() -> None:

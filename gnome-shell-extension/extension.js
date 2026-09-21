@@ -87,6 +87,12 @@ export default class QuotaBubbleExtension extends Extension {
                     Main.notify(title, message);
                 },
             );
+            this._appearanceSignalId = proxy.connectSignal(
+                'AppearanceChanged',
+                (_proxy, _sender, parameters) => this._applyAppearance(
+                    JSON.parse(parameters.deepUnpack()[0]),
+                ),
+            );
             const result = await this._getState(proxy);
             if (this._enabled)
                 this._render(result.deepUnpack()[0]);
@@ -101,8 +107,11 @@ export default class QuotaBubbleExtension extends Extension {
             this._proxy?.disconnectSignal(this._signalId);
         if (this._notificationSignalId !== undefined)
             this._proxy?.disconnectSignal(this._notificationSignalId);
+        if (this._appearanceSignalId !== undefined)
+            this._proxy?.disconnectSignal(this._appearanceSignalId);
         this._signalId = undefined;
         this._notificationSignalId = undefined;
+        this._appearanceSignalId = undefined;
         this._proxy = null;
     }
 
@@ -229,16 +238,8 @@ export default class QuotaBubbleExtension extends Extension {
             const state = JSON.parse(payload);
             if (state.version !== 1 || !Array.isArray(state.providers))
                 throw new Error('unsupported presentation contract');
-            this._appearance = state.appearance ?? DEFAULT_APPEARANCE;
+            this._applyAppearance(state.appearance ?? DEFAULT_APPEARANCE);
             this._renderer?.setView(state);
-            if (!this._expanded && !this._pointerAction) {
-                this._cancelFade();
-                this._setOpacity(
-                    this._actor.get_hover()
-                        ? this._appearance.hover_opacity
-                        : this._appearance.idle_opacity,
-                );
-            }
         } catch (error) {
             console.error(`QuotaBubble received an invalid service state: ${error.message}`);
             this._renderFallback('Invalid service data');
@@ -280,6 +281,19 @@ export default class QuotaBubbleExtension extends Extension {
             application.launch([], null);
         else
             console.error('QuotaBubble settings application is not installed');
+    }
+
+    _applyAppearance(appearance) {
+        this._appearance = appearance;
+        if (!this._expanded && !this._pointerAction) {
+            this._cancelFade();
+            this._setOpacity(
+                this._actor.get_hover()
+                    ? this._appearance.hover_opacity
+                    : this._appearance.idle_opacity,
+                true,
+            );
+        }
     }
 
     _onEnter() {

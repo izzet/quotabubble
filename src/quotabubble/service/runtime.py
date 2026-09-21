@@ -62,3 +62,6 @@ class ServiceRuntime:
 
     def state_json(self) -> str:
         return build_bubble_view(self._state.ordered(), self._settings).model_dump_json()
+
+    def appearance_json(self) -> str:
+        return build_bubble_view(self._state.ordered(), self._settings).appearance.model_dump_json()

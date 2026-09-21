@@ -46,7 +46,10 @@ def test_service_runtime_reloads_saved_settings(monkeypatch) -> None:
 
     runtime.reload_settings()
 
-    assert json.loads(runtime.state_json())["providers"] == []
+    state = json.loads(runtime.state_json())
+
+    assert state["providers"] == []
+    assert json.loads(runtime.appearance_json()) == state["appearance"]
 
 
 def test_service_runtime_records_history(monkeypatch) -> None:

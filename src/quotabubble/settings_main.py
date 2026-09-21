@@ -32,6 +32,7 @@ async def _call_service(method: str) -> None:
 def main() -> None:
     app = QApplication(sys.argv)
     app.setApplicationName("QuotaBubble Settings")
+    app.setDesktopFileName("dev.izzet.QuotaBubbleSettings")
     app.setWindowIcon(app_icon())
     settings = Settings.load()
     dialog = SettingsDialog(settings, build_providers(settings))
