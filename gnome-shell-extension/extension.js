@@ -233,7 +233,6 @@ export default class QuotaBubbleExtension extends Extension {
             this._renderer?.setView(state);
             if (!this._expanded && !this._pointerAction) {
                 this._cancelFade();
-                this._actor.sync_hover();
                 this._setOpacity(
                     this._actor.get_hover()
                         ? this._appearance.hover_opacity
@@ -317,9 +316,14 @@ export default class QuotaBubbleExtension extends Extension {
     }
 
     _setOpacity(opacity, immediate = false) {
+        if (immediate) {
+            this._actor?.remove_all_transitions();
+            this._actor.opacity = Math.round(opacity * 255);
+            return;
+        }
         this._actor?.ease({
             opacity: Math.round(opacity * 255),
-            duration: immediate ? 0 : this._appearance.fade_duration_ms,
+            duration: this._appearance.fade_duration_ms,
             mode: Clutter.AnimationMode.EASE_IN_OUT_QUAD,
         });
     }
