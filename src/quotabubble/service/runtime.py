@@ -1,12 +1,11 @@
 from __future__ import annotations
 
-import json
-
 from quotabubble.app.cache import load_snapshots
 from quotabubble.app.providers import build_providers, merge_selected_snapshots, select_providers
 from quotabubble.app.runtime import PollingRuntime
 from quotabubble.app.settings import Settings
 from quotabubble.app.state import AppState
+from quotabubble.presentation.builder import build_bubble_view
 from quotabubble.providers.base import Provider, UsageSnapshot
 
 
@@ -39,8 +38,4 @@ class ServiceRuntime:
         return snapshots
 
     def state_json(self) -> str:
-        snapshots = [snapshot.model_dump(mode="json") for snapshot in self._state.ordered()]
-        return json.dumps(
-            {"version": 1, "snapshots": snapshots},
-            separators=(",", ":"),
-        )
+        return build_bubble_view(self._state.ordered(), self._settings).model_dump_json()

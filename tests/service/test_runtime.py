@@ -30,7 +30,7 @@ def test_service_runtime_seeds_and_serializes_selected_providers(monkeypatch) ->
     refreshed = json.loads(runtime.state_json())
 
     assert initial["version"] == 1
-    assert initial["snapshots"][0]["provider"] == "codex"
-    assert initial["snapshots"][0]["status"] == "loading"
+    assert initial["providers"][0]["name"] == "Codex"
+    assert initial["providers"][0]["expanded_metrics"][0]["label"] == "..."
     assert refreshed["version"] == 1
-    assert refreshed["snapshots"][0]["status"] == "ok"
+    assert refreshed["providers"][0]["expanded_metrics"][0]["label"] == "—"
