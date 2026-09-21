@@ -76,22 +76,10 @@ export default class QuotaBubbleExtension extends Extension {
             if (!this._enabled)
                 return;
             this._proxy = proxy;
-            this._signalId = proxy.connectSignal(
-                'StateChanged',
-                (_proxy, _sender, parameters) => this._render(parameters[0]),
-            );
-            this._notificationSignalId = proxy.connectSignal(
-                'NotificationRaised',
-                (_proxy, _sender, parameters) => {
-                    const [title, message] = parameters;
-                    Main.notify(title, message);
-                },
-            );
-            this._appearanceSignalId = proxy.connectSignal(
-                'AppearanceChanged',
-                (_proxy, _sender, parameters) => this._applyAppearance(
-                    JSON.parse(parameters[0]),
-                ),
+            this._dbusSignalId = proxy.connect(
+                'g-signal',
+                (_proxy, _sender, signalName, parameters) =>
+                    this._handleServiceSignal(signalName, parameters.deepUnpack()),
             );
             const result = await this._getState(proxy);
             if (this._enabled)
@@ -103,16 +91,21 @@ export default class QuotaBubbleExtension extends Extension {
     }
 
     _disconnectService() {
-        if (this._signalId !== undefined)
-            this._proxy?.disconnectSignal(this._signalId);
-        if (this._notificationSignalId !== undefined)
-            this._proxy?.disconnectSignal(this._notificationSignalId);
-        if (this._appearanceSignalId !== undefined)
-            this._proxy?.disconnectSignal(this._appearanceSignalId);
-        this._signalId = undefined;
-        this._notificationSignalId = undefined;
-        this._appearanceSignalId = undefined;
+        if (this._dbusSignalId !== undefined)
+            this._proxy?.disconnect(this._dbusSignalId);
+        this._dbusSignalId = undefined;
         this._proxy = null;
+    }
+
+    _handleServiceSignal(signalName, args) {
+        if (signalName === 'StateChanged') {
+            this._render(args[0]);
+        } else if (signalName === 'NotificationRaised') {
+            const [title, message] = args;
+            Main.notify(title, message);
+        } else if (signalName === 'AppearanceChanged') {
+            this._applyAppearance(JSON.parse(args[0]));
+        }
     }
 
     _serviceVanished() {
