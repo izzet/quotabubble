@@ -39,6 +39,16 @@ def test_build_bubble_view_formats_non_ok_status() -> None:
     view = build_bubble_view([snapshot], Settings())
 
     assert view.providers[0].expanded_metrics[0].label == "sign in"
+    assert view.providers[0].expanded_metrics[0].detail is None
+
+
+def test_build_bubble_view_keeps_empty_provider_marker_to_one_expanded_label() -> None:
+    snapshot = UsageSnapshot(provider="codex", display_name="Codex")
+
+    view = build_bubble_view([snapshot], Settings())
+
+    assert view.providers[0].expanded_metrics[0].label == "—"
+    assert view.providers[0].expanded_metrics[0].detail is None
 
 
 def test_build_bubble_view_preserves_usage_severity_when_showing_remaining() -> None:

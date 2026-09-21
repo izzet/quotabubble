@@ -22,7 +22,7 @@ def _provider_view(
 ) -> ProviderView:
     if snapshot.status is not ProviderStatus.OK:
         status = _status_text(snapshot.status)
-        metric = MetricView(label=status, detail=status)
+        metric = MetricView(label=status)
         return ProviderView(
             name=snapshot.display_name,
             stale=snapshot.stale,
@@ -33,7 +33,7 @@ def _provider_view(
     if snapshot.credits is not None:
         metrics.append(MetricView(label="Credits", detail=snapshot.credits.display))
     if not metrics:
-        metrics.append(MetricView(label="—", detail="—"))
+        metrics.append(MetricView(label="—"))
 
     trailing = snapshot.plan
     if snapshot.stale:

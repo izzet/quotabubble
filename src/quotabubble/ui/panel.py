@@ -74,6 +74,8 @@ def _paint_metric_row(
         metric.label,
     )
     if metric.percent is None:
+        if metric.detail is None:
+            return
         painter.setPen(TEXT_DIM)
         painter.drawText(
             QRectF(left + LABEL_WIDTH, top, right - left - LABEL_WIDTH, WINDOW_ROW_HEIGHT),
