@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from pathlib import Path
+
 from PySide6.QtCore import QEvent, QPointF, Qt
 from PySide6.QtGui import QMouseEvent
 
@@ -62,7 +64,7 @@ def test_click_toggles_expansion(qapp: object) -> None:
     window.deleteLater()
 
 
-def test_drag_moves_the_window_without_expanding(qapp: object) -> None:
+def test_drag_moves_the_window_without_expanding(qapp: object, tmp_path: Path) -> None:
     window = BubbleWindow(_state(), Settings(position=(100, 100)))
     start = QPointF(window.x() + 10, window.y() + 10)
     window.mousePressEvent(_mouse_event(QEvent.Type.MouseButtonPress, start))
@@ -79,6 +81,7 @@ def test_drag_moves_the_window_without_expanding(qapp: object) -> None:
     window.mouseReleaseEvent(_mouse_event(QEvent.Type.MouseButtonRelease, second))
     assert window._expanded is False
     assert window._dragging is False
+    assert (tmp_path / "settings.json").exists()
 
     window.deleteLater()
 
