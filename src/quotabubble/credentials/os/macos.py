@@ -5,6 +5,7 @@ from dataclasses import dataclass
 
 from Security import (
     SecItemCopyMatching,
+    SecKeychainSetUserInteractionAllowed,
     errSecSuccess,
     kSecAttrAccount,
     kSecAttrModificationDate,
@@ -15,6 +16,8 @@ from Security import (
     kSecMatchLimitAll,
     kSecReturnAttributes,
     kSecReturnData,
+    kSecUseAuthenticationUI,
+    kSecUseAuthenticationUIFail,
 )
 
 
@@ -26,7 +29,15 @@ class _Item:
 
 
 def _copy_matching(query: dict[object, object]) -> object | None:
-    status, result = SecItemCopyMatching(query, None)
+    # Quota polling runs without an interactive application flow. A keychain
+    # item that requires approval must fail rather than block that worker.
+    SecKeychainSetUserInteractionAllowed(False)
+    try:
+        status, result = SecItemCopyMatching(
+            {**query, kSecUseAuthenticationUI: kSecUseAuthenticationUIFail}, None
+        )
+    finally:
+        SecKeychainSetUserInteractionAllowed(True)
     return result if status == errSecSuccess else None
 
 
@@ -42,10 +53,11 @@ def _copy_data(service: str, account: str | None = None) -> bytes | None:
     return bytes(result) if result is not None else None
 
 
-def _items() -> list[_Item]:
+def _items(service: str) -> list[_Item]:
     result = _copy_matching(
         {
             kSecClass: kSecClassGenericPassword,
+            kSecAttrService: service,
             kSecReturnAttributes: True,
             kSecMatchLimit: kSecMatchLimitAll,
         }
@@ -78,7 +90,9 @@ def read_generic_credential(target: str) -> bytes | None:
 def enumerate_generic_credentials(name_contains: str) -> list[tuple[str, bytes]]:
     needle = name_contains.lower()
     results: list[tuple[str, bytes]] = []
-    for item in _items():
+    # Callers use a known Keychain service name. Searching every generic
+    # password can block on an unrelated item that requires authentication.
+    for item in _items(name_contains):
         target = f"{item.service}:{item.account}" if item.account else item.service
         if needle not in target.lower():
             continue
