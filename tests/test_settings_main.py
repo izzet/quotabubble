@@ -40,7 +40,7 @@ def test_notify_service_calls_reload_settings(monkeypatch) -> None:
     aio.MessageBus = Bus  # type: ignore[attr-defined]
     monkeypatch.setitem(sys.modules, "dbus_fast.aio", aio)
 
-    asyncio.run(settings_main._notify_service())
+    asyncio.run(settings_main._call_service("reload_settings"))
 
     assert calls == [
         "introspect:dev.izzet.quotabubble:/dev/izzet/quotabubble",
@@ -55,7 +55,13 @@ def test_settings_launcher_notifies_service_after_a_save(qapp: object, monkeypat
 
     notified: list[bool] = []
 
+    class Signal:
+        def connect(self, callback: object) -> None:
+            pass
+
     class Dialog:
+        test_notification_requested = Signal()
+
         def __init__(self, settings: Settings, providers: list[object]) -> None:
             assert settings == Settings()
             assert providers == []
@@ -70,7 +76,7 @@ def test_settings_launcher_notifies_service_after_a_save(qapp: object, monkeypat
     monkeypatch.setattr(settings_main, "SettingsDialog", Dialog)
     monkeypatch.setattr(settings_main.Settings, "load", lambda: Settings())
     monkeypatch.setattr(settings_main, "build_providers", lambda settings: [])
-    monkeypatch.setattr(settings_main, "_notify_service", notify)
+    monkeypatch.setattr(settings_main, "_call_service", lambda method: notify())
     monkeypatch.setattr(settings_main.sys, "platform", "linux")
     monkeypatch.setattr(
         settings_main, "set_launch_at_login", lambda enabled: notified.append(enabled)

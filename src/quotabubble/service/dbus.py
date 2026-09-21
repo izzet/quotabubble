@@ -30,6 +30,10 @@ class QuotaBubbleInterface(ServiceInterface):
     def ReloadSettings(self):
         self._service.request_settings_reload()
 
+    @method()
+    def TestNotification(self):
+        self._service.send_test_notification()
+
     @signal()
     def StateChanged(self, state: "s") -> "s":
         return state
@@ -79,6 +83,13 @@ class DbusService:
     def request_settings_reload(self) -> None:
         if self._refresh_task is None or self._refresh_task.done():
             self._refresh_task = asyncio.create_task(self.reload_settings())
+
+    def send_test_notification(self) -> None:
+        self._interface.NotificationRaised(
+            "QuotaBubble",
+            "Test notification: QuotaBubble alerts are configured properly.",
+            "normal",
+        )
 
     async def refresh(self) -> None:
         await asyncio.to_thread(self.runtime.refresh, force=True)
