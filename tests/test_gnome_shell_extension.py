@@ -13,7 +13,7 @@ def test_extension_metadata_declares_the_installed_uuid() -> None:
     metadata = json.loads((EXTENSION_DIR / "metadata.json").read_text(encoding="utf-8"))
 
     assert metadata["uuid"] == "quotabubble@izzet.dev"
-    assert metadata["shell-version"] == ["46"]
+    assert metadata["shell-version"] == ["45", "46", "47", "48"]
 
 
 def test_extension_has_its_required_entrypoint() -> None:

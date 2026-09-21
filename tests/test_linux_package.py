@@ -36,7 +36,7 @@ def test_debian_package_contains_the_native_gnome_installation(tmp_path: Path) -
     module.build_package(source, package, "0.0.0-test")
 
     fields = subprocess.run(
-        ["dpkg-deb", "--field", str(package), "Package", "Version", "Architecture"],
+        ["dpkg-deb", "--field", str(package), "Package", "Version", "Architecture", "Recommends"],
         check=True,
         capture_output=True,
         text=True,
@@ -48,12 +48,31 @@ def test_debian_package_contains_the_native_gnome_installation(tmp_path: Path) -
         text=True,
     ).stdout
 
+    control_dir = tmp_path / "control"
+    subprocess.run(
+        ["dpkg-deb", "--control", str(package), str(control_dir)],
+        check=True,
+    )
+
     assert "Package: quotabubble" in fields
     assert "Version: 0.0.0-test" in fields
     assert "Architecture: amd64" in fields
+    assert "Recommends: gnome-shell" in fields
     assert "usr/lib/quotabubble/quotabubble-service" in contents
     assert "usr/lib/quotabubble/quotabubble-settings" in contents
     assert "usr/share/dbus-1/services/dev.izzet.quotabubble.service" in contents
     assert "usr/share/gnome-shell/extensions/quotabubble@izzet.dev/extension.js" in contents
     assert "usr/share/applications/dev.izzet.QuotaBubbleSettings.desktop" in contents
     assert "usr/share/icons/hicolor/scalable/apps/dev.izzet.QuotaBubble.svg" in contents
+
+    postinst = control_dir / "postinst"
+    postrm = control_dir / "postrm"
+    assert postinst.is_file()
+    assert (postinst.stat().st_mode & 0o111) != 0
+    assert "update-desktop-database" in postinst.read_text(encoding="utf-8")
+    assert "gtk-update-icon-cache" in postinst.read_text(encoding="utf-8")
+
+    assert postrm.is_file()
+    assert (postrm.stat().st_mode & 0o111) != 0
+    assert "update-desktop-database" in postrm.read_text(encoding="utf-8")
+    assert "gtk-update-icon-cache" in postrm.read_text(encoding="utf-8")
