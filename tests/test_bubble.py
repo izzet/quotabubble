@@ -5,7 +5,7 @@ from PySide6.QtGui import QMouseEvent
 
 from quotabubble.app.settings import Settings
 from quotabubble.app.state import AppState
-from quotabubble.providers.base import UsageSnapshot, UsageWindow
+from quotabubble.providers.base import ProviderStatus, UsageSnapshot, UsageWindow
 from quotabubble.ui.bubble import BubbleWindow
 
 
@@ -172,6 +172,28 @@ def test_window_paints_the_shared_view_in_both_states(qapp: object) -> None:
 
     assert compact.isNull() is False
     assert expanded.isNull() is False
+    window.deleteLater()
+
+
+def test_expanded_status_renders_without_detail_text(qapp: object) -> None:
+    from PySide6.QtGui import QPixmap
+
+    state = AppState()
+    state.update(
+        UsageSnapshot(
+            provider="claude",
+            display_name="Claude",
+            status=ProviderStatus.EXPIRED,
+        )
+    )
+    window = BubbleWindow(state, Settings(position=(0, 0)))
+    window._expanded = True
+    window.refresh()
+
+    rendered = QPixmap(window.size())
+    window.render(rendered)
+
+    assert rendered.isNull() is False
     window.deleteLater()
 
 
