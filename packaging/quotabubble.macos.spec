@@ -47,7 +47,7 @@ app = BUNDLE(
     a.datas,
     name="QuotaBubble.app",
     icon=str(PROJECT_ROOT / "assets" / "quotabubble.icns"),
-    bundle_identifier="com.izzet.quotabubble",
+    bundle_identifier="dev.izzet.quotabubble",
     info_plist={
         "CFBundleDisplayName": "QuotaBubble",
         "CFBundleShortVersionString": VERSION,
