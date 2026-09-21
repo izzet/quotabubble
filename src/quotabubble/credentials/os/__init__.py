@@ -12,6 +12,11 @@ elif sys.platform == "darwin":
         enumerate_generic_credentials,
         read_generic_credential,
     )
+elif sys.platform == "linux":
+    from quotabubble.credentials.os.linux import (
+        enumerate_generic_credentials,
+        read_generic_credential,
+    )
 else:
 
     def read_generic_credential(target: str) -> bytes | None:
