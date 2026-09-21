@@ -77,14 +77,14 @@ export default class QuotaBubbleExtension extends Extension {
                 return;
             this._proxy = proxy;
             this._signalId = proxy.connectSignal(
-                null,
-                (_proxy, _sender, name, parameters) => {
-                    if (name === 'StateChanged')
-                        this._render(parameters.deepUnpack()[0]);
-                    if (name === 'NotificationRaised') {
-                        const [title, message] = parameters.deepUnpack();
-                        Main.notify(title, message);
-                    }
+                'StateChanged',
+                (_proxy, _sender, _name, parameters) => this._render(parameters.deepUnpack()[0]),
+            );
+            this._notificationSignalId = proxy.connectSignal(
+                'NotificationRaised',
+                (_proxy, _sender, _name, parameters) => {
+                    const [title, message] = parameters.deepUnpack();
+                    Main.notify(title, message);
                 },
             );
             const result = await this._getState(proxy);
@@ -99,7 +99,10 @@ export default class QuotaBubbleExtension extends Extension {
     _disconnectService() {
         if (this._signalId !== undefined)
             this._proxy?.disconnectSignal(this._signalId);
+        if (this._notificationSignalId !== undefined)
+            this._proxy?.disconnectSignal(this._notificationSignalId);
         this._signalId = undefined;
+        this._notificationSignalId = undefined;
         this._proxy = null;
     }
 

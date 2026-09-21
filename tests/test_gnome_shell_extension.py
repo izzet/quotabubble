@@ -35,6 +35,7 @@ def test_extension_has_its_required_entrypoint() -> None:
     assert "fade_duration_ms" in source
     assert "NotificationRaised" in source
     assert "Main.notify" in source
+    assert "_notificationSignalId" in source
 
 
 def test_extension_renderer_uses_the_presentation_contract() -> None:
