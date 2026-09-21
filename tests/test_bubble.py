@@ -159,6 +159,22 @@ def test_paint_expanded_stale_snapshot(qapp: object) -> None:
     painter.end()
 
 
+def test_window_paints_the_shared_view_in_both_states(qapp: object) -> None:
+    from PySide6.QtGui import QPixmap
+
+    window = BubbleWindow(_state(), Settings(position=(0, 0)))
+    compact = QPixmap(window.size())
+    window.render(compact)
+
+    window._toggle_expanded()
+    expanded = QPixmap(window._target_size())
+    window.render(expanded)
+
+    assert compact.isNull() is False
+    assert expanded.isNull() is False
+    window.deleteLater()
+
+
 def test_tray_icon_actions_and_refresh_signal(qapp: object) -> None:
     from PySide6.QtWidgets import QWidget
 

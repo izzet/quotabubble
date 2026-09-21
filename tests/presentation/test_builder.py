@@ -37,3 +37,17 @@ def test_build_bubble_view_formats_non_ok_status() -> None:
     view = build_bubble_view([snapshot], Settings())
 
     assert view.providers[0].expanded_metrics[0].label == "sign in"
+
+
+def test_build_bubble_view_preserves_usage_severity_when_showing_remaining() -> None:
+    snapshot = UsageSnapshot(
+        provider="claude",
+        display_name="Claude",
+        windows=[UsageWindow(key="session", label="Session", used_pct=90)],
+    )
+
+    view = build_bubble_view([snapshot], Settings(show_remaining=True))
+
+    metric = view.providers[0].compact_metrics[0]
+    assert metric.percent == 10
+    assert metric.tone == "critical"
