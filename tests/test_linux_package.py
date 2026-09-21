@@ -2,9 +2,17 @@ from __future__ import annotations
 
 import importlib.util
 import subprocess
+import sys
 from pathlib import Path
 
+import pytest
+
 PACKAGE_SCRIPT = Path(__file__).parents[1] / "packaging/linux/package_deb.py"
+
+pytestmark = pytest.mark.skipif(
+    sys.platform != "linux",
+    reason="Debian packaging is Linux only",
+)
 
 
 def _package_module() -> object:
