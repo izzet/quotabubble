@@ -7,6 +7,7 @@ from pydantic import BaseModel, Field
 
 class MetricView(BaseModel):
     label: str
+    compact_label: str | None = None
     percent: int | None = None
     bar_fraction: float | None = Field(default=None, ge=0, le=1)
     tone: Literal["ok", "warning", "critical", "muted"] = "muted"

@@ -51,7 +51,8 @@ def _provider_view(
 def _metric_view(window: UsageWindow, settings: Settings, *, now: datetime | None) -> MetricView:
     percent = 100 - window.used_pct if settings.show_remaining else window.used_pct
     return MetricView(
-        label=window.short or window.label,
+        label=window.label,
+        compact_label=window.short,
         percent=round(percent),
         bar_fraction=max(0, min(1, percent / 100)),
         tone=_tone(window),

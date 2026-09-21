@@ -131,7 +131,7 @@ export class BubbleRenderer {
         const groupWidth = size.miniLabelWidth + size.miniGap + size.miniBarWidth
             + size.miniGap + percentWidth;
         const left = anchoredRight ? right - groupWidth : right - groupWidth;
-        text(cr, metric.label, left + size.miniLabelWidth, top + 17, {align: 'right', color: color.textDim});
+        text(cr, metric.compact_label ?? metric.label, left + size.miniLabelWidth, top + 17, {align: 'right', color: color.textDim});
         const barLeft = left + size.miniLabelWidth + size.miniGap;
         roundedRect(cr, barLeft, top + 10, size.miniBarWidth, size.barHeight, 3);
         setColor(cr, color.track);

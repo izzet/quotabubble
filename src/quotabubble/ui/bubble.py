@@ -192,7 +192,7 @@ class BubbleWindow(QWidget):
         painter.drawText(
             QRectF(left, top, self.MINI_LABEL_WIDTH, self.COMPACT_ROW_HEIGHT),
             vertical | Qt.AlignmentFlag.AlignRight,
-            metric.label,
+            metric.compact_label or metric.label,
         )
 
         bar_left = left + self.MINI_LABEL_WIDTH + self.MINI_GAP
