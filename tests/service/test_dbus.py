@@ -16,9 +16,13 @@ class _Runtime:
 
     def __init__(self) -> None:
         self.refreshes: list[bool] = []
+        self.position: tuple[int, int] | None = None
 
     def refresh(self, *, force: bool = False) -> None:
         self.refreshes.append(force)
+
+    def set_position(self, x: int, y: int) -> None:
+        self.position = (x, y)
 
     def state_json(self) -> str:
         return '{"version":1,"snapshots":[]}'
@@ -111,3 +115,11 @@ def test_interface_declares_notification_signal() -> None:
     assert service._interface.NotificationRaised.__wrapped__(
         service._interface, "QuotaBubble", "Quota warning", "critical"
     ) == ["QuotaBubble", "Quota warning", "critical"]
+
+
+def test_interface_declares_set_position() -> None:
+    runtime = _Runtime()
+    service = DbusService(runtime)
+
+    service._interface.SetPosition.__wrapped__(service._interface, 100, 200)
+    assert runtime.position == (100, 200)

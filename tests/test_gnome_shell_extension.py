@@ -42,6 +42,10 @@ def test_extension_has_its_required_entrypoint() -> None:
     assert "AppearanceChanged" in source
     assert "connectSignal" not in source
     assert "_handleServiceSignal" in source
+    assert "SetPosition" in source
+    assert "_restorePosition" in source
+    assert "_savePosition" in source
+    assert "_userMoved" in source
 
 
 def test_extension_renderer_uses_the_presentation_contract() -> None:

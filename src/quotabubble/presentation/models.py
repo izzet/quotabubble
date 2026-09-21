@@ -34,3 +34,4 @@ class BubbleView(BaseModel):
     version: Literal[1] = 1
     appearance: AppearanceView
     providers: list[ProviderView] = Field(default_factory=list)
+    position: tuple[int, int] | None = None

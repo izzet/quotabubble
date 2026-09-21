@@ -19,7 +19,8 @@ def build_bubble_view(
             fade_delay_ms=settings.fade_delay_ms,
             fade_duration_ms=settings.fade_duration_ms,
         ),
-        providers=[_provider_view(snapshot, settings, now=now) for snapshot in snapshots]
+        providers=[_provider_view(snapshot, settings, now=now) for snapshot in snapshots],
+        position=settings.position,
     )
 
 

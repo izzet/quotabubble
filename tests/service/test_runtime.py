@@ -69,3 +69,20 @@ def test_service_runtime_records_history(monkeypatch) -> None:
     runtime.refresh(force=True)
 
     assert [snapshot.provider for snapshot in recorded] == ["codex"]
+
+
+def test_service_runtime_updates_and_saves_position(monkeypatch) -> None:
+    monkeypatch.setattr("quotabubble.app.runtime.save_snapshots", lambda snapshots: None)
+    saved_settings: list[Settings] = []
+    monkeypatch.setattr(
+        "quotabubble.app.settings.Settings.save",
+        lambda self: saved_settings.append(self),
+    )
+
+    runtime = ServiceRuntime(Settings(), providers=[_Provider()], cached={})
+    runtime.set_position(150, 250)
+
+    state = json.loads(runtime.state_json())
+    assert state["position"] == [150, 250]
+    assert len(saved_settings) == 1
+    assert saved_settings[0].position == (150, 250)

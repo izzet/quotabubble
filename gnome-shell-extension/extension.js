@@ -23,6 +23,7 @@ export default class QuotaBubbleExtension extends Extension {
     enable() {
         this._enabled = true;
         this._expanded = false;
+        this._userMoved = false;
         this._appearance = DEFAULT_APPEARANCE;
         this._renderer = new BubbleRenderer();
         this._actor = this._renderer.actor;
@@ -54,6 +55,7 @@ export default class QuotaBubbleExtension extends Extension {
 
     disable() {
         this._enabled = false;
+        this._userMoved = false;
         this._endPointerAction();
         this._cancelFade();
         if (this._nameWatchId)
@@ -197,10 +199,14 @@ export default class QuotaBubbleExtension extends Extension {
         if (event.type() === Clutter.EventType.BUTTON_RELEASE) {
             const dragged = this._pointerAction.dragged;
             this._endPointerAction();
-            if (!dragged)
+            if (!dragged) {
                 this._setExpanded(!this._expanded);
-            else if (!this._actor.get_hover())
-                this._scheduleFade();
+            } else {
+                this._userMoved = true;
+                this._savePosition(this._actor.x, this._actor.y);
+                if (!this._actor.get_hover())
+                    this._scheduleFade();
+            }
             return Clutter.EVENT_STOP;
         }
 
@@ -226,12 +232,43 @@ export default class QuotaBubbleExtension extends Extension {
         }
     }
 
+    _restorePosition(x, y) {
+        const width = this._actor?.width || 48;
+        const height = this._actor?.height || 48;
+        const stageWidth = global.stage?.width ?? 1920;
+        const stageHeight = global.stage?.height ?? 1080;
+        const maxX = Math.max(0, stageWidth - width);
+        const maxY = Math.max(0, stageHeight - height);
+        const clampedX = Math.max(0, Math.min(x, maxX));
+        const clampedY = Math.max(0, Math.min(y, maxY));
+        this._actor?.set_position(clampedX, clampedY);
+    }
+
+    _savePosition(x, y) {
+        this._proxy?.call(
+            'SetPosition',
+            new GLib.Variant('(ii)', [Math.round(x), Math.round(y)]),
+            Gio.DBusCallFlags.NONE,
+            -1,
+            null,
+            (_proxy, result) => {
+                try {
+                    this._proxy?.call_finish(result);
+                } catch (error) {
+                    console.error(`QuotaBubble could not save position: ${error.message}`);
+                }
+            },
+        );
+    }
+
     _render(payload) {
         try {
             const state = JSON.parse(payload);
             if (state.version !== 1 || !Array.isArray(state.providers))
                 throw new Error('unsupported presentation contract');
             this._applyAppearance(state.appearance ?? DEFAULT_APPEARANCE);
+            if (Array.isArray(state.position) && state.position.length === 2 && !this._userMoved)
+                this._restorePosition(state.position[0], state.position[1]);
             this._renderer?.setView(state);
         } catch (error) {
             console.error(`QuotaBubble received an invalid service state: ${error.message}`);

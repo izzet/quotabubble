@@ -28,6 +28,10 @@ class QuotaBubbleInterface(ServiceInterface):
         self._service.request_refresh()
 
     @method()
+    def SetPosition(self, x: "i", y: "i"):
+        self._service.set_position(x, y)
+
+    @method()
     def ReloadSettings(self):
         self._service.request_settings_reload()
 
@@ -84,6 +88,9 @@ class DbusService:
     def request_refresh(self) -> None:
         if self._refresh_task is None or self._refresh_task.done():
             self._refresh_task = asyncio.create_task(self.refresh())
+
+    def set_position(self, x: int, y: int) -> None:
+        self.runtime.set_position(x, y)
 
     def request_settings_reload(self) -> None:
         if self._refresh_task is None or self._refresh_task.done():
