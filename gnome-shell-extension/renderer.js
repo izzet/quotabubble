@@ -116,7 +116,7 @@ export class BubbleRenderer {
             if (metrics.length > 0 && Number.isInteger(metrics[0].percent))
                 this._paintMini(cr, metrics[0], width - size.padding - 85, y, provider.stale);
             if (metrics.length > 1 && Number.isInteger(metrics[1].percent))
-                this._paintMini(cr, metrics[1], width - size.padding, y, provider.stale, true);
+                this._paintMini(cr, metrics[1], width - size.padding, y, provider.stale);
             else if (metrics.length > 0 && metrics[0].percent === null)
                 text(cr, metrics[0].detail ?? metrics[0].label, width - size.padding, baseline, {
                     align: 'right', color: color.textDim,
@@ -125,12 +125,11 @@ export class BubbleRenderer {
         }
     }
 
-    _paintMini(cr, metric, right, top, stale, anchoredRight = false) {
+    _paintMini(cr, metric, right, top, stale) {
         const percent = `${metric.percent}%`;
-        const percentWidth = cr.textExtents(percent).width;
         const groupWidth = size.miniLabelWidth + size.miniGap + size.miniBarWidth
-            + size.miniGap + percentWidth;
-        const left = anchoredRight ? right - groupWidth : right - groupWidth;
+            + size.miniGap + size.miniPercentWidth;
+        const left = right - groupWidth;
         text(cr, metric.compact_label ?? metric.label, left + size.miniLabelWidth, top + 17, {align: 'right', color: color.textDim});
         const barLeft = left + size.miniLabelWidth + size.miniGap;
         roundedRect(cr, barLeft, top + 10, size.miniBarWidth, size.barHeight, 3);
