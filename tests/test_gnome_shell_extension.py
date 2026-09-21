@@ -37,6 +37,7 @@ def test_extension_has_its_required_entrypoint() -> None:
     assert "Main.notify" in source
     assert "_notificationSignalId" in source
     assert "this._actor.opacity = Math.round(opacity * 255)" in source
+    assert "(_proxy, _sender, parameters)" in source
 
 
 def test_extension_renderer_uses_the_presentation_contract() -> None:
