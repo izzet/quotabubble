@@ -45,13 +45,13 @@ class _UserResponse(BaseModel):
 
 
 def _decode_token(blob: bytes) -> str | None:
-    for encoding in ("utf-16-le", "utf-8"):
+    for encoding in ("utf-8", "utf-16-le"):
         try:
             text = blob.decode(encoding)
         except UnicodeDecodeError:
             continue
         text = text.strip("\x00").strip()
-        if text:
+        if text and "\x00" not in text:
             return text
     return None
 

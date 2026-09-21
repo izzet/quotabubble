@@ -4,6 +4,7 @@ import json
 import os
 import sys
 from pathlib import Path
+from urllib.parse import urlparse
 
 from quotabubble.credentials.os import read_generic_credential
 
@@ -37,7 +38,11 @@ def _last_logged_in_user() -> tuple[str, str] | None:
         or not login.strip()
     ):
         return None
-    return host.strip(), login.strip()
+    normalized_host = host.strip()
+    parsed = urlparse(normalized_host)
+    if parsed.scheme and parsed.netloc:
+        normalized_host = parsed.netloc
+    return normalized_host, login.strip()
 
 
 def read_copilot_cli_credentials() -> list[tuple[str, bytes]]:
