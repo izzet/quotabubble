@@ -9,27 +9,41 @@ module = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(module)
 
 
-def test_alpha_hex_moves_alpha_to_front_for_qt():
-    assert module._to_qt_alpha_order("#ffffff22") == "#22ffffff"
-    assert module._to_qt_alpha_order("#ffffff28") == "#28ffffff"
+def test_alpha_color_renders_alpha_first_for_qt():
+    token = {"$type": "color", "$value": "#ffffff", "$alpha": 34}
+    assert module._render_value(token, alpha_first=True) == "#22ffffff"
 
 
-def test_opaque_hex_is_left_unchanged():
-    assert module._to_qt_alpha_order("#5ec584") == "#5ec584"
+def test_alpha_color_renders_alpha_last_for_web():
+    token = {"$type": "color", "$value": "#ffffff", "$alpha": 34}
+    assert module._render_value(token, alpha_first=False) == "#ffffff22"
 
 
-def test_non_color_values_are_left_unchanged():
-    assert module._to_qt_alpha_order(14) == 14
-    assert module._to_qt_alpha_order(None) is None
+def test_opaque_color_is_unaffected_by_alpha_first():
+    token = {"$type": "color", "$value": "#5ec584"}
+    assert module._render_value(token, alpha_first=True) == "#5ec584"
+    assert module._render_value(token, alpha_first=False) == "#5ec584"
 
 
-def test_nested_dicts_are_converted_recursively():
-    result = module._to_qt_alpha_order({"track": "#ffffff22", "ok": "#5ec584"})
-    assert result == {"track": "#22ffffff", "ok": "#5ec584"}
+def test_non_color_value_passes_through_unchanged():
+    token = {"$type": "number", "$value": 14}
+    assert module._render_value(token, alpha_first=True) == 14
 
 
-def test_qt_parses_converted_colors_with_intended_alpha(qapp):
+def test_render_walks_nested_groups():
+    source = {
+        "color": {
+            "track": {"$type": "color", "$value": "#ffffff", "$alpha": 34},
+            "ok": {"$type": "color", "$value": "#5ec584"},
+        }
+    }
+    result = module._render(source, alpha_first=True)
+    assert result == {"color": {"track": "#22ffffff", "ok": "#5ec584"}}
+
+
+def test_qt_parses_rendered_color_with_intended_alpha(qapp):
     from PySide6.QtGui import QColor
 
-    color = QColor(module._to_qt_alpha_order("#ffffff22"))
+    token = {"$type": "color", "$value": "#ffffff", "$alpha": 34}
+    color = QColor(module._render_value(token, alpha_first=True))
     assert (color.red(), color.green(), color.blue(), color.alpha()) == (255, 255, 255, 34)
