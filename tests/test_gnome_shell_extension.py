@@ -39,6 +39,8 @@ def test_extension_has_its_required_entrypoint() -> None:
     assert "this._actor.opacity = Math.round(opacity * 255)" in source
     assert "(_proxy, _sender, parameters)" in source
     assert "AppearanceChanged" in source
+    assert "parameters.deepUnpack" not in source
+    assert "parameters[0]" in source
 
 
 def test_extension_renderer_uses_the_presentation_contract() -> None:

@@ -34,6 +34,6 @@ def _pixmap(size: int) -> QPixmap:
 
 def app_icon() -> QIcon:
     icon = QIcon()
-    for size in (16, 24, 32, 48, 64):
+    for size in (16, 24, 32, 48, 64, 128, 256):
         icon.addPixmap(_pixmap(size))
     return icon
