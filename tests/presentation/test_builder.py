@@ -4,7 +4,7 @@ from datetime import UTC, datetime, timedelta
 
 from quotabubble.app.settings import Settings
 from quotabubble.presentation.builder import build_bubble_view
-from quotabubble.providers.base import ProviderStatus, UsageSnapshot, UsageWindow
+from quotabubble.providers.base import Credits, ProviderStatus, UsageSnapshot, UsageWindow
 
 
 def test_build_bubble_view_prepares_compact_and_expanded_metrics() -> None:
@@ -46,6 +46,38 @@ def test_build_bubble_view_formats_non_ok_status() -> None:
     view = build_bubble_view([snapshot], Settings())
 
     assert view.providers[0].expanded_metrics[0].label == "sign in"
+    assert view.providers[0].expanded_metrics[0].detail is None
+    assert view.providers[0].compact_metrics[0].label == "sign in"
+
+
+def test_build_bubble_view_preserves_stale_status_context_and_credits() -> None:
+    now = datetime(2026, 9, 20, 20, tzinfo=UTC)
+    snapshot = UsageSnapshot(
+        provider="codex",
+        display_name="Codex",
+        status=ProviderStatus.EXPIRED,
+        plan="Plus",
+        stale=True,
+        fetched_at=now - timedelta(minutes=5),
+        credits=Credits(display="$4.20"),
+    )
+
+    view = build_bubble_view([snapshot], Settings(), now=now)
+
+    provider = view.providers[0]
+    assert provider.trailing == "Plus · 5m ago"
+    assert [metric.label for metric in provider.compact_metrics] == ["expired"]
+    assert [metric.label for metric in provider.expanded_metrics] == ["expired", "Credits"]
+    assert provider.expanded_metrics[1].detail == "$4.20"
+
+
+def test_build_bubble_view_keeps_empty_provider_marker_to_one_expanded_label() -> None:
+    snapshot = UsageSnapshot(provider="codex", display_name="Codex")
+
+    view = build_bubble_view([snapshot], Settings())
+
+    assert view.providers[0].expanded_metrics[0].label == "—"
+    assert view.providers[0].expanded_metrics[0].detail is None
 
 
 def test_build_bubble_view_preserves_usage_severity_when_showing_remaining() -> None:
