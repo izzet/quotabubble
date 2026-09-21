@@ -165,6 +165,7 @@ jobs:
           $version = $env:GITHUB_REF_NAME -replace '^v', ''
           $zipUrl = "https://github.com/izzet/quotabubble/releases/download/v$version/QuotaBubble-windows-x64.zip"
           $iconUrl = "https://cdn.jsdelivr.net/gh/izzet/quotabubble@v$version/website/public/icon.png"
+          $releaseNotes = "https://github.com/izzet/quotabubble/releases/tag/v$version"
 
           Invoke-WebRequest -Uri $zipUrl -OutFile QuotaBubble-windows-x64.zip
           $checksum = (Get-FileHash QuotaBubble-windows-x64.zip -Algorithm SHA256).Hash
@@ -177,7 +178,8 @@ jobs:
 
           $nuspec = "packaging/chocolatey/quotabubble.nuspec"
           (Get-Content $nuspec -Raw) `
-            -replace '__ICON_URL__', $iconUrl |
+            -replace '__ICON_URL__', $iconUrl `
+            -replace '__RELEASE_NOTES__', $releaseNotes |
             Set-Content $nuspec
 
           if ((Get-Content $nuspec -Raw) -match '__[A-Z]+__') {

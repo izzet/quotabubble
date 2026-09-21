@@ -4,11 +4,12 @@
     <id>quotabubble</id>
     <version>0.0.0</version>
     <packageSourceUrl>https://github.com/izzet/quotabubble/tree/main/packaging/chocolatey</packageSourceUrl>
-    <owners>Izzet Yildirim</owners>
+    <owners>izzet</owners>
     <title>QuotaBubble</title>
     <authors>Izzet Yildirim</authors>
     <projectUrl>https://izzet.github.io/quotabubble/</projectUrl>
     <iconUrl>__ICON_URL__</iconUrl>
+    <releaseNotes>__RELEASE_NOTES__</releaseNotes>
     <copyright>2026 Izzet Yildirim</copyright>
     <licenseUrl>https://github.com/izzet/quotabubble/blob/main/LICENSE</licenseUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
