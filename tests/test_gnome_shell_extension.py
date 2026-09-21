@@ -39,6 +39,7 @@ def test_extension_renderer_uses_the_presentation_contract() -> None:
     assert "expanded_metrics" in source
     assert "compact_metrics" in source
     assert "./generated/tokens.js" in source
+    assert "Number.isInteger(metric.percent)" in source
 
 
 def test_package_activates_the_extension_service_on_the_session_bus() -> None:

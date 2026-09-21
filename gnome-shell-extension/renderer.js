@@ -113,9 +113,9 @@ export class BubbleRenderer {
                 color: provider.stale ? color.textDim : color.text,
             });
             const metrics = provider.compact_metrics;
-            if (metrics.length > 0 && metrics[0].percent !== null)
+            if (metrics.length > 0 && Number.isInteger(metrics[0].percent))
                 this._paintMini(cr, metrics[0], width - size.padding - 85, y, provider.stale);
-            if (metrics.length > 1 && metrics[1].percent !== null)
+            if (metrics.length > 1 && Number.isInteger(metrics[1].percent))
                 this._paintMini(cr, metrics[1], width - size.padding, y, provider.stale, true);
             else if (metrics.length > 0 && metrics[0].percent === null)
                 text(cr, metrics[0].detail ?? metrics[0].label, width - size.padding, baseline, {
@@ -165,7 +165,7 @@ export class BubbleRenderer {
     _paintMetric(cr, metric, top, width) {
         const baseline = top + 16;
         text(cr, metric.label, size.padding, baseline, {color: color.text});
-        if (metric.percent === null) {
+        if (!Number.isInteger(metric.percent)) {
             text(cr, metric.detail ?? '—', size.padding + size.metricLabelWidth, baseline, {color: color.textDim});
             return;
         }
