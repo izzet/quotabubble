@@ -104,9 +104,13 @@ def _parse_credentials(raw: object) -> _Credentials | None:
 
 
 def read_keychain_credentials(
-    credential_provider: Callable[[str], list[tuple[str, bytes]]] = enumerate_generic_credentials,
+    credential_provider: Callable[..., list[tuple[str, bytes]]] = enumerate_generic_credentials,
+    *,
+    allow_interaction: bool = False,
 ) -> _Credentials | None:
-    for _target, blob in credential_provider(KEYCHAIN_CREDENTIAL_HINT):
+    for _target, blob in credential_provider(
+        KEYCHAIN_CREDENTIAL_HINT, allow_interaction=allow_interaction
+    ):
         try:
             raw = json.loads(blob.decode("utf-8"))
         except (UnicodeDecodeError, ValueError):
@@ -260,26 +264,33 @@ class ClaudeProvider:
     def __init__(
         self,
         credentials_path: Path | None = None,
-        keychain_credentials_provider: Callable[[str], list[tuple[str, bytes]]] | None = None,
+        keychain_credentials_provider: Callable[..., list[tuple[str, bytes]]] | None = None,
         client: httpx2.Client | None = None,
     ) -> None:
         self._credentials_path = credentials_path or default_credentials_path()
         self._keychain_credentials_provider = (
             keychain_credentials_provider or enumerate_generic_credentials
         )
+        self._keychain_credentials: _Credentials | None = None
         self._client = client
 
-    def _credentials(self) -> _Credentials | None:
+    def _credentials(self, *, allow_interaction: bool = False) -> _Credentials | None:
+        if self._keychain_credentials is not None:
+            return self._keychain_credentials
         if sys.platform == "darwin":
             keychain_credentials = read_keychain_credentials(
-                self._keychain_credentials_provider
+                self._keychain_credentials_provider,
+                allow_interaction=allow_interaction,
             )
             if keychain_credentials is not None:
+                self._keychain_credentials = keychain_credentials
                 return keychain_credentials
         return read_credentials(self._credentials_path)
 
     def detect(self) -> bool:
-        return self._credentials() is not None
+        # Detection runs on the UI thread. Allow the one-time Keychain prompt
+        # here, then keep the credential in memory so polling never blocks.
+        return self._credentials(allow_interaction=True) is not None
 
     def fetch(self) -> UsageSnapshot:
         credentials = self._credentials()

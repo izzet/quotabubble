@@ -40,3 +40,23 @@ def test_generic_credential_queries_never_wait_for_keychain_ui(monkeypatch) -> N
         query[macos.kSecUseAuthenticationUI] == macos.kSecUseAuthenticationUIFail
         for query in queries
     )
+
+
+def test_interactive_credential_query_allows_keychain_authorization(monkeypatch) -> None:
+    from quotabubble.credentials.os import macos
+
+    queries = []
+    interactions = []
+
+    def no_match(query, _result):
+        queries.append(query)
+        return -1, None
+
+    monkeypatch.setattr(macos, "SecItemCopyMatching", no_match)
+    monkeypatch.setattr(
+        macos, "SecKeychainSetUserInteractionAllowed", interactions.append
+    )
+
+    assert macos._copy_data("Claude Code-credentials", allow_interaction=True) is None
+    assert interactions == []
+    assert queries[0][macos.kSecUseAuthenticationUI] == macos.kSecUseAuthenticationUIAllow
