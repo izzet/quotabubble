@@ -3,6 +3,7 @@
 import asyncio
 from collections.abc import Callable
 
+from dbus_fast import Message, Variant
 from dbus_fast.aio import MessageBus
 from dbus_fast.service import ServiceInterface, method, signal
 
@@ -85,17 +86,43 @@ class DbusService:
             self._refresh_task = asyncio.create_task(self.reload_settings())
 
     def send_test_notification(self) -> None:
-        self._interface.NotificationRaised(
-            "QuotaBubble",
-            "Test notification: QuotaBubble alerts are configured properly.",
-            "normal",
+        asyncio.create_task(
+            self._emit_notification(
+                "QuotaBubble",
+                "Test notification: QuotaBubble alerts are configured properly.",
+                "normal",
+            )
         )
 
     async def refresh(self) -> None:
         await asyncio.to_thread(self.runtime.refresh, force=True)
         self._interface.StateChanged(self.runtime.state_json())
         for event in self.runtime.take_notifications():
-            self._interface.NotificationRaised(event.title, event.message, event.urgency)
+            await self._emit_notification(event.title, event.message, event.urgency)
+
+    async def _emit_notification(self, title: str, message: str, urgency: str) -> None:
+        self._interface.NotificationRaised(title, message, urgency)
+        if self._bus is None:
+            return
+        await self._bus.call(
+            Message(
+                destination="org.freedesktop.Notifications",
+                path="/org/freedesktop/Notifications",
+                interface="org.freedesktop.Notifications",
+                member="Notify",
+                signature="susssasa{sv}i",
+                body=[
+                    "QuotaBubble",
+                    0,
+                    "",
+                    title,
+                    message,
+                    [],
+                    {"urgency": Variant("y", 2 if urgency == "critical" else 1)},
+                    -1,
+                ],
+            )
+        )
 
     async def reload_settings(self) -> None:
         await asyncio.to_thread(self.runtime.reload_settings)

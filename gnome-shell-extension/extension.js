@@ -231,6 +231,14 @@ export default class QuotaBubbleExtension extends Extension {
                 throw new Error('unsupported presentation contract');
             this._appearance = state.appearance ?? DEFAULT_APPEARANCE;
             this._renderer?.setView(state);
+            if (!this._expanded && !this._pointerAction) {
+                this._cancelFade();
+                this._setOpacity(
+                    this._actor.get_hover()
+                        ? this._appearance.hover_opacity
+                        : this._appearance.idle_opacity,
+                );
+            }
         } catch (error) {
             console.error(`QuotaBubble received an invalid service state: ${error.message}`);
             this._renderFallback('Invalid service data');
