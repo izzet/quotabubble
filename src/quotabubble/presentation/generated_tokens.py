@@ -12,6 +12,7 @@ TOKENS = {
   },
   "size": {
     "barHeight": 6,
+    "compactGroupGap": 8,
     "compactRowHeight": 26,
     "compactWidth": 260,
     "expandedWidth": 300,

@@ -56,7 +56,7 @@ class BubbleWindow(QWidget):
     MINI_BAR_WIDTH = TOKENS["size"]["miniBarWidth"]
     MINI_PCT_WIDTH = TOKENS["size"]["miniPercentWidth"]
     MINI_GAP = TOKENS["size"]["miniGap"]
-    GROUP_GAP = 8
+    GROUP_GAP = TOKENS["size"]["compactGroupGap"]
     CORNER_RADIUS = TOKENS["size"]["radius"]
 
     def __init__(self, state: AppState, settings: Settings) -> None:
