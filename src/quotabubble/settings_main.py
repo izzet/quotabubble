@@ -7,6 +7,7 @@ from PySide6.QtWidgets import QApplication, QDialog
 
 from quotabubble.app.providers import build_providers
 from quotabubble.app.settings import Settings
+from quotabubble.platform import set_launch_at_login
 from quotabubble.ui.icon import app_icon
 from quotabubble.ui.settings_dialog import SettingsDialog
 
@@ -34,4 +35,5 @@ def main() -> None:
     settings = Settings.load()
     dialog = SettingsDialog(settings, build_providers(settings))
     if dialog.exec() == QDialog.DialogCode.Accepted and sys.platform == "linux":
+        set_launch_at_login(settings.launch_at_login)
         asyncio.run(_notify_service())

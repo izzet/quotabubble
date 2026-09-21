@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from quotabubble.app.cache import load_snapshots
+from quotabubble.app.history import HistoryRecorder
 from quotabubble.app.providers import build_providers, merge_selected_snapshots, select_providers
 from quotabubble.app.runtime import PollingRuntime
 from quotabubble.app.settings import Settings
@@ -24,6 +25,7 @@ class ServiceRuntime:
         self._providers = select_providers(candidates, settings)
         self._cached = load_snapshots() if cached is None else cached
         self._state = AppState()
+        self._history = HistoryRecorder(settings)
         self._state.replace(merge_selected_snapshots(self._providers, [], self._cached))
         self._polling = PollingRuntime(self._providers, last_good=self._cached)
 
@@ -35,11 +37,13 @@ class ServiceRuntime:
         snapshots = self._polling.poll(force=force)
         for snapshot in snapshots:
             self._state.update(snapshot)
+            self._history.record(snapshot)
         return snapshots
 
     def reload_settings(self) -> None:
         """Apply saved settings without requiring the GNOME extension to restart."""
         self._settings = Settings.load()
+        self._history = HistoryRecorder(self._settings)
         self._providers = select_providers(build_providers(self._settings), self._settings)
         previous = {snapshot.provider: snapshot for snapshot in self._state.ordered()}
         self._state.replace(

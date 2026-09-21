@@ -72,7 +72,10 @@ def test_settings_launcher_notifies_service_after_a_save(qapp: object, monkeypat
     monkeypatch.setattr(settings_main, "build_providers", lambda settings: [])
     monkeypatch.setattr(settings_main, "_notify_service", notify)
     monkeypatch.setattr(settings_main.sys, "platform", "linux")
+    monkeypatch.setattr(
+        settings_main, "set_launch_at_login", lambda enabled: notified.append(enabled)
+    )
 
     settings_main.main()
 
-    assert notified == [True]
+    assert notified == [False, True]

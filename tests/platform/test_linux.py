@@ -13,15 +13,13 @@ pytestmark = pytest.mark.skipif(sys.platform != "linux", reason="Linux only")
 def test_enabling_launch_at_login_writes_desktop_entry(monkeypatch, tmp_path: Path) -> None:
     target = tmp_path / "autostart" / "quotabubble.desktop"
     monkeypatch.setattr(linux, "AUTOSTART_FILE", target)
-    monkeypatch.setattr(linux, "launch_command", lambda: '"/opt/QuotaBubble/QuotaBubble"')
-
     linux.set_launch_at_login(True)
 
     assert target.read_text(encoding="utf-8") == (
         "[Desktop Entry]\n"
         "Type=Application\n"
         "Name=QuotaBubble\n"
-        'Exec="/opt/QuotaBubble/QuotaBubble"\n'
+        "Exec=quotabubble-service\n"
         "Terminal=false\n"
         "X-GNOME-Autostart-enabled=true\n"
     )

@@ -47,3 +47,22 @@ def test_service_runtime_reloads_saved_settings(monkeypatch) -> None:
     runtime.reload_settings()
 
     assert json.loads(runtime.state_json())["providers"] == []
+
+
+def test_service_runtime_records_history(monkeypatch) -> None:
+    monkeypatch.setattr("quotabubble.app.runtime.save_snapshots", lambda snapshots: None)
+    recorded: list[UsageSnapshot] = []
+
+    class Recorder:
+        def __init__(self, settings: Settings) -> None:
+            pass
+
+        def record(self, snapshot: UsageSnapshot) -> None:
+            recorded.append(snapshot)
+
+    monkeypatch.setattr("quotabubble.service.runtime.HistoryRecorder", Recorder)
+    runtime = ServiceRuntime(Settings(history_enabled=True), providers=[_Provider()], cached={})
+
+    runtime.refresh(force=True)
+
+    assert [snapshot.provider for snapshot in recorded] == ["codex"]
