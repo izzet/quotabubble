@@ -19,7 +19,11 @@ def test_build_bubble_view_prepares_compact_and_expanded_metrics() -> None:
         ],
     )
 
-    view = build_bubble_view([snapshot], Settings(), now=now)
+    view = build_bubble_view(
+        [snapshot],
+        Settings(idle_opacity=0.4, hover_opacity=0.9, fade_delay_ms=800),
+        now=now,
+    )
 
     provider = view.providers[0]
     assert provider.name == "Codex"
@@ -29,6 +33,9 @@ def test_build_bubble_view_prepares_compact_and_expanded_metrics() -> None:
     assert provider.compact_metrics[1].compact_label == "wk"
     assert provider.compact_metrics[0].tone == "warning"
     assert provider.expanded_metrics[0].reset_text == "3h"
+    assert view.appearance.idle_opacity == 0.4
+    assert view.appearance.hover_opacity == 0.9
+    assert view.appearance.fade_delay_ms == 800
 
 
 def test_build_bubble_view_formats_non_ok_status() -> None:

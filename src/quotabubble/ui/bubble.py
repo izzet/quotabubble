@@ -30,7 +30,7 @@ from quotabubble.app.state import AppState
 from quotabubble.platform import configure_window
 from quotabubble.presentation.builder import build_bubble_view
 from quotabubble.presentation.generated_tokens import TOKENS
-from quotabubble.presentation.models import MetricView, ProviderView
+from quotabubble.presentation.models import AppearanceView, MetricView, ProviderView
 from quotabubble.providers.base import UsageSnapshot
 from quotabubble.ui.context_menu import build_context_menu
 from quotabubble.ui.panel import (
@@ -94,7 +94,7 @@ class BubbleWindow(QWidget):
         self._tick_timer.setInterval(30_000)
         self._tick_timer.timeout.connect(self.update)
 
-        self.setWindowOpacity(self._settings.idle_opacity)
+        self.setWindowOpacity(self._appearance().idle_opacity)
         self._apply_size()
         self._restore_position()
         configure_window(self)
@@ -112,7 +112,7 @@ class BubbleWindow(QWidget):
 
     def apply_settings(self) -> None:
         if not self.underMouse() and not self._dragging:
-            self.setWindowOpacity(self._settings.idle_opacity)
+            self.setWindowOpacity(self._appearance().idle_opacity)
         self.refresh()
 
     def paintEvent(self, event: QPaintEvent) -> None:
@@ -249,12 +249,12 @@ class BubbleWindow(QWidget):
 
     def enterEvent(self, event) -> None:
         self._fade_timer.stop()
-        self._animate_opacity(self._settings.hover_opacity)
+        self._animate_opacity(self._appearance().hover_opacity)
         super().enterEvent(event)
 
     def leaveEvent(self, event) -> None:
         if not self._dragging and not self._expanded:
-            self._fade_timer.start(self._settings.fade_delay_ms)
+            self._fade_timer.start(self._appearance().fade_delay_ms)
         super().leaveEvent(event)
 
     def mousePressEvent(self, event) -> None:
@@ -263,7 +263,7 @@ class BubbleWindow(QWidget):
             self._drag_offset = self._press_pos - self.frameGeometry().topLeft()
             self._pending_click = True
             self._fade_timer.stop()
-            self._animate_opacity(self._settings.hover_opacity)
+            self._animate_opacity(self._appearance().hover_opacity)
             event.accept()
             return
         super().mousePressEvent(event)
@@ -292,7 +292,7 @@ class BubbleWindow(QWidget):
                 self._settings.position = (self.x(), self.y())
                 self._settings.save()
                 if not self.rect().contains(self.mapFromGlobal(QCursor.pos())):
-                    self._fade_timer.start(self._settings.fade_delay_ms)
+                    self._fade_timer.start(self._appearance().fade_delay_ms)
                 event.accept()
                 return
             if was_pending:
@@ -328,11 +328,11 @@ class BubbleWindow(QWidget):
         if self._expanded:
             self._fade_timer.stop()
             self._tick_timer.start()
-            self._animate_opacity(self._settings.hover_opacity)
+            self._animate_opacity(self._appearance().hover_opacity)
         else:
             self._tick_timer.stop()
             if not self.underMouse():
-                self._fade_timer.start(self._settings.fade_delay_ms)
+                self._fade_timer.start(self._appearance().fade_delay_ms)
         self._start_resize_animation()
 
     def _start_resize_animation(self) -> None:
@@ -365,6 +365,9 @@ class BubbleWindow(QWidget):
     def _view(self):
         return build_bubble_view(self._state.ordered(), self._settings)
 
+    def _appearance(self) -> AppearanceView:
+        return self._view().appearance
+
     def _target_size(self) -> QSize:
         return self._expanded_size() if self._expanded else self._compact_size()
 
@@ -392,11 +395,11 @@ class BubbleWindow(QWidget):
 
     def _fade_out(self) -> None:
         if not self._dragging and not self._expanded:
-            self._animate_opacity(self._settings.idle_opacity)
+            self._animate_opacity(self._appearance().idle_opacity)
 
     def _animate_opacity(self, value: float) -> None:
         self._animation.stop()
-        self._animation.setDuration(self._settings.fade_duration_ms)
+        self._animation.setDuration(self._appearance().fade_duration_ms)
         self._animation.setStartValue(self.windowOpacity())
         self._animation.setEndValue(value)
         self._animation.start()

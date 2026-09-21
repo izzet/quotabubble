@@ -30,6 +30,9 @@ def test_extension_has_its_required_entrypoint() -> None:
     assert "Gio.bus_watch_name" in source
     assert "Settings…" in source
     assert "dev.izzet.QuotaBubbleSettings.desktop" in source
+    assert "GLib.timeout_add" in source
+    assert "fade_delay_ms" in source
+    assert "fade_duration_ms" in source
 
 
 def test_extension_renderer_uses_the_presentation_contract() -> None:

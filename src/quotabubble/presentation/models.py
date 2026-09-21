@@ -23,6 +23,14 @@ class ProviderView(BaseModel):
     expanded_metrics: list[MetricView] = Field(default_factory=list)
 
 
+class AppearanceView(BaseModel):
+    idle_opacity: float = Field(ge=0, le=1)
+    hover_opacity: float = Field(ge=0, le=1)
+    fade_delay_ms: int = Field(ge=0)
+    fade_duration_ms: int = Field(ge=0)
+
+
 class BubbleView(BaseModel):
     version: Literal[1] = 1
+    appearance: AppearanceView
     providers: list[ProviderView] = Field(default_factory=list)

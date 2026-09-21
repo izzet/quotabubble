@@ -6,13 +6,19 @@ from quotabubble.app.settings import Settings
 from quotabubble.providers.base import ProviderStatus, UsageSnapshot, UsageWindow
 
 from .formatting import format_age, format_reset
-from .models import BubbleView, MetricView, ProviderView
+from .models import AppearanceView, BubbleView, MetricView, ProviderView
 
 
 def build_bubble_view(
     snapshots: list[UsageSnapshot], settings: Settings, *, now: datetime | None = None
 ) -> BubbleView:
     return BubbleView(
+        appearance=AppearanceView(
+            idle_opacity=settings.idle_opacity,
+            hover_opacity=settings.hover_opacity,
+            fade_delay_ms=settings.fade_delay_ms,
+            fade_duration_ms=settings.fade_duration_ms,
+        ),
         providers=[_provider_view(snapshot, settings, now=now) for snapshot in snapshots]
     )
 

@@ -1,5 +1,6 @@
 import Clutter from 'gi://Clutter';
 import Gio from 'gi://Gio';
+import GLib from 'gi://GLib';
 import St from 'gi://St';
 
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
@@ -11,11 +12,18 @@ const BUS_NAME = 'dev.izzet.quotabubble';
 const OBJECT_PATH = '/dev/izzet/quotabubble';
 const INTERFACE_NAME = 'dev.izzet.quotabubble.Service1';
 const DRAG_THRESHOLD = 4;
+const DEFAULT_APPEARANCE = {
+    idle_opacity: 0.25,
+    hover_opacity: 1,
+    fade_delay_ms: 700,
+    fade_duration_ms: 180,
+};
 
 export default class QuotaBubbleExtension extends Extension {
     enable() {
         this._enabled = true;
         this._expanded = false;
+        this._appearance = DEFAULT_APPEARANCE;
         this._renderer = new BubbleRenderer();
         this._actor = this._renderer.actor;
         this._menu = new PopupMenu.PopupMenu(this._actor, 0.5, St.Side.TOP);
@@ -27,11 +35,14 @@ export default class QuotaBubbleExtension extends Extension {
             'button-press-event',
             (_actor, event) => this._beginPointerAction(event),
         );
+        this._enterId = this._actor.connect('enter-event', () => this._onEnter());
+        this._leaveId = this._actor.connect('leave-event', () => this._onLeave());
         Main.layoutManager.addChrome(this._actor, {
             affectsStruts: false,
             trackFullscreen: false,
         });
         this._actor.set_position(24, 24);
+        this._setOpacity(this._appearance.idle_opacity, true);
         this._nameWatchId = Gio.bus_watch_name(
             Gio.BusType.SESSION,
             BUS_NAME,
@@ -44,6 +55,7 @@ export default class QuotaBubbleExtension extends Extension {
     disable() {
         this._enabled = false;
         this._endPointerAction();
+        this._cancelFade();
         if (this._nameWatchId)
             Gio.bus_unwatch_name(this._nameWatchId);
         this._nameWatchId = null;
@@ -51,6 +63,8 @@ export default class QuotaBubbleExtension extends Extension {
         this._menu?.destroy();
         this._menu = null;
         this._actor?.disconnect(this._buttonPressId);
+        this._actor?.disconnect(this._enterId);
+        this._actor?.disconnect(this._leaveId);
         this._actor?.destroy();
         this._actor = null;
     }
@@ -144,6 +158,8 @@ export default class QuotaBubbleExtension extends Extension {
             actorY: this._actor.y,
             dragged: false,
         };
+        this._cancelFade();
+        this._setOpacity(this._appearance.hover_opacity);
         this._stageEventId = global.stage.connect(
             'captured-event',
             (_stage, capturedEvent) => this._handleCapturedEvent(capturedEvent),
@@ -171,6 +187,8 @@ export default class QuotaBubbleExtension extends Extension {
             this._endPointerAction();
             if (!dragged)
                 this._setExpanded(!this._expanded);
+            else if (!this._actor.get_hover())
+                this._scheduleFade();
             return Clutter.EVENT_STOP;
         }
 
@@ -188,6 +206,12 @@ export default class QuotaBubbleExtension extends Extension {
     _setExpanded(expanded) {
         this._expanded = expanded;
         this._renderer?.setExpanded(expanded);
+        if (expanded) {
+            this._cancelFade();
+            this._setOpacity(this._appearance.hover_opacity);
+        } else if (!this._actor.get_hover()) {
+            this._scheduleFade();
+        }
     }
 
     _render(payload) {
@@ -195,6 +219,7 @@ export default class QuotaBubbleExtension extends Extension {
             const state = JSON.parse(payload);
             if (state.version !== 1 || !Array.isArray(state.providers))
                 throw new Error('unsupported presentation contract');
+            this._appearance = state.appearance ?? DEFAULT_APPEARANCE;
             this._renderer?.setView(state);
         } catch (error) {
             console.error(`QuotaBubble received an invalid service state: ${error.message}`);
@@ -237,5 +262,46 @@ export default class QuotaBubbleExtension extends Extension {
             application.launch([], null);
         else
             console.error('QuotaBubble settings application is not installed');
+    }
+
+    _onEnter() {
+        this._cancelFade();
+        this._setOpacity(this._appearance.hover_opacity);
+        return Clutter.EVENT_PROPAGATE;
+    }
+
+    _onLeave() {
+        if (!this._expanded && !this._pointerAction)
+            this._scheduleFade();
+        return Clutter.EVENT_PROPAGATE;
+    }
+
+    _scheduleFade() {
+        this._cancelFade();
+        this._fadeTimeoutId = GLib.timeout_add(
+            GLib.PRIORITY_DEFAULT,
+            this._appearance.fade_delay_ms,
+            () => {
+                this._fadeTimeoutId = null;
+                if (!this._expanded && !this._pointerAction)
+                    this._setOpacity(this._appearance.idle_opacity);
+                return GLib.SOURCE_REMOVE;
+            },
+        );
+    }
+
+    _cancelFade() {
+        if (this._fadeTimeoutId) {
+            GLib.Source.remove(this._fadeTimeoutId);
+            this._fadeTimeoutId = null;
+        }
+    }
+
+    _setOpacity(opacity, immediate = false) {
+        this._actor?.ease({
+            opacity: Math.round(opacity * 255),
+            duration: immediate ? 0 : this._appearance.fade_duration_ms,
+            mode: Clutter.AnimationMode.EASE_IN_OUT_QUAD,
+        });
     }
 }
