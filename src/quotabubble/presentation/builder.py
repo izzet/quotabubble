@@ -43,7 +43,14 @@ def _provider_view(
         name=snapshot.display_name,
         trailing=trailing,
         stale=snapshot.stale,
-        compact_metrics=metrics[:2],
+        compact_metrics=[
+            metric.model_copy(
+                update={"label": snapshot.windows[index].short or metric.label}
+            )
+            if index < len(snapshot.windows)
+            else metric
+            for index, metric in enumerate(metrics[:2])
+        ],
         expanded_metrics=metrics,
     )
 
@@ -51,7 +58,7 @@ def _provider_view(
 def _metric_view(window: UsageWindow, settings: Settings, *, now: datetime | None) -> MetricView:
     percent = 100 - window.used_pct if settings.show_remaining else window.used_pct
     return MetricView(
-        label=window.short or window.label,
+        label=window.label,
         percent=round(percent),
         bar_fraction=max(0, min(1, percent / 100)),
         tone=_tone(window),

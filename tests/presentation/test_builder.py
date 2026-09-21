@@ -24,6 +24,8 @@ def test_build_bubble_view_prepares_compact_and_expanded_metrics() -> None:
     provider = view.providers[0]
     assert provider.name == "Codex"
     assert provider.trailing == "Plus"
+    assert [metric.label for metric in provider.compact_metrics] == ["5h", "wk"]
+    assert [metric.label for metric in provider.expanded_metrics] == ["5h", "Weekly"]
     assert [metric.percent for metric in provider.compact_metrics] == [65, 20]
     assert provider.compact_metrics[0].tone == "warning"
     assert provider.expanded_metrics[0].reset_text == "3h"
