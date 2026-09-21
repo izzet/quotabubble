@@ -20,13 +20,22 @@ def build_bubble_view(
 def _provider_view(
     snapshot: UsageSnapshot, settings: Settings, *, now: datetime | None
 ) -> ProviderView:
+    trailing = snapshot.plan
+    if snapshot.stale:
+        age = format_age(snapshot.fetched_at, now=now)
+        trailing = " · ".join(value for value in (trailing, age) if value)
+
     if snapshot.status is not ProviderStatus.OK:
         status = _status_text(snapshot.status)
-        metric = MetricView(label=status)
+        metrics = [MetricView(label=status)]
+        if snapshot.credits is not None:
+            metrics.append(MetricView(label="Credits", detail=snapshot.credits.display))
         return ProviderView(
             name=snapshot.display_name,
+            trailing=trailing,
             stale=snapshot.stale,
-            expanded_metrics=[metric],
+            compact_metrics=metrics[:1],
+            expanded_metrics=metrics,
         )
 
     metrics = [_metric_view(window, settings, now=now) for window in snapshot.windows]
@@ -35,10 +44,6 @@ def _provider_view(
     if not metrics:
         metrics.append(MetricView(label="—"))
 
-    trailing = snapshot.plan
-    if snapshot.stale:
-        age = format_age(snapshot.fetched_at, now=now)
-        trailing = " · ".join(value for value in (trailing, age) if value)
     return ProviderView(
         name=snapshot.display_name,
         trailing=trailing,
@@ -56,11 +61,11 @@ def _provider_view(
 
 
 def _metric_view(window: UsageWindow, settings: Settings, *, now: datetime | None) -> MetricView:
-    percent = 100 - window.used_pct if settings.show_remaining else window.used_pct
+    shown_pct = 100 - window.used_pct if settings.show_remaining else window.used_pct
     return MetricView(
         label=window.label,
-        percent=round(percent),
-        bar_fraction=max(0, min(1, percent / 100)),
+        percent=round(shown_pct),
+        bar_fraction=max(0, min(1, shown_pct / 100)),
         tone=_tone(window),
         reset_text=format_reset(window.resets_at, now=now),
     )

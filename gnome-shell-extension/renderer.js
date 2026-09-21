@@ -119,7 +119,7 @@ export class BubbleRenderer {
                 this._paintMini(cr, metrics[1], width - size.padding, y, provider.stale, true);
             else if (metrics.length > 0 && metrics[0].percent === null)
                 text(cr, metrics[0].detail ?? metrics[0].label, width - size.padding, baseline, {
-                    align: 'right', color: color.textDim,
+                    align: 'right', color: metrics[0].detail != null ? color.text : color.textDim,
                 });
             y += size.compactRowHeight;
         }
@@ -164,11 +164,15 @@ export class BubbleRenderer {
 
     _paintMetric(cr, metric, top, width) {
         const baseline = top + 16;
-        text(cr, metric.label, size.padding, baseline, {color: color.text});
         if (metric.percent === null) {
-            text(cr, metric.detail ?? '—', size.padding + size.metricLabelWidth, baseline, {color: color.textDim});
+            text(cr, metric.label, size.padding, baseline, {
+                color: metric.detail != null ? color.text : color.textDim,
+            });
+            if (metric.detail != null)
+                text(cr, metric.detail, size.padding + size.metricLabelWidth, baseline, {color: color.textDim});
             return;
         }
+        text(cr, metric.label, size.padding, baseline, {color: color.text});
         const barLeft = size.padding + size.metricLabelWidth;
         roundedRect(cr, barLeft, top + 8, size.metricBarWidth, size.barHeight, 3);
         setColor(cr, color.track);

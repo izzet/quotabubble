@@ -68,12 +68,13 @@ def _paint_metric_row(
 ) -> None:
     vertical = Qt.AlignmentFlag.AlignVCenter
     painter.setPen(TEXT_LABEL)
-    painter.drawText(
-        QRectF(left, top, LABEL_WIDTH, WINDOW_ROW_HEIGHT),
-        vertical | Qt.AlignmentFlag.AlignLeft,
-        metric.label,
-    )
     if metric.percent is None:
+        painter.setPen(TEXT_LABEL if metric.detail is not None else TEXT_DIM)
+        painter.drawText(
+            QRectF(left, top, LABEL_WIDTH, WINDOW_ROW_HEIGHT),
+            vertical | Qt.AlignmentFlag.AlignLeft,
+            metric.label,
+        )
         if metric.detail is None:
             return
         painter.setPen(TEXT_DIM)
@@ -83,6 +84,12 @@ def _paint_metric_row(
             metric.detail or "—",
         )
         return
+
+    painter.drawText(
+        QRectF(left, top, LABEL_WIDTH, WINDOW_ROW_HEIGHT),
+        vertical | Qt.AlignmentFlag.AlignLeft,
+        metric.label,
+    )
 
     bar_left = left + LABEL_WIDTH
     bar = QRectF(bar_left, top + (WINDOW_ROW_HEIGHT - BAR_HEIGHT) / 2, BAR_WIDTH, BAR_HEIGHT)

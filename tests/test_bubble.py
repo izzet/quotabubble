@@ -5,7 +5,7 @@ from PySide6.QtGui import QMouseEvent
 
 from quotabubble.app.settings import Settings
 from quotabubble.app.state import AppState
-from quotabubble.providers.base import ProviderStatus, UsageSnapshot, UsageWindow
+from quotabubble.providers.base import Credits, ProviderStatus, UsageSnapshot, UsageWindow
 from quotabubble.ui.bubble import BubbleWindow
 
 
@@ -175,7 +175,7 @@ def test_window_paints_the_shared_view_in_both_states(qapp: object) -> None:
     window.deleteLater()
 
 
-def test_expanded_status_renders_without_detail_text(qapp: object) -> None:
+def test_expanded_status_renders_with_credits_without_duplicate_detail(qapp: object) -> None:
     from PySide6.QtGui import QPixmap
 
     state = AppState()
@@ -184,6 +184,7 @@ def test_expanded_status_renders_without_detail_text(qapp: object) -> None:
             provider="claude",
             display_name="Claude",
             status=ProviderStatus.EXPIRED,
+            credits=Credits(display="$4.20"),
         )
     )
     window = BubbleWindow(state, Settings(position=(0, 0)))
