@@ -15,7 +15,9 @@ FIXTURES = Path(__file__).resolve().parents[1] / "fixtures"
 
 @pytest.fixture(autouse=True)
 def no_system_keychain(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(claude_module, "enumerate_generic_credentials", lambda _: [])
+    monkeypatch.setattr(
+        claude_module, "enumerate_generic_credentials", lambda _, **__: []
+    )
 
 
 def _write_credentials(tmp_path: Path) -> Path:

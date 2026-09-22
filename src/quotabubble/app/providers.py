@@ -41,7 +41,13 @@ def build_providers(settings: Settings) -> list[Provider]:
 def select_providers(providers: list[Provider], settings: Settings) -> list[Provider]:
     if settings.enabled_providers is not None:
         enabled = set(settings.enabled_providers)
-        return [provider for provider in providers if provider.id in enabled]
+        selected = [provider for provider in providers if provider.id in enabled]
+        # Explicit selection keeps a provider visible even when it is signed
+        # out, but still gives it an opportunity to initialise credentials on
+        # the UI thread before polling begins.
+        for provider in selected:
+            provider.detect()
+        return selected
     return [provider for provider in providers if provider.detect()]
 
 
