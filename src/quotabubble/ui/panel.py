@@ -3,7 +3,7 @@ from __future__ import annotations
 from PySide6.QtCore import QRectF, Qt
 from PySide6.QtGui import QColor, QFont, QPainter
 
-from quotabubble.presentation.generated_tokens import TOKENS
+from quotabubble.generated.design_tokens import TOKENS
 from quotabubble.presentation.models import MetricView, ProviderView
 
 PADDING = TOKENS["size"]["padding"]

@@ -4,9 +4,9 @@ import json
 from pathlib import Path
 
 ROOT = Path(__file__).parents[1]
-SOURCE = ROOT / "design" / "tokens.json"
-PYTHON_OUTPUT = ROOT / "src" / "quotabubble" / "presentation" / "generated_tokens.py"
-GJS_OUTPUT = ROOT / "gnome-shell-extension" / "generated" / "tokens.js"
+SOURCE = ROOT / "design-tokens.json"
+PYTHON_OUTPUT = ROOT / "src" / "quotabubble" / "generated" / "design_tokens.py"
+GJS_OUTPUT = ROOT / "gnome-shell-extension" / "generated" / "design-tokens.js"
 
 
 def _render(node: dict[str, object], *, alpha_first: bool) -> dict[str, object]:

@@ -1,7 +1,7 @@
 import Cairo from 'cairo';
 import St from 'gi://St';
 
-import {TOKENS} from './generated/tokens.js';
+import {TOKENS} from './generated/design-tokens.js';
 
 const {color, size} = TOKENS;
 
