@@ -27,9 +27,9 @@ from PySide6.QtWidgets import QApplication, QWidget
 
 from quotabubble.app.settings import Settings
 from quotabubble.app.state import AppState
+from quotabubble.generated.design_tokens import TOKENS
 from quotabubble.platform import configure_window
 from quotabubble.presentation.builder import build_bubble_view
-from quotabubble.presentation.generated_tokens import TOKENS
 from quotabubble.presentation.models import AppearanceView, MetricView, ProviderView
 from quotabubble.providers.base import UsageSnapshot
 from quotabubble.ui.context_menu import build_context_menu

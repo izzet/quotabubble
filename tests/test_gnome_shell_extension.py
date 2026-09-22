@@ -54,7 +54,7 @@ def test_extension_renderer_uses_the_presentation_contract() -> None:
     assert "St.DrawingArea" in source
     assert "expanded_metrics" in source
     assert "compact_metrics" in source
-    assert "./generated/tokens.js" in source
+    assert "./generated/design-tokens.js" in source
     assert "Number.isInteger(metric.percent)" in source
     assert "size.miniPercentWidth" in source
     assert "size.compactGroupGap" in source
