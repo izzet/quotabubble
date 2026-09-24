@@ -199,6 +199,7 @@ class SettingsDialog(QDialog):
                 row.addWidget(status)
 
                 field.textChanged.connect(lambda _text, lbl=status: lbl.setText(""))
+                self._enable_on_first_key(field, checkbox)
                 button.clicked.connect(
                     lambda _checked=False, p=provider, f=field, b=button, s=status: (
                         self._start_check(p, f, b, s)
@@ -209,6 +210,23 @@ class SettingsDialog(QDialog):
             box.addLayout(row)
             self.provider_checks.append((provider, checkbox))
         return group
+
+    @staticmethod
+    def _enable_on_first_key(field: QLineEdit, checkbox: QCheckBox) -> None:
+        """Tick the provider when a key is entered where there was none.
+
+        Only that empty-to-filled transition ticks it; after that the checkbox is the
+        user's to control, and an existing key never forces a provider on.
+        """
+        had_key = [bool(field.text().strip())]
+
+        def on_text_changed(text: str) -> None:
+            has_key = bool(text.strip())
+            if has_key and not had_key[0]:
+                checkbox.setChecked(True)
+            had_key[0] = has_key
+
+        field.textChanged.connect(on_text_changed)
 
     def _start_check(
         self,
@@ -274,8 +292,6 @@ class SettingsDialog(QDialog):
                         self._settings.api_keys.pop(provider.id, None)
                     else:
                         self._settings.api_keys[provider.id] = value
-                    if provider.id not in enabled:
-                        enabled.append(provider.id)
                 else:
                     delete_secret(provider.id)
                     self._settings.api_keys.pop(provider.id, None)
