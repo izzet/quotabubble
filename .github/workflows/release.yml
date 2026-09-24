@@ -30,9 +30,9 @@ jobs:
             spec: packaging/quotabubble.linux.spec
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: astral-sh/setup-uv@v5
+      - uses: astral-sh/setup-uv@v10.2.0
         with:
           enable-cache: true
 
@@ -91,7 +91,7 @@ jobs:
         if: runner.os == 'macOS'
         run: hdiutil create -volname QuotaBubble -srcfolder dist/QuotaBubble.app -ov -format UDZO ${{ matrix.artifact }}
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: ${{ matrix.artifact }}
           path: ${{ matrix.artifact }}
@@ -108,12 +108,12 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           path: artifacts
           merge-multiple: true
 
-      - uses: softprops/action-gh-release@v2
+      - uses: softprops/action-gh-release@v3
         with:
           files: artifacts/*
 
@@ -151,7 +151,7 @@ jobs:
     env:
       CHOCOLATEY_API_KEY: ${{ secrets.CHOCOLATEY_API_KEY }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Skip when CHOCOLATEY_API_KEY is not configured
         if: env.CHOCOLATEY_API_KEY == ''
@@ -197,13 +197,13 @@ jobs:
     env:
       HOMEBREW_TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Skip when HOMEBREW_TAP_TOKEN is not configured
         if: env.HOMEBREW_TAP_TOKEN == ''
         run: echo "HOMEBREW_TAP_TOKEN is not set; skipping Homebrew tap update."
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         if: env.HOMEBREW_TAP_TOKEN != ''
         with:
           repository: izzet/homebrew-tap
@@ -287,9 +287,9 @@ jobs:
       contents: read
       id-token: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: astral-sh/setup-uv@v5
+      - uses: astral-sh/setup-uv@v10.2.0
 
       - name: Build
         run: uv build
