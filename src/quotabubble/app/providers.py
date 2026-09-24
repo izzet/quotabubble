@@ -16,6 +16,7 @@ from quotabubble.providers.kimi import KimiProvider
 from quotabubble.providers.opencode import OpenCodeProvider
 from quotabubble.providers.openrouter import OpenRouterProvider
 from quotabubble.providers.zai import ZaiProvider
+from quotabubble.providers.zed import ZedProvider
 
 _ENV_ALIASES = {"kimi": ("KIMI_CODE_API_KEY",), "zai": ("Z_AI_API_KEY",)}
 
@@ -44,6 +45,7 @@ def build_providers(settings: Settings) -> list[Provider]:
         KimiProvider(api_key=resolve_api_key(settings, "kimi")),
         ZaiProvider(api_key=resolve_api_key(settings, "zai")),
         GrokProvider(),
+        ZedProvider(),
     ]
 
 

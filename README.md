@@ -41,6 +41,7 @@ QuotaBubble is a small, frameless desktop widget that keeps the usage limits for
 | Kimi Code | API key (`KIMI_CODE_API_KEY` override) |
 | Z.ai (GLM Coding Plan) | API key (`Z_AI_API_KEY` override) |
 | Grok (SuperGrok) | `~/.grok/auth.json` from `grok login` (`GROK_HOME` override) |
+| Zed | Windows Credential Manager (sign in to Zed) |
 
 Providers are detected automatically. Enable or disable them in Settings; API keys are entered there and validated inline with a **Test** button. Antigravity and Copilot reuse their existing OS keychain sign-ins, including Linux Secret Service. Cursor reuses the IDE session token from `state.vscdb` or `auth.json` (or `CURSOR_SESSION_TOKEN`).
 
@@ -142,7 +143,7 @@ See [AGENTS.md](AGENTS.md) for architecture and contribution conventions. The pr
 
 ## Status
 
-Windows, macOS, and Ubuntu GNOME 24.04 (amd64) have native release artifacts. Claude, Codex, Cursor, OpenCode, DeepSeek, OpenRouter, Kimi Code, Z.ai, and Grok work anywhere. Antigravity and Copilot reuse Windows Credential Manager, macOS Keychain, and Linux Secret Service credentials. API keys entered in Settings are stored in the OS credential store via [`keyring`](https://pypi.org/project/keyring/); if no OS keyring backend is available, they fall back to the local settings file.
+Windows, macOS, and Ubuntu GNOME 24.04 (amd64) have native release artifacts. Claude, Codex, Cursor, OpenCode, DeepSeek, OpenRouter, Kimi Code, Z.ai, and Grok work anywhere. Zed currently works on Windows only. Antigravity and Copilot reuse Windows Credential Manager, macOS Keychain, and Linux Secret Service credentials. API keys entered in Settings are stored in the OS credential store via [`keyring`](https://pypi.org/project/keyring/); if no OS keyring backend is available, they fall back to the local settings file.
 
 ## License
 

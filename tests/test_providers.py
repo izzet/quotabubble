@@ -109,6 +109,7 @@ def test_build_providers_registers_all_expected_providers(monkeypatch) -> None:
         "kimi",
         "zai",
         "grok",
+        "zed",
     ]
 
 
