@@ -106,7 +106,7 @@ jobs:
         if: runner.os == 'Windows'
         uses: actions/upload-artifact@v7
         with:
-          name: microsoft-store-msix
+          name: QuotaBubble-windows-x64.msix
           path: QuotaBubble-windows-x64.msix
 
   # Fan-in: waits for every platform in the build matrix, then creates ONE
@@ -121,17 +121,16 @@ jobs:
     permissions:
       contents: write
     steps:
-      # Only the public platform archives: the Microsoft Store MSIX is uploaded
-      # under a different artifact name and is deliberately not attached here.
       - uses: actions/download-artifact@v8
         with:
-          pattern: QuotaBubble-*
           path: artifacts
           merge-multiple: true
 
       - uses: softprops/action-gh-release@v3
         with:
           files: artifacts/*
+          body: |
+            `QuotaBubble-windows-x64.msix` is the package submitted to the Microsoft Store. It is not signed for direct installation, so on Windows use the ZIP, winget, Chocolatey, or Scoop instead.
 
   winget:
     needs: github-release
