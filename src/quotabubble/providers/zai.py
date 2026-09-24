@@ -19,6 +19,8 @@ _MINUTES_PER_UNIT = {1: 1440, 3: 60, 5: 1, 6: 10080}
 _PLAN_KEYS = ("planName", "plan", "plan_type", "packageName", "level")
 _SESSION_MINUTES = 300
 _RESET_SLACK = timedelta(minutes=1)
+# Z.ai answers HTTP 200 for everything and reports failures in the JSON body.
+_AUTH_FAILURE_CODES = {401, 403, 1001}
 
 
 def _minutes(item: dict[str, object]) -> float:
@@ -46,6 +48,20 @@ def _reset(item: dict[str, object], minutes: float, now: datetime) -> datetime |
     if minutes and reset - now > timedelta(minutes=minutes) + _RESET_SLACK:
         return None
     return reset
+
+
+def _failure(payload: object) -> tuple[bool, str] | None:
+    """(is_auth_failure, message) for a `success: false` body, else None."""
+    if not isinstance(payload, dict) or payload.get("success") is not False:
+        return None
+    code = as_number(payload.get("code"))
+    message = payload.get("msg")
+    message = message if isinstance(message, str) else ""
+    if code in _AUTH_FAILURE_CODES:
+        return True, "Invalid Z.ai API key"
+    if "coding plan" in message.lower():
+        return False, "No Coding Plan on this Z.ai account"
+    return False, message or "Z.ai rejected the request"
 
 
 def _plan(data: dict[str, object]) -> str | None:
@@ -138,7 +154,13 @@ class ZaiProvider:
                 client.close()
         if response.status_code in (401, 403):
             return KeyStatus.INVALID
-        return KeyStatus.VALID if response.status_code == 200 else KeyStatus.UNREACHABLE
+        if response.status_code != 200:
+            return KeyStatus.UNREACHABLE
+        try:
+            failure = _failure(response.json())
+        except ValueError:
+            return KeyStatus.UNREACHABLE
+        return KeyStatus.INVALID if failure and failure[0] else KeyStatus.VALID
 
     @staticmethod
     def _headers(api_key: str) -> dict[str, str]:
@@ -157,6 +179,9 @@ class ZaiProvider:
             payload = response.json()
         except ValueError:
             return self._snapshot(ProviderStatus.ERROR, "Unexpected quota response")
+        failure = _failure(payload)
+        if failure is not None:
+            return self._snapshot(ProviderStatus.ERROR, failure[1])
         data = payload.get("data") if isinstance(payload, dict) else None
         if not isinstance(data, dict):
             return self._snapshot(ProviderStatus.ERROR, "Unexpected quota response")

@@ -137,6 +137,34 @@ def test_invalid_key_reports_error() -> None:
     assert snapshot.message == "Invalid Z.ai API key"
 
 
+def test_body_level_auth_failure_reports_invalid_key() -> None:
+    body = {"code": 401, "msg": "token expired or incorrect", "success": False}
+
+    snapshot = ZaiProvider(api_key="bad", client=_respond(body)).fetch()
+
+    assert snapshot.status is ProviderStatus.ERROR
+    assert snapshot.message == "Invalid Z.ai API key"
+
+
+def test_account_without_a_coding_plan_is_reported_clearly() -> None:
+    body = {"code": 500, "msg": "当前用户不存在coding plan", "success": False}
+
+    snapshot = ZaiProvider(api_key="k", client=_respond(body)).fetch()
+
+    assert snapshot.status is ProviderStatus.ERROR
+    assert snapshot.message == "No Coding Plan on this Z.ai account"
+
+
+def test_other_body_level_failures_surface_their_message() -> None:
+    with_msg = {"code": 9, "msg": "try later", "success": False}
+    without_msg = {"code": 9, "success": False}
+
+    assert ZaiProvider(api_key="k", client=_respond(with_msg)).fetch().message == "try later"
+    assert ZaiProvider(api_key="k", client=_respond(without_msg)).fetch().message == (
+        "Z.ai rejected the request"
+    )
+
+
 def test_unexpected_status_and_body_report_error() -> None:
     assert ZaiProvider(api_key="k", client=_respond({}, 500)).fetch().status is (
         ProviderStatus.ERROR
@@ -162,6 +190,12 @@ def test_check_api_key_statuses() -> None:
     assert ZaiProvider(client=_respond(_payload())).check_api_key("k") is KeyStatus.VALID
     assert ZaiProvider(client=_respond({}, 401)).check_api_key("k") is KeyStatus.INVALID
     assert ZaiProvider(client=_respond({}, 500)).check_api_key("k") is KeyStatus.UNREACHABLE
+    auth_failure = {"code": 1001, "msg": "no header", "success": False}
+    assert ZaiProvider(client=_respond(auth_failure)).check_api_key("k") is KeyStatus.INVALID
+    no_plan = {"code": 500, "msg": "no coding plan", "success": False}
+    assert ZaiProvider(client=_respond(no_plan)).check_api_key("k") is KeyStatus.VALID
+    not_json = _client(lambda request: httpx2.Response(200, text="nope"))
+    assert ZaiProvider(client=not_json).check_api_key("k") is KeyStatus.UNREACHABLE
 
     def handler(request: httpx2.Request) -> httpx2.Response:
         raise httpx2.ConnectError("boom")
