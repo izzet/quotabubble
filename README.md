@@ -63,6 +63,13 @@ Or with [Chocolatey](https://community.chocolatey.org/packages/quotabubble):
 choco install quotabubble
 ```
 
+Or with [Scoop](https://scoop.sh):
+
+```powershell
+scoop bucket add izzet https://github.com/izzet/scoop-bucket
+scoop install izzet/quotabubble
+```
+
 Or download the latest `QuotaBubble-windows-x64.zip` from the [Releases page](https://github.com/izzet/quotabubble/releases), unzip it, and run `QuotaBubble.exe`.
 
 > The binary is not code-signed yet, so Windows SmartScreen may warn you. Choose **More info → Run anyway**.
