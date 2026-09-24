@@ -10,14 +10,12 @@ from importlib import metadata
 import httpx2
 
 from quotabubble.credentials.kimi import (
-    DEFAULT_BASE_URL,
     KimiCodeLogin,
     kimi_code_base_url,
     kimi_code_device_id,
     read_kimi_code_login,
 )
 from quotabubble.providers.base import (
-    KeyStatus,
     ProviderStatus,
     UsageSnapshot,
     UsageWindow,
@@ -161,90 +159,52 @@ def _identity_headers() -> dict[str, str]:
 class KimiProvider:
     id = "kimi"
     display_name = "Kimi"
-    uses_api_key = True
+    uses_api_key = False
 
     def __init__(
         self,
-        api_key: str | None = None,
         client: httpx2.Client | None = None,
         login_reader: Callable[[], KimiCodeLogin | None] = read_kimi_code_login,
         clock: Callable[[], float] = time.time,
     ) -> None:
-        self._api_key = api_key
         self._client = client
         self._read_login = login_reader
         self._clock = clock
 
     def detect(self) -> bool:
-        return bool(self._api_key) or self._read_login() is not None
+        return self._read_login() is not None
 
     def fetch(self) -> UsageSnapshot:
-        if self._api_key:
-            return self._request(self._api_key, from_login=False)
         login = self._read_login()
         if login is None:
-            return self._snapshot(
-                ProviderStatus.NO_CREDENTIALS, "Sign in with Kimi Code or add an API key"
-            )
+            return self._snapshot(ProviderStatus.NO_CREDENTIALS, "Sign in with Kimi Code")
         if not login.is_fresh(self._clock()):
-            return self._snapshot(
-                ProviderStatus.EXPIRED, "Open Kimi Code to refresh your login"
-            )
-        return self._request(login.access_token, from_login=True)
-
-    def check_api_key(self, api_key: str) -> KeyStatus:
-        if not api_key:
-            return KeyStatus.MISSING
-        client = self._client or httpx2.Client(timeout=REQUEST_TIMEOUT_SECONDS)
-        try:
-            response = client.get(
-                _usage_url(kimi_code_base_url() or DEFAULT_BASE_URL),
-                headers=self._headers(api_key),
-            )
-        except httpx2.HTTPError:
-            return KeyStatus.UNREACHABLE
-        finally:
-            if self._client is None:
-                client.close()
-        if response.status_code in (401, 403):
-            return KeyStatus.INVALID
-        return KeyStatus.VALID if response.status_code == 200 else KeyStatus.UNREACHABLE
-
-    @staticmethod
-    def _headers(token: str) -> dict[str, str]:
-        return {
-            **_identity_headers(),
-            "Authorization": f"Bearer {token}",
-            "Accept": "application/json",
-        }
-
-    def _request(self, token: str, *, from_login: bool) -> UsageSnapshot:
-        client = self._client or httpx2.Client(timeout=REQUEST_TIMEOUT_SECONDS)
-        try:
-            return self._query(token, client, from_login)
-        finally:
-            if self._client is None:
-                client.close()
-
-    def _query(self, token: str, client: httpx2.Client, from_login: bool) -> UsageSnapshot:
+            return self._snapshot(ProviderStatus.EXPIRED, "Open Kimi Code to refresh your login")
         base_url = kimi_code_base_url()
-        if base_url is None and from_login:
+        if base_url is None:
             return self._snapshot(
                 ProviderStatus.ERROR,
                 "Unknown Kimi Code region; set KIMI_CODE_BASE_URL to your Kimi Code API host",
             )
+        client = self._client or httpx2.Client(timeout=REQUEST_TIMEOUT_SECONDS)
         try:
-            response = client.get(
-                _usage_url(base_url or DEFAULT_BASE_URL), headers=self._headers(token)
-            )
+            return self._query(login.access_token, base_url, client)
+        finally:
+            if self._client is None:
+                client.close()
+
+    def _query(self, token: str, base_url: str, client: httpx2.Client) -> UsageSnapshot:
+        headers = {
+            **_identity_headers(),
+            "Authorization": f"Bearer {token}",
+            "Accept": "application/json",
+        }
+        try:
+            response = client.get(_usage_url(base_url), headers=headers)
         except httpx2.HTTPError as exc:
             return self._snapshot(ProviderStatus.ERROR, str(exc))
         if response.status_code in (401, 403):
-            if from_login:
-                return self._snapshot(
-                    ProviderStatus.EXPIRED, "Open Kimi Code to refresh your login"
-                )
-            return self._snapshot(ProviderStatus.ERROR, "Invalid Kimi Code API key")
+            return self._snapshot(ProviderStatus.EXPIRED, "Open Kimi Code to refresh your login")
         if response.status_code != 200:
             return self._snapshot(ProviderStatus.ERROR, f"HTTP {response.status_code}")
         try:

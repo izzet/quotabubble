@@ -18,7 +18,7 @@ from quotabubble.providers.openrouter import OpenRouterProvider
 from quotabubble.providers.zai import ZaiProvider
 from quotabubble.providers.zed import ZedProvider
 
-_ENV_ALIASES = {"kimi": ("KIMI_CODE_API_KEY",), "zai": ("Z_AI_API_KEY",)}
+_ENV_ALIASES = {"zai": ("Z_AI_API_KEY",)}
 
 
 def resolve_api_key(settings: Settings, provider_id: str) -> str | None:
@@ -33,20 +33,23 @@ def resolve_api_key(settings: Settings, provider_id: str) -> str | None:
 
 
 def build_providers(settings: Settings) -> list[Provider]:
-    return [
+    providers: list[Provider] = [
         ClaudeProvider(),
         CodexProvider(),
         AntigravityProvider(),
         CopilotProvider(),
         CursorProvider(),
+        GrokProvider(),
+        ZedProvider(),
+        KimiProvider(),
         OpenCodeProvider(api_key=resolve_api_key(settings, "opencode")),
         DeepSeekProvider(api_key=resolve_api_key(settings, "deepseek")),
         OpenRouterProvider(api_key=resolve_api_key(settings, "openrouter")),
-        KimiProvider(api_key=resolve_api_key(settings, "kimi")),
         ZaiProvider(api_key=resolve_api_key(settings, "zai")),
-        GrokProvider(),
-        ZedProvider(),
     ]
+    # Providers that need an API key go last, so Settings and the bubble never mix
+    # them in among the ones that reuse a local sign-in. The sort is stable.
+    return sorted(providers, key=lambda provider: provider.uses_api_key)
 
 
 def select_providers(providers: list[Provider], settings: Settings) -> list[Provider]:

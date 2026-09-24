@@ -8,7 +8,6 @@ from dataclasses import dataclass
 from pathlib import Path
 from urllib.parse import urlparse
 
-DEFAULT_BASE_URL = "https://api.kimi.com"
 _PROVIDER_KEY = "managed:kimi-code"
 _FRESHNESS_SKEW_SECONDS = 60.0
 
