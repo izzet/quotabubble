@@ -11,8 +11,13 @@ from quotabubble.providers.codex import CodexProvider
 from quotabubble.providers.copilot import CopilotProvider
 from quotabubble.providers.cursor import CursorProvider
 from quotabubble.providers.deepseek import DeepSeekProvider
+from quotabubble.providers.grok import GrokProvider
+from quotabubble.providers.kimi import KimiProvider
 from quotabubble.providers.opencode import OpenCodeProvider
 from quotabubble.providers.openrouter import OpenRouterProvider
+from quotabubble.providers.zai import ZaiProvider
+
+_ENV_ALIASES = {"kimi": ("KIMI_CODE_API_KEY",), "zai": ("Z_AI_API_KEY",)}
 
 
 def resolve_api_key(settings: Settings, provider_id: str) -> str | None:
@@ -22,7 +27,8 @@ def resolve_api_key(settings: Settings, provider_id: str) -> str | None:
     stored = settings.api_keys.get(provider_id)
     if stored:
         return stored
-    return os.environ.get(f"{provider_id.upper()}_API_KEY")
+    names = (f"{provider_id.upper()}_API_KEY", *_ENV_ALIASES.get(provider_id, ()))
+    return next((value for name in names if (value := os.environ.get(name))), None)
 
 
 def build_providers(settings: Settings) -> list[Provider]:
@@ -35,6 +41,9 @@ def build_providers(settings: Settings) -> list[Provider]:
         OpenCodeProvider(api_key=resolve_api_key(settings, "opencode")),
         DeepSeekProvider(api_key=resolve_api_key(settings, "deepseek")),
         OpenRouterProvider(api_key=resolve_api_key(settings, "openrouter")),
+        KimiProvider(api_key=resolve_api_key(settings, "kimi")),
+        ZaiProvider(api_key=resolve_api_key(settings, "zai")),
+        GrokProvider(),
     ]
 
 

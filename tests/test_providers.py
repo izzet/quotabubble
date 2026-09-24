@@ -75,6 +75,25 @@ def test_resolve_api_key_falls_back_to_environment(monkeypatch) -> None:
     assert resolve_api_key(Settings(), "deepseek") == "from-env"
 
 
+def test_resolve_api_key_accepts_vendor_env_var_aliases(monkeypatch) -> None:
+    monkeypatch.setattr("quotabubble.app.providers.get_secret", lambda provider_id: None)
+    monkeypatch.delenv("KIMI_API_KEY", raising=False)
+    monkeypatch.delenv("ZAI_API_KEY", raising=False)
+    monkeypatch.setenv("KIMI_CODE_API_KEY", "kimi-env")
+    monkeypatch.setenv("Z_AI_API_KEY", "zai-env")
+
+    assert resolve_api_key(Settings(), "kimi") == "kimi-env"
+    assert resolve_api_key(Settings(), "zai") == "zai-env"
+
+
+def test_resolve_api_key_prefers_canonical_env_var_over_alias(monkeypatch) -> None:
+    monkeypatch.setattr("quotabubble.app.providers.get_secret", lambda provider_id: None)
+    monkeypatch.setenv("KIMI_API_KEY", "canonical")
+    monkeypatch.setenv("KIMI_CODE_API_KEY", "alias")
+
+    assert resolve_api_key(Settings(), "kimi") == "canonical"
+
+
 def test_build_providers_registers_all_expected_providers(monkeypatch) -> None:
     monkeypatch.setattr("quotabubble.app.providers.get_secret", lambda provider_id: None)
     providers = build_providers(Settings())
@@ -87,6 +106,9 @@ def test_build_providers_registers_all_expected_providers(monkeypatch) -> None:
         "opencode",
         "deepseek",
         "openrouter",
+        "kimi",
+        "zai",
+        "grok",
     ]
 
 
