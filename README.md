@@ -38,10 +38,12 @@ QuotaBubble is a small, frameless desktop widget that keeps the usage limits for
 | OpenCode | `~/.local/share/opencode/auth.json` / `opencode.jsonc` (`OPENCODE_API_KEY` override) or API key |
 | DeepSeek | API key |
 | OpenRouter | API key |
-| Kimi Code | API key (`KIMI_CODE_API_KEY` override) |
+| Kimi Code | Kimi Code CLI login in `~/.kimi-code` (`KIMI_CODE_HOME` override), or an API key (`KIMI_CODE_API_KEY`) |
 | Z.ai (GLM Coding Plan) | API key (`Z_AI_API_KEY` override) |
 | Grok (SuperGrok) | `~/.grok/auth.json` from `grok login` (`GROK_HOME` override) |
 | Zed | Windows Credential Manager (sign in to Zed) |
+
+Kimi Code runs separate regional services (`kimi.com` and `kimi.ai`): the CLI login is only ever sent to the host the CLI itself is configured for, and an API key uses `api.kimi.com` unless you set `KIMI_CODE_BASE_URL`. QuotaBubble never refreshes the CLI's login; when it expires, open Kimi Code to renew it.
 
 Providers are detected automatically. Enable or disable them in Settings; API keys are entered there and validated inline with a **Test** button. Antigravity and Copilot reuse their existing OS keychain sign-ins, including Linux Secret Service. Cursor reuses the IDE session token from `state.vscdb` or `auth.json` (or `CURSOR_SESSION_TOKEN`).
 
