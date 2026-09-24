@@ -31,8 +31,8 @@
 `release.yml` runs on a `v*` tag (or manual `workflow_dispatch`) in a fan-in shape:
 
 ```
-build (matrix: windows-latest, macos-15-intel x64, macos-15 arm64 today;
-       ubuntu-latest add here later)
+build (matrix: windows-latest, macos-15-intel x64, macos-15 arm64,
+       ubuntu-24.04)
   each: checkout -> test -> PyInstaller build -> package -> upload-artifact
   (no per-OS entry publishes anything itself)
         |
@@ -51,7 +51,7 @@ pypi (fully independent -- own checkout/build/publish, no needs on
       build or github-release at all; see below for why)
 ```
 
-- **`build`:** a matrix job (`strategy.matrix.include`) producing the Windows ZIP plus `QuotaBubble-macos-x64.dmg` from `macos-15-intel` and `QuotaBubble-macos-arm64.dmg` from `macos-15`. macOS builds generate `assets/quotabubble.icns`, use `packaging/quotabubble.macos.spec` to make an app bundle, then package it with `hdiutil`. Platform specs follow `quotabubble.<platform>.spec`, reserving `quotabubble.linux.spec` for a future Linux build. Adding Linux later means adding its own `include` entry and packaging step — nothing downstream needs to change, since `github-release` and everything after it only cares about whatever artifacts the matrix produced.
+- **`build`:** a matrix job (`strategy.matrix.include`) producing the Windows ZIP plus `QuotaBubble-macos-x64.dmg` from `macos-15-intel` and `QuotaBubble-macos-arm64.dmg` from `macos-15`. macOS builds generate `assets/quotabubble.icns`, use `packaging/quotabubble.macos.spec` to make an app bundle, then package it with `hdiutil`. Platform specs follow `quotabubble.<platform>.spec`; the Linux `QuotaBubble-linux-amd64.deb` uses `packaging/quotabubble.linux.spec` and is built on `ubuntu-24.04`. That runner is pinned rather than `ubuntu-latest` on purpose: PyInstaller binaries link the build host's glibc, so the runner must match the Ubuntu GNOME 24.04 target we ship. Adding another platform means adding its own `include` entry and packaging step — nothing downstream needs to change, since `github-release` and everything after it only cares about whatever artifacts the matrix produced.
 - **macOS signing:** initial macOS artifacts use PyInstaller's ad hoc signatures. Once Apple Developer credentials are available, add Developer ID signing with the hardened runtime, notarization, and ticket stapling to the macOS packaging step before uploading the artifact.
 - **`github-release`:** fans in the whole matrix, downloads all artifacts (`actions/download-artifact@v4` with no `name:` filter + `merge-multiple: true`), and creates the GitHub Release with everything attached in one `softprops/action-gh-release@v2` call. Nothing else creates or touches the release.
 - **Homebrew:** the `homebrew` job (`needs: github-release`) downloads the two macOS DMGs, computes their SHA-256 values, renders `packaging/homebrew/quotabubble.rb.tmpl`, validates it with `brew audit --cask --strict`, and commits it to `izzet/homebrew-tap`. It needs a `HOMEBREW_TAP_TOKEN` repository secret: a fine-grained token with Contents read/write access to that tap only. Users install it with `brew install --cask izzet/tap/quotabubble`. The first-party tap can distribute initial unsigned builds; submitting to the official `homebrew/cask` waits for Developer ID signing and notarization.

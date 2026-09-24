@@ -20,7 +20,7 @@ jobs:
             coverage_flag: macos-x64
           - os: macos-15
             coverage: false
-          - os: ubuntu-latest
+          - os: ubuntu-24.04
             coverage: true
             coverage_flag: linux
     runs-on: ${{ matrix.os }}

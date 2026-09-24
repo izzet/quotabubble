@@ -25,7 +25,7 @@ jobs:
           - os: macos-15
             artifact: QuotaBubble-macos-arm64.dmg
             spec: packaging/quotabubble.macos.spec
-          - os: ubuntu-latest
+          - os: ubuntu-24.04
             artifact: QuotaBubble-linux-amd64.deb
             spec: packaging/quotabubble.linux.spec
     runs-on: ${{ matrix.os }}
@@ -103,7 +103,7 @@ jobs:
   # platforms are in the matrix.
   github-release:
     needs: build
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     if: startsWith(github.ref, 'refs/tags/')
     permissions:
       contents: write
@@ -280,7 +280,7 @@ jobs:
     # package itself doesn't need here would be testing the wrong thing.
     # A plain import of a non-Qt module is enough to catch real packaging
     # mistakes (missing package data, broken entry points, bad metadata).
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     if: startsWith(github.ref, 'refs/tags/v')
     environment: pypi
     permissions:
