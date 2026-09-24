@@ -3,8 +3,7 @@ from __future__ import annotations
 import httpx2
 from pydantic import BaseModel
 
-from quotabubble.providers.base import Credits, KeyStatus, ProviderStatus, UsageSnapshot
-from quotabubble.providers.parsing import as_number
+from quotabubble.providers.base import Credits, KeyStatus, ProviderStatus, UsageSnapshot, as_number
 
 BALANCE_URL = "https://api.deepseek.com/user/balance"
 REQUEST_TIMEOUT_SECONDS = 15.0

@@ -9,9 +9,10 @@ from quotabubble.providers.base import (
     ProviderStatus,
     UsageSnapshot,
     UsageWindow,
+    as_number,
     format_plan,
+    parse_timestamp,
 )
-from quotabubble.providers.parsing import as_number, parse_timestamp
 
 USAGE_URL = "https://api.kimi.com/coding/v1/usages"
 REQUEST_TIMEOUT_SECONDS = 15.0

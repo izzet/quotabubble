@@ -16,10 +16,10 @@ from quotabubble.providers.base import (
     ProviderStatus,
     UsageSnapshot,
     UsageWindow,
+    as_number,
     format_plan,
     parse_retry_after,
 )
-from quotabubble.providers.parsing import as_number
 
 USAGE_URL = "https://api.anthropic.com/api/oauth/usage"
 ANTHROPIC_BETA = "oauth-2025-04-20"

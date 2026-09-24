@@ -9,8 +9,9 @@ from quotabubble.providers.base import (
     ProviderStatus,
     UsageSnapshot,
     UsageWindow,
+    as_number,
+    parse_timestamp,
 )
-from quotabubble.providers.parsing import as_number, parse_timestamp
 
 QUOTA_URL = "https://api.z.ai/api/monitor/usage/quota/limit"
 REQUEST_TIMEOUT_SECONDS = 15.0

@@ -11,8 +11,9 @@ from quotabubble.providers.base import (
     ProviderStatus,
     UsageSnapshot,
     UsageWindow,
+    as_number,
+    parse_timestamp,
 )
-from quotabubble.providers.parsing import as_number, parse_timestamp
 
 BILLING_URL = "https://cli-chat-proxy.grok.com/v1/billing?format=credits"
 SETTINGS_URL = "https://cli-chat-proxy.grok.com/v1/settings"
