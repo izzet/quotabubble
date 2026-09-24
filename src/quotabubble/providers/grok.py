@@ -12,6 +12,7 @@ from quotabubble.providers.base import (
     UsageSnapshot,
     UsageWindow,
 )
+from quotabubble.providers.parsing import as_number, parse_timestamp
 
 BILLING_URL = "https://cli-chat-proxy.grok.com/v1/billing?format=credits"
 SETTINGS_URL = "https://cli-chat-proxy.grok.com/v1/settings"
@@ -24,34 +25,6 @@ def default_credentials_path() -> Path:
     grok_home = os.environ.get("GROK_HOME")
     base = Path(grok_home) if grok_home else Path.home() / ".grok"
     return base / "auth.json"
-
-
-def _timestamp(value: object) -> datetime | None:
-    if isinstance(value, bool):
-        return None
-    if isinstance(value, int | float):
-        seconds = value / 1000 if value > 1e11 else value
-        return datetime.fromtimestamp(seconds, tz=UTC)
-    if isinstance(value, str) and value:
-        try:
-            parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
-        except ValueError:
-            return None
-        return parsed if parsed.tzinfo else parsed.replace(tzinfo=UTC)
-    return None
-
-
-def _number(value: object) -> float | None:
-    if isinstance(value, bool):
-        return None
-    if isinstance(value, int | float):
-        return float(value)
-    if isinstance(value, str):
-        try:
-            return float(value)
-        except ValueError:
-            return None
-    return None
 
 
 def read_credentials(path: Path) -> tuple[str, datetime | None] | None:
@@ -68,18 +41,18 @@ def read_credentials(path: Path) -> tuple[str, datetime | None] | None:
                 continue
             key = entry.get("key")
             if isinstance(key, str) and key:
-                return key, _timestamp(entry.get("expires_at"))
+                return key, parse_timestamp(entry.get("expires_at"))
     return None
 
 
 def _value(node: object) -> float | None:
     if isinstance(node, dict):
-        return _number(node.get("val"))
-    return _number(node)
+        return as_number(node.get("val"))
+    return as_number(node)
 
 
 def _used_pct(config: dict[str, object]) -> float | None:
-    percent = _number(config.get("creditUsagePercent"))
+    percent = as_number(config.get("creditUsagePercent"))
     if percent is None:
         used = _value(config.get("onDemandUsed"))
         cap = _value(config.get("onDemandCap"))
@@ -92,10 +65,10 @@ def _used_pct(config: dict[str, object]) -> float | None:
 def _reset(config: dict[str, object]) -> datetime | None:
     period = config.get("currentPeriod")
     if isinstance(period, dict):
-        parsed = _timestamp(period.get("end"))
+        parsed = parse_timestamp(period.get("end"))
         if parsed is not None:
             return parsed
-    return _timestamp(config.get("billingPeriodEnd"))
+    return parse_timestamp(config.get("billingPeriodEnd"))
 
 
 class GrokProvider:

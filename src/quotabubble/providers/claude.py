@@ -19,6 +19,7 @@ from quotabubble.providers.base import (
     format_plan,
     parse_retry_after,
 )
+from quotabubble.providers.parsing import as_number
 
 USAGE_URL = "https://api.anthropic.com/api/oauth/usage"
 ANTHROPIC_BETA = "oauth-2025-04-20"
@@ -117,19 +118,6 @@ def read_keychain_credentials(
     return None
 
 
-def _as_float(value: object) -> float | None:
-    if isinstance(value, bool):
-        return None
-    if isinstance(value, int | float):
-        return float(value)
-    if isinstance(value, str):
-        try:
-            return float(value)
-        except ValueError:
-            return None
-    return None
-
-
 def _slug(value: str) -> str:
     return re.sub(r"[^a-z0-9]+", "-", value.lower()).strip("-")
 
@@ -146,7 +134,7 @@ def _scope_name(limit: _Limit) -> str | None:
 def _windows_from_limits(limits: list[_Limit]) -> list[UsageWindow]:
     windows: list[UsageWindow] = []
     for limit in limits:
-        percent = _as_float(limit.percent)
+        percent = as_number(limit.percent)
         if percent is None:
             continue
         if limit.kind == "session":
@@ -234,7 +222,7 @@ def _credits(spend: _Spend | None) -> Credits | None:
     if spend is None or not spend.enabled:
         return None
     if spend.limit is None:
-        percent = _as_float(spend.percent)
+        percent = as_number(spend.percent)
         if percent is None:
             return None
         return Credits(display=f"{percent:.0f}% used", used_pct=percent)
@@ -243,7 +231,7 @@ def _credits(spend: _Spend | None) -> Credits | None:
     if used is None or total is None:
         return None
     symbol = "$" if (spend.limit.currency or "USD") == "USD" else ""
-    used_pct = _as_float(spend.percent)
+    used_pct = as_number(spend.percent)
     if used_pct is None and total > 0:
         used_pct = used / total * 100
     return Credits(

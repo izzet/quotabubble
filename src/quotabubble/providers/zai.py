@@ -10,6 +10,7 @@ from quotabubble.providers.base import (
     UsageSnapshot,
     UsageWindow,
 )
+from quotabubble.providers.parsing import as_number, parse_timestamp
 
 QUOTA_URL = "https://api.z.ai/api/monitor/usage/quota/limit"
 REQUEST_TIMEOUT_SECONDS = 15.0
@@ -19,42 +20,28 @@ _SESSION_MINUTES = 300
 _RESET_SLACK = timedelta(minutes=1)
 
 
-def _number(value: object) -> float | None:
-    if isinstance(value, bool):
-        return None
-    if isinstance(value, int | float):
-        return float(value)
-    if isinstance(value, str):
-        try:
-            return float(value)
-        except ValueError:
-            return None
-    return None
-
-
 def _minutes(item: dict[str, object]) -> float:
-    number = _number(item.get("number")) or 0.0
-    unit = _MINUTES_PER_UNIT.get(int(_number(item.get("unit")) or 0), 0)
+    number = as_number(item.get("number")) or 0.0
+    unit = _MINUTES_PER_UNIT.get(int(as_number(item.get("unit")) or 0), 0)
     return number * unit
 
 
 def _used_pct(item: dict[str, object]) -> float:
-    total = _number(item.get("usage"))
+    total = as_number(item.get("usage"))
     if total and total > 0:
-        used = _number(item.get("currentValue"))
+        used = as_number(item.get("currentValue"))
         if used is None:
-            remaining = _number(item.get("remaining"))
+            remaining = as_number(item.get("remaining"))
             used = total - remaining if remaining is not None else None
         if used is not None:
             return max(0.0, min(100.0, used / total * 100))
-    return max(0.0, min(100.0, _number(item.get("percentage")) or 0.0))
+    return max(0.0, min(100.0, as_number(item.get("percentage")) or 0.0))
 
 
 def _reset(item: dict[str, object], minutes: float, now: datetime) -> datetime | None:
-    millis = _number(item.get("nextResetTime"))
-    if millis is None:
+    reset = parse_timestamp(item.get("nextResetTime"))
+    if reset is None:
         return None
-    reset = datetime.fromtimestamp(millis / 1000, tz=UTC)
     if minutes and reset - now > timedelta(minutes=minutes) + _RESET_SLACK:
         return None
     return reset

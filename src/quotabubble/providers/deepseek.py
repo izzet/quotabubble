@@ -4,6 +4,7 @@ import httpx2
 from pydantic import BaseModel
 
 from quotabubble.providers.base import Credits, KeyStatus, ProviderStatus, UsageSnapshot
+from quotabubble.providers.parsing import as_number
 
 BALANCE_URL = "https://api.deepseek.com/user/balance"
 REQUEST_TIMEOUT_SECONDS = 15.0
@@ -21,19 +22,6 @@ class _BalanceResponse(BaseModel):
     balance_infos: list[_BalanceInfo] = []
 
 
-def _as_float(value: object) -> float | None:
-    if isinstance(value, bool):
-        return None
-    if isinstance(value, int | float):
-        return float(value)
-    if isinstance(value, str):
-        try:
-            return float(value)
-        except ValueError:
-            return None
-    return None
-
-
 def _credits(balance: _BalanceResponse) -> Credits | None:
     if not balance.balance_infos:
         return None
@@ -42,7 +30,7 @@ def _credits(balance: _BalanceResponse) -> Credits | None:
         (item for item in infos if (item.currency or "").upper() == "USD"),
         infos[0],
     )
-    amount = _as_float(info.total_balance)
+    amount = as_number(info.total_balance)
     if amount is None:
         return None
     currency = (info.currency or "").upper()

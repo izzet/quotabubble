@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import UTC, datetime
+from datetime import datetime
 
 import httpx2
 
@@ -11,6 +11,7 @@ from quotabubble.providers.base import (
     UsageWindow,
     format_plan,
 )
+from quotabubble.providers.parsing import as_number, parse_timestamp
 
 USAGE_URL = "https://api.kimi.com/coding/v1/usages"
 REQUEST_TIMEOUT_SECONDS = 15.0
@@ -25,42 +26,21 @@ _PLAN_NAMES = {
 }
 
 
-def _number(value: object) -> float | None:
-    if isinstance(value, bool):
-        return None
-    if isinstance(value, int | float):
-        return float(value)
-    if isinstance(value, str):
-        try:
-            return float(value)
-        except ValueError:
-            return None
-    return None
-
-
 def _reset_time(detail: dict[str, object]) -> datetime | None:
     for key in _RESET_KEYS:
-        value = detail.get(key)
-        if isinstance(value, str) and value:
-            try:
-                parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
-            except ValueError:
-                continue
-            return parsed if parsed.tzinfo else parsed.replace(tzinfo=UTC)
-        number = _number(value)
-        if number is not None:
-            seconds = number / 1000 if number > 1e11 else number
-            return datetime.fromtimestamp(seconds, tz=UTC)
+        parsed = parse_timestamp(detail.get(key))
+        if parsed is not None:
+            return parsed
     return None
 
 
 def _used_pct(detail: dict[str, object]) -> float | None:
-    limit = _number(detail.get("limit"))
+    limit = as_number(detail.get("limit"))
     if not limit or limit <= 0:
         return None
-    used = _number(detail.get("used"))
+    used = as_number(detail.get("used"))
     if used is None:
-        remaining = _number(detail.get("remaining"))
+        remaining = as_number(detail.get("remaining"))
         if remaining is None:
             return None
         used = limit - remaining
@@ -70,7 +50,7 @@ def _used_pct(detail: dict[str, object]) -> float | None:
 def _window_label(window: object) -> tuple[str, str] | None:
     if not isinstance(window, dict):
         return None
-    duration = _number(window.get("duration"))
+    duration = as_number(window.get("duration"))
     unit = _MINUTES_PER_UNIT.get(str(window.get("timeUnit")))
     if not duration or unit is None:
         return None
