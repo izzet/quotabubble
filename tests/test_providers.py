@@ -75,6 +75,22 @@ def test_resolve_api_key_falls_back_to_environment(monkeypatch) -> None:
     assert resolve_api_key(Settings(), "deepseek") == "from-env"
 
 
+def test_resolve_api_key_accepts_vendor_env_var_alias(monkeypatch) -> None:
+    monkeypatch.setattr("quotabubble.app.providers.get_secret", lambda provider_id: None)
+    monkeypatch.delenv("ZAI_API_KEY", raising=False)
+    monkeypatch.setenv("Z_AI_API_KEY", "zai-env")
+
+    assert resolve_api_key(Settings(), "zai") == "zai-env"
+
+
+def test_resolve_api_key_prefers_canonical_env_var_over_alias(monkeypatch) -> None:
+    monkeypatch.setattr("quotabubble.app.providers.get_secret", lambda provider_id: None)
+    monkeypatch.setenv("ZAI_API_KEY", "canonical")
+    monkeypatch.setenv("Z_AI_API_KEY", "alias")
+
+    assert resolve_api_key(Settings(), "zai") == "canonical"
+
+
 def test_build_providers_registers_all_expected_providers(monkeypatch) -> None:
     monkeypatch.setattr("quotabubble.app.providers.get_secret", lambda provider_id: None)
     providers = build_providers(Settings())
@@ -84,10 +100,22 @@ def test_build_providers_registers_all_expected_providers(monkeypatch) -> None:
         "antigravity",
         "copilot",
         "cursor",
+        "grok",
+        "zed",
+        "kimi",
         "opencode",
         "deepseek",
         "openrouter",
+        "zai",
     ]
+
+
+def test_build_providers_lists_api_key_providers_last(monkeypatch) -> None:
+    monkeypatch.setattr("quotabubble.app.providers.get_secret", lambda provider_id: None)
+    flags = [provider.uses_api_key for provider in build_providers(Settings())]
+
+    assert flags == sorted(flags)
+    assert any(flags) and not all(flags)
 
 
 def test_merge_selected_snapshots_seeds_new_provider_with_loading_when_no_cache() -> None:
