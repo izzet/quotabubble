@@ -6,7 +6,7 @@ const releases = `${repo}/releases/latest`;
 const canonical = new URL(base, Astro.site).href;
 const ogImage = new URL(`${base}screenshot-expanded.png`, Astro.site).href;
 const ogCard = new URL(`${base}og.png`, Astro.site).href;
-const appVersion = "0.2.3";
+const appVersion = "0.2.4";
 const structuredData = {
   "@context": "https://schema.org",
   "@graph": [
@@ -109,7 +109,7 @@ const providers = [
           idle and expands when you click it.
         </p>
         <div class="cta">
-          <a class="primary" href={releases}>Download for Windows or macOS</a>
+          <a class="primary" href={releases}>Download for Windows, macOS, or Linux</a>
           <a class="secondary" href={repo}>View on GitHub</a>
         </div>
         <div class="shots">
@@ -166,11 +166,27 @@ scoop install izzet/quotabubble</code></pre>
           The build is unsigned for now, so SmartScreen may warn you — choose “More info → Run anyway”.
         </p>
         <p>
-          <strong>macOS.</strong> Download the matching <code>QuotaBubble-macos-arm64.dmg</code>
-          (Apple Silicon) or <code>QuotaBubble-macos-x64.dmg</code> (Intel) from
-          <a href={releases}>Releases</a>, then drag QuotaBubble to Applications. The first macOS
-          builds are not yet Developer ID signed or notarized, so Control-click the app and choose
-          Open on first launch.
+          <strong>macOS.</strong> With <a href="https://brew.sh">Homebrew</a>, using the first-party tap
+          (works on both Apple Silicon and Intel):
+        </p>
+        <pre><code>brew install --cask izzet/tap/quotabubble</code></pre>
+        <p>
+          Or download the matching disk image from <a href={releases}>Releases</a>:
+          <code>QuotaBubble-macos-arm64.dmg</code> for Apple Silicon, or
+          <code>QuotaBubble-macos-x64.dmg</code> for Intel. Open it and drag QuotaBubble to Applications.
+        </p>
+        <p class="note">
+          The macOS builds are not yet Developer ID signed or notarized, so Control-click the app,
+          choose Open, and confirm the dialog on first launch.
+        </p>
+        <p>
+          <strong>Ubuntu GNOME.</strong> Download <code>QuotaBubble-linux-amd64.deb</code> from
+          <a href={releases}>Releases</a>, then install it and enable the GNOME extension:
+        </p>
+        <pre><code>sudo apt install ./QuotaBubble-linux-amd64.deb
+gnome-extensions enable quotabubble@izzet.dev</code></pre>
+        <p>
+          Open <code>quotabubble-settings</code> to choose providers, notifications, and launch at login.
         </p>
         <p>
           <strong>From source.</strong> With Python 3.11+ and <a href="https://docs.astral.sh/uv/">uv</a>:
