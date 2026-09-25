@@ -1,0 +1,158 @@
+---
+const rawBase = import.meta.env.BASE_URL;
+const base = rawBase.endsWith("/") ? rawBase : `${rawBase}/`;
+const repo = "https://github.com/izzet/quotabubble";
+const canonical = new URL(`${base}code-signing/`, Astro.site).href;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Code signing policy — QuotaBubble</title>
+    <meta
+      name="description"
+      content="How QuotaBubble's Windows binaries are built and signed, and who is responsible for each step."
+    />
+    <link rel="icon" type="image/png" href={`${base}favicon.png`} />
+    <link rel="canonical" href={canonical} />
+    <meta name="theme-color" content="#0e0e11" />
+  </head>
+  <body>
+    <main>
+      <p class="back"><a href={base}>← QuotaBubble</a></p>
+      <h1>Code signing policy</h1>
+      <p class="dim">Last updated: September 2026</p>
+
+      <p>
+        Free code signing for QuotaBubble's Windows binaries is provided by
+        <a href="https://signpath.org/">SignPath.io</a>, with a certificate issued by the
+        <a href="https://signpath.org/">SignPath Foundation</a>.
+      </p>
+
+      <h2>What is signed</h2>
+      <p>
+        Only Windows executables that are built from the public source code in
+        <a href={repo}>github.com/izzet/quotabubble</a>, by the project's own GitHub Actions release
+        workflow, are submitted for signing. Third-party dependencies are not re-signed; they are included
+        as published by their upstream authors.
+      </p>
+
+      <h2>Roles</h2>
+      <ul>
+        <li>
+          <strong>Author, reviewer, and approver:</strong>
+          <a href="https://github.com/izzet">Izzet Yildirim</a>, the project maintainer. Every change is
+          made through a pull request and merged only after review.
+        </li>
+      </ul>
+      <p>
+        Multi-factor authentication is enabled for the maintainer's GitHub and SignPath accounts.
+      </p>
+
+      <h2>How a release is signed</h2>
+      <ul>
+        <li>A release is triggered by pushing a version tag to the repository.</li>
+        <li>The release workflow builds the executable from that tagged source and submits it to SignPath.</li>
+        <li>The maintainer approves the signing request, and the signed executable is attached to the GitHub Release.</li>
+      </ul>
+
+      <h2>Privacy</h2>
+      <p>
+        QuotaBubble does not send any data to the developer. See the
+        <a href={`${base}privacy/`}>privacy policy</a> for details.
+      </p>
+
+      <h2>Reporting a problem</h2>
+      <p>
+        If you believe a signed QuotaBubble binary is malicious or has been tampered with, please open an
+        issue at <a href={`${repo}/issues`}>github.com/izzet/quotabubble/issues</a>.
+      </p>
+    </main>
+
+    <footer>
+      <span>MIT licensed</span>
+      <span>·</span>
+      <a href={repo}>github.com/izzet/quotabubble</a>
+    </footer>
+  </body>
+</html>
+
+<style>
+  :root {
+    --bg: #0e0e11;
+    --panel: #16161a;
+    --line: rgba(255, 255, 255, 0.08);
+    --text: #ececf1;
+    --dim: #9a9aa5;
+    --accent: #5ec584;
+  }
+  * {
+    box-sizing: border-box;
+  }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font: 16px/1.65 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial,
+      sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  main {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 48px 24px 24px;
+  }
+  h1 {
+    font-size: 2rem;
+    margin: 8px 0 4px;
+  }
+  h2 {
+    font-size: 1.15rem;
+    margin: 32px 0 8px;
+  }
+  a {
+    color: var(--accent);
+    text-decoration: none;
+  }
+  a:hover {
+    text-decoration: underline;
+  }
+  code {
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 1px 6px;
+    font-size: 0.9em;
+  }
+  ul {
+    padding-left: 22px;
+  }
+  li {
+    margin: 6px 0;
+  }
+  .dim {
+    color: var(--dim);
+  }
+  .back {
+    margin: 0;
+    font-size: 0.95rem;
+  }
+  .hosts {
+    font-size: 0.95rem;
+    color: var(--dim);
+  }
+  .hosts strong {
+    color: var(--text);
+  }
+  footer {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 24px;
+    color: var(--dim);
+    font-size: 0.9rem;
+    display: flex;
+    gap: 8px;
+  }
+</style>
