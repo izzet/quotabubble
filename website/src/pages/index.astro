@@ -1,4 +1,7 @@
 ---
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
+
 const rawBase = import.meta.env.BASE_URL;
 const base = rawBase.endsWith("/") ? rawBase : `${rawBase}/`;
 const repo = "https://github.com/izzet/quotabubble";
@@ -13,7 +16,11 @@ const downloads = [
 const canonical = new URL(base, Astro.site).href;
 const ogImage = new URL(`${base}screenshot-expanded.png`, Astro.site).href;
 const ogCard = new URL(`${base}og.png`, Astro.site).href;
-const appVersion = "0.2.4";
+// Single source of truth: the app version in pyproject.toml (the site builds from the website/ directory).
+const pyproject = readFileSync(resolve(process.cwd(), "../pyproject.toml"), "utf-8");
+const appVersion = pyproject.match(/^version\s*=\s*"([^"]+)"/m)?.[1];
+if (!appVersion) throw new Error("Could not read the app version from pyproject.toml");
+const changelog = `${repo}/releases/tag/v${appVersion}`;
 const structuredData = {
   "@context": "https://schema.org",
   "@graph": [
@@ -359,6 +366,8 @@ quotabubble`}</code></pre>
       <a href={repo}>github.com/izzet/quotabubble</a>
       <span>·</span>
       <a href={`${base}privacy/`}>Privacy</a>
+      <span>·</span>
+      <a href={changelog}>Changelog (v{appVersion})</a>
     </footer>
     <script>
       // Progressive enhancement: without JS the code blocks simply stay plain.
