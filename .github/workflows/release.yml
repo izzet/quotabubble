@@ -264,6 +264,8 @@ jobs:
           Path("homebrew-tap/Casks/quotabubble.rb").write_text(cask)
           PY
           brew tap izzet/tap
+          # Homebrew refuses to load casks from a tap it hasn't been told to trust.
+          brew trust izzet/tap
           tap_path="$(brew --repository izzet/tap)"
           cp homebrew-tap/Casks/quotabubble.rb "$tap_path/Casks/quotabubble.rb"
           brew audit --cask --strict quotabubble
