@@ -11,7 +11,7 @@ const downloads = [
   { os: "windows", label: "Windows", file: "QuotaBubble-windows-x64.zip" },
   { os: "macos", label: "macOS (Apple Silicon)", file: "QuotaBubble-macos-arm64.dmg" },
   { os: "macos-intel", label: "macOS (Intel)", file: "QuotaBubble-macos-x64.dmg" },
-  // TODO: add the Ubuntu .deb here once a release actually ships it (v0.2.4 doesn't).
+  { os: "linux", label: "Ubuntu GNOME", file: "QuotaBubble-linux-amd64.deb" },
 ];
 const canonical = new URL(base, Astro.site).href;
 const ogImage = new URL(`${base}screenshot-expanded.png`, Astro.site).href;
