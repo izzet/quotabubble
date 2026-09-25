@@ -209,6 +209,31 @@ quotabubble`}</code></pre>
       <span>·</span>
       <a href={`${base}privacy/`}>Privacy</a>
     </footer>
+    <script>
+      // Progressive enhancement: without JS the code blocks simply stay plain.
+      for (const pre of document.querySelectorAll("pre")) {
+        const wrap = document.createElement("div");
+        wrap.className = "codeblock";
+        pre.replaceWith(wrap);
+        wrap.append(pre);
+
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "copy-btn";
+        button.textContent = "Copy";
+        button.setAttribute("aria-label", "Copy command to clipboard");
+        button.addEventListener("click", async () => {
+          try {
+            await navigator.clipboard.writeText(pre.innerText.trim());
+            button.textContent = "Copied";
+          } catch {
+            button.textContent = "Press Ctrl+C";
+          }
+          setTimeout(() => (button.textContent = "Copy"), 1800);
+        });
+        wrap.append(button);
+      }
+    </script>
   </body>
 </html>
 
@@ -255,6 +280,31 @@ quotabubble`}</code></pre>
     border-radius: 12px;
     padding: 16px;
     overflow-x: auto;
+  }
+  :global(.codeblock) {
+    position: relative;
+  }
+  :global(.codeblock pre) {
+    margin: 0 0 16px;
+    padding-right: 76px;
+  }
+  :global(.copy-btn) {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    padding: 4px 10px;
+    font: inherit;
+    font-size: 12px;
+    color: var(--dim);
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    cursor: pointer;
+  }
+  :global(.copy-btn:hover),
+  :global(.copy-btn:focus-visible) {
+    color: var(--text);
+    border-color: var(--accent);
   }
   pre code {
     background: none;
