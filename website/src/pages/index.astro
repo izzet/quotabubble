@@ -144,61 +144,127 @@ const providers = [
 
       <section>
         <h2>Install</h2>
-        <p>
-          <strong>Windows.</strong> With
-          <a href="https://learn.microsoft.com/windows/package-manager/winget/">winget</a>:
-        </p>
-        <pre><code>winget install Izzet.QuotaBubble</code></pre>
-        <p>
-          Or with <a href="https://community.chocolatey.org/packages/quotabubble">Chocolatey</a>:
-        </p>
-        <pre><code>choco install quotabubble</code></pre>
-        <p>
-          Or with <a href="https://scoop.sh">Scoop</a>:
-        </p>
-        <pre><code>scoop bucket add izzet https://github.com/izzet/scoop-bucket
+        <div class="os-tabs" role="tablist" aria-label="Operating system" hidden>
+          <button type="button" role="tab" data-os="windows">Windows</button>
+          <button type="button" role="tab" data-os="macos">macOS</button>
+          <button type="button" role="tab" data-os="linux">Ubuntu GNOME</button>
+          <button type="button" role="tab" data-os="source">From source</button>
+        </div>
+
+        <div class="os-panel" role="tabpanel" data-os="windows">
+          <h3>Windows</h3>
+          <p>
+            With <a href="https://learn.microsoft.com/windows/package-manager/winget/">winget</a>:
+          </p>
+          <pre><code>winget install Izzet.QuotaBubble</code></pre>
+          <p>
+            Or with <a href="https://community.chocolatey.org/packages/quotabubble">Chocolatey</a>:
+          </p>
+          <pre><code>choco install quotabubble</code></pre>
+          <p>
+            Or with <a href="https://scoop.sh">Scoop</a>:
+          </p>
+          <pre><code>scoop bucket add izzet https://github.com/izzet/scoop-bucket
 scoop install izzet/quotabubble</code></pre>
-        <p>
-          Or download the latest <code>QuotaBubble-windows-x64.zip</code> from
-          <a href={releases}>Releases</a>, unzip it, and run <code>QuotaBubble.exe</code>.
-        </p>
-        <p class="note">
-          The build is unsigned for now, so SmartScreen may warn you — choose “More info → Run anyway”.
-        </p>
-        <p>
-          <strong>macOS.</strong> With <a href="https://brew.sh">Homebrew</a>, using the first-party tap
-          (works on both Apple Silicon and Intel):
-        </p>
-        <pre><code>brew install --cask izzet/tap/quotabubble</code></pre>
-        <p>
-          Or download the matching disk image from <a href={releases}>Releases</a>:
-          <code>QuotaBubble-macos-arm64.dmg</code> for Apple Silicon, or
-          <code>QuotaBubble-macos-x64.dmg</code> for Intel. Open it and drag QuotaBubble to Applications.
-        </p>
-        <p class="note">
-          The macOS builds are not yet Developer ID signed or notarized, so Control-click the app,
-          choose Open, and confirm the dialog on first launch.
-        </p>
-        <p>
-          <strong>Ubuntu GNOME.</strong> Download <code>QuotaBubble-linux-amd64.deb</code> from
-          <a href={releases}>Releases</a>, then install it and enable the GNOME extension:
-        </p>
-        <pre><code>sudo apt install ./QuotaBubble-linux-amd64.deb
+          <p>
+            Or download the latest <code>QuotaBubble-windows-x64.zip</code> from
+            <a href={releases}>Releases</a>, unzip it, and run <code>QuotaBubble.exe</code>.
+          </p>
+          <p class="note">
+            The build is unsigned for now, so SmartScreen may warn you — choose “More info → Run anyway”.
+          </p>
+        </div>
+
+        <div class="os-panel" role="tabpanel" data-os="macos">
+          <h3>macOS</h3>
+          <p>
+            With <a href="https://brew.sh">Homebrew</a>, using the first-party tap (works on both Apple
+            Silicon and Intel):
+          </p>
+          <pre><code>brew install --cask izzet/tap/quotabubble</code></pre>
+          <p>
+            Or download the matching disk image from <a href={releases}>Releases</a>:
+            <code>QuotaBubble-macos-arm64.dmg</code> for Apple Silicon, or
+            <code>QuotaBubble-macos-x64.dmg</code> for Intel. Open it and drag QuotaBubble to Applications.
+          </p>
+          <p class="note">
+            The macOS builds are not yet Developer ID signed or notarized, so Control-click the app,
+            choose Open, and confirm the dialog on first launch.
+          </p>
+        </div>
+
+        <div class="os-panel" role="tabpanel" data-os="linux">
+          <h3>Ubuntu GNOME</h3>
+          <p>
+            Download <code>QuotaBubble-linux-amd64.deb</code> from <a href={releases}>Releases</a>, then
+            install it and enable the GNOME extension:
+          </p>
+          <pre><code>sudo apt install ./QuotaBubble-linux-amd64.deb
 gnome-extensions enable quotabubble@izzet.dev</code></pre>
-        <p>
-          Open <code>quotabubble-settings</code> to choose providers, notifications, and launch at login.
-        </p>
-        <p>
-          <strong>From source.</strong> With Python 3.11+ and <a href="https://docs.astral.sh/uv/">uv</a>:
-        </p>
-        <pre><code>{`git clone ${repo}.git
+          <p>
+            Open <code>quotabubble-settings</code> to choose providers, notifications, and launch at login.
+          </p>
+        </div>
+
+        <div class="os-panel" role="tabpanel" data-os="source">
+          <h3>From source</h3>
+          <p>
+            With Python 3.11+ and <a href="https://docs.astral.sh/uv/">uv</a>:
+          </p>
+          <pre><code>{`git clone ${repo}.git
 cd quotabubble
 uv tool install --editable .
 quotabubble`}</code></pre>
-        <p>
-          Or install it as a standalone command with
-          <a href="https://pipx.pypa.io/">pipx</a>: <code>pipx install quotabubble</code>.
-        </p>
+          <p>
+            Or install it as a standalone command with
+            <a href="https://pipx.pypa.io/">pipx</a>: <code>pipx install quotabubble</code>.
+          </p>
+        </div>
+
+        <script>
+          // Progressive enhancement: without JS every panel stays visible, one after another.
+          const tabs = [...document.querySelectorAll<HTMLButtonElement>(".os-tabs [data-os]")];
+          const panels = [...document.querySelectorAll<HTMLElement>(".os-panel")];
+          const bar = document.querySelector<HTMLElement>(".os-tabs");
+          const ua = navigator.userAgent;
+          const detected = /Android|iPhone|iPad/i.test(ua)
+            ? "source"
+            : /Windows/i.test(ua)
+              ? "windows"
+              : /Macintosh|Mac OS X/i.test(ua)
+                ? "macos"
+                : /Linux|X11|CrOS/i.test(ua)
+                  ? "linux"
+                  : "windows";
+
+          function select(os: string, focus = false) {
+            for (const tab of tabs) {
+              const on = tab.dataset.os === os;
+              tab.setAttribute("aria-selected", String(on));
+              tab.tabIndex = on ? 0 : -1;
+              if (on && focus) tab.focus();
+            }
+            for (const panel of panels) panel.hidden = panel.dataset.os !== os;
+          }
+
+          if (bar && tabs.length && panels.length) {
+            bar.hidden = false;
+            bar.classList.add("on");
+            document.querySelector(".os-panel")?.parentElement?.classList.add("tabs-on");
+            select(detected);
+            tabs.forEach((tab, index) => {
+              tab.addEventListener("click", () => select(tab.dataset.os ?? detected));
+              tab.addEventListener("keydown", (event) => {
+                const step = event.key === "ArrowRight" ? 1 : event.key === "ArrowLeft" ? -1 : 0;
+                if (step) {
+                  event.preventDefault();
+                  const next = tabs[(index + step + tabs.length) % tabs.length];
+                  select(next.dataset.os ?? detected, true);
+                }
+              });
+            });
+          }
+        </script>
       </section>
     </main>
 
@@ -400,6 +466,36 @@ quotabubble`}</code></pre>
     color: var(--dim);
     font-size: 13px;
     text-align: right;
+  }
+  .os-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin: 0 0 16px;
+  }
+  .os-tabs button {
+    padding: 6px 14px;
+    font: inherit;
+    font-size: 14px;
+    color: var(--dim);
+    background: transparent;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    cursor: pointer;
+  }
+  .os-tabs button:hover,
+  .os-tabs button:focus-visible {
+    color: var(--text);
+    border-color: var(--accent);
+  }
+  .os-tabs button[aria-selected="true"] {
+    color: var(--accent-ink);
+    background: var(--accent);
+    border-color: var(--accent);
+    font-weight: 600;
+  }
+  .tabs-on .os-panel > h3 {
+    display: none;
   }
   .note {
     color: var(--dim);
