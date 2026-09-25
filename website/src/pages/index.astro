@@ -49,6 +49,33 @@ const features = [
   ["Local only", "Reuses the credentials your tools already store. No telemetry, no server."],
 ];
 
+const faq = [
+  [
+    "Does QuotaBubble send my data anywhere?",
+    "No. There is no QuotaBubble account, server, or telemetry. It only talks to the service each login belongs to, over HTTPS, to read your own usage numbers. The details are in the privacy policy.",
+  ],
+  [
+    "Why does it read my sign-in files?",
+    "To ask each service for your usage, it reuses the sign-in your tool already stored: a file in your home folder or an entry in the OS keychain or credential store. It never modifies or copies those files, only reads the tools you have enabled, and the whole app is open source so you can check.",
+  ],
+  [
+    "Why does Windows or macOS warn me when I open it?",
+    "The builds are not code-signed yet. On Windows choose “More info → Run anyway” in SmartScreen; on macOS Control-click the app, choose Open, and confirm. Signing is planned, and installing through winget, Chocolatey, Scoop, or Homebrew doesn't change the warning.",
+  ],
+  [
+    "My provider isn't showing up. What do I do?",
+    "Sign in to that tool first (Claude Code, Codex, Cursor, and so on), then open Settings and enable it. Providers that use an API key, like DeepSeek, OpenRouter, and Z.ai, need the key entered in Settings, and the Test button checks it. If it still fails, Open logs from the tray menu shows what went wrong, with secrets redacted.",
+  ],
+  [
+    "How often does it update, and what if I'm offline?",
+    "Every 5 minutes by default; you can change that in Settings. If a refresh fails because of a network or rate-limit error, it keeps showing the last good values, dimmed, and tries again on the next refresh.",
+  ],
+  [
+    "Which systems does it run on?",
+    "Windows and macOS (Apple Silicon and Intel), plus Ubuntu GNOME through a package with a GNOME extension. You can also run it from source with Python 3.11 or newer; other setups aren't tested.",
+  ],
+];
+
 const providers = [
   ["Claude Code", "macOS Keychain or ~/.claude/.credentials.json"],
   ["Codex", "~/.codex/auth.json"],
@@ -199,6 +226,25 @@ quotabubble`}</code></pre>
           Or install it as a standalone command with
           <a href="https://pipx.pypa.io/">pipx</a>: <code>pipx install quotabubble</code>.
         </p>
+      </section>
+
+      <section id="faq">
+        <h2>FAQ</h2>
+        <div class="faq">
+          {faq.map(([question, answer]) => (
+            <details>
+              <summary>{question}</summary>
+              <p>
+                {answer}
+                {question.startsWith("Does QuotaBubble send") && (
+                  <>
+                    {" "}<a href={`${base}privacy/`}>Read the privacy policy</a>.
+                  </>
+                )}
+              </p>
+            </details>
+          ))}
+        </div>
       </section>
     </main>
 
@@ -400,6 +446,42 @@ quotabubble`}</code></pre>
     color: var(--dim);
     font-size: 13px;
     text-align: right;
+  }
+  .faq details {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 0 16px;
+    margin-bottom: 8px;
+  }
+  .faq summary {
+    cursor: pointer;
+    padding: 14px 0;
+    font-weight: 600;
+    list-style: none;
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .faq summary::-webkit-details-marker {
+    display: none;
+  }
+  .faq summary::after {
+    content: "+";
+    color: var(--dim);
+    font-weight: 400;
+  }
+  .faq details[open] summary::after {
+    content: "−";
+  }
+  .faq summary:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+    border-radius: 6px;
+  }
+  .faq details p {
+    margin: 0 0 14px;
+    color: var(--dim);
   }
   .note {
     color: var(--dim);
