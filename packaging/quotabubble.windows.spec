@@ -1,47 +1,8 @@
 # -*- mode: python ; coding: utf-8 -*-
 
-import tomllib
 from pathlib import Path
 
-from PyInstaller.utils.win32.versioninfo import (
-    FixedFileInfo,
-    StringFileInfo,
-    StringStruct,
-    StringTable,
-    VarFileInfo,
-    VarStruct,
-    VSVersionInfo,
-)
-
 ROOT = Path(SPECPATH).parent
-
-# SignPath Foundation requires the signed binary's file metadata to be set,
-# so the version resource is generated from pyproject.toml's version.
-VERSION = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))["project"]["version"]
-VERSION_TUPLE = (*(int(part) for part in VERSION.split(".")[:3]), 0)
-VERSION_INFO = VSVersionInfo(
-    ffi=FixedFileInfo(filevers=VERSION_TUPLE, prodvers=VERSION_TUPLE),
-    kids=[
-        StringFileInfo(
-            [
-                StringTable(
-                    "040904B0",
-                    [
-                        StringStruct("CompanyName", "Izzet Yildirim"),
-                        StringStruct("FileDescription", "QuotaBubble"),
-                        StringStruct("FileVersion", ".".join(map(str, VERSION_TUPLE))),
-                        StringStruct("InternalName", "QuotaBubble"),
-                        StringStruct("LegalCopyright", "Copyright (c) 2026 Izzet Yildirim. MIT license."),
-                        StringStruct("OriginalFilename", "QuotaBubble.exe"),
-                        StringStruct("ProductName", "QuotaBubble"),
-                        StringStruct("ProductVersion", ".".join(map(str, VERSION_TUPLE))),
-                    ],
-                )
-            ]
-        ),
-        VarFileInfo([VarStruct("Translation", [0x0409, 1200])]),
-    ],
-)
 
 a = Analysis(
     [str(Path(SPECPATH) / "launcher.py")],
@@ -94,7 +55,6 @@ exe = EXE(
     upx=False,
     console=False,
     icon=str(ROOT / "assets" / "quotabubble.ico"),
-    version=VERSION_INFO,
 )
 
 coll = COLLECT(
