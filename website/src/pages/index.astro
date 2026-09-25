@@ -23,7 +23,7 @@ const structuredData = {
       "@id": `${canonical}#software`,
       name: "QuotaBubble",
       description:
-        "A tiny always-on-top desktop bubble that shows your AI coding usage limits: Claude Code, Codex, Antigravity, Copilot, Cursor, OpenCode, DeepSeek, and OpenRouter.",
+        "A tiny always-on-top desktop bubble that shows your AI coding usage limits: Claude Code, Codex, Antigravity, Copilot, Cursor, Grok, Zed, Kimi Code, OpenCode, DeepSeek, OpenRouter, and Z.ai.",
       url: canonical,
       applicationCategory: "DeveloperApplication",
       operatingSystem: "Windows, macOS, Linux",
@@ -52,12 +52,16 @@ const features = [
 const providers = [
   ["Claude Code", "macOS Keychain or ~/.claude/.credentials.json"],
   ["Codex", "~/.codex/auth.json"],
-  ["Google Antigravity", "Windows Credential Manager or macOS Keychain"],
-  ["GitHub Copilot", "Windows Credential Manager or macOS Keychain"],
+  ["Google Antigravity", "Windows Credential Manager, macOS Keychain, or Linux Secret Service"],
+  ["GitHub Copilot", "Windows Credential Manager, macOS Keychain, or Linux Secret Service"],
   ["Cursor", "Cursor IDE state.vscdb / auth.json"],
-  ["OpenCode", "~/.local/share/opencode/auth.json"],
+  ["Grok (SuperGrok)", "~/.grok/auth.json from grok login"],
+  ["Zed", "Windows Credential Manager (sign in to Zed)"],
+  ["Kimi Code", "Kimi Code CLI login in ~/.kimi-code"],
+  ["OpenCode", "~/.local/share/opencode/auth.json or an API key"],
   ["DeepSeek", "API key"],
   ["OpenRouter", "API key"],
+  ["Z.ai (GLM Coding Plan)", "API key"],
 ];
 ---
 
@@ -69,7 +73,7 @@ const providers = [
     <title>QuotaBubble — your AI usage limits, always in sight</title>
     <meta
       name="description"
-      content="A tiny always-on-top desktop bubble that shows your AI coding usage limits: Claude Code, Codex, Antigravity, Copilot, Cursor, OpenCode, DeepSeek, and OpenRouter."
+      content="A tiny always-on-top desktop bubble that shows your AI coding usage limits: Claude Code, Codex, Antigravity, Copilot, Cursor, Grok, Zed, Kimi Code, OpenCode, DeepSeek, OpenRouter, and Z.ai."
     />
     <link rel="icon" type="image/png" href={`${base}favicon.png`} />
     <link rel="canonical" href={canonical} />
@@ -394,12 +398,14 @@ quotabubble`}</code></pre>
   }
   .pname {
     font-weight: 600;
+    flex-shrink: 0;
   }
   .pauth {
     min-width: 0;
     color: var(--dim);
     font-size: 13px;
     text-align: right;
+    overflow-wrap: anywhere;
   }
   .note {
     color: var(--dim);
@@ -411,6 +417,7 @@ quotabubble`}</code></pre>
     padding: 32px 24px 48px;
     color: var(--dim);
     display: flex;
+    flex-wrap: wrap;
     gap: 8px;
     border-top: 1px solid var(--line);
   }
