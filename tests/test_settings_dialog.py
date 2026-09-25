@@ -129,6 +129,35 @@ def test_dialog_toggles_history_enabled(qapp: object, tmp_path: Path) -> None:
     assert Settings.load(tmp_path / "settings.json").history_enabled is True
 
 
+def test_launch_at_login_is_a_normal_checkbox_when_unpackaged(
+    qapp: object, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr("quotabubble.ui.settings_dialog.is_packaged", lambda: False)
+
+    dialog = SettingsDialog(Settings(launch_at_login=True), path=tmp_path / "settings.json")
+
+    assert dialog.launch_at_login.isEnabled() is True
+    assert dialog.launch_at_login.isChecked() is True
+    assert dialog.launch_at_login.text() == "Launch at login"
+
+
+def test_launch_at_login_defers_to_windows_settings_when_packaged(
+    qapp: object, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr("quotabubble.ui.settings_dialog.is_packaged", lambda: True)
+    settings = Settings(launch_at_login=True)
+
+    dialog = SettingsDialog(settings, path=tmp_path / "settings.json")
+
+    assert dialog.launch_at_login.isEnabled() is False
+    assert dialog.launch_at_login.isChecked() is False
+    assert "Windows Settings" in dialog.launch_at_login.text()
+
+    dialog.accept()
+
+    assert settings.launch_at_login is False
+
+
 def test_dialog_lists_detected_providers(qapp: object, tmp_path: Path) -> None:
     path = tmp_path / "settings.json"
     settings = Settings()

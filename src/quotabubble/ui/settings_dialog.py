@@ -22,6 +22,7 @@ from PySide6.QtWidgets import (
 from quotabubble.app.providers import resolve_api_key
 from quotabubble.app.settings import Settings, format_thresholds, parse_thresholds
 from quotabubble.credentials import delete_secret, is_keyring_available, set_secret
+from quotabubble.platform import is_packaged
 from quotabubble.providers.base import ApiKeyProvider, KeyStatus, Provider
 
 _STATUS_STYLES = {
@@ -94,6 +95,12 @@ class SettingsDialog(QDialog):
 
         self.launch_at_login = QCheckBox("Launch at login")
         self.launch_at_login.setChecked(settings.launch_at_login)
+        if is_packaged():
+            self.launch_at_login.setText(
+                "Launch at login (manage in Windows Settings › Apps › Startup)"
+            )
+            self.launch_at_login.setChecked(False)
+            self.launch_at_login.setEnabled(False)
 
         self.history_enabled = QCheckBox("Collect local usage history (for future trends)")
         self.history_enabled.setChecked(settings.history_enabled)
