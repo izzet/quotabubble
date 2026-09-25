@@ -58,6 +58,12 @@ jobs:
         shell: pwsh
         run: Compress-Archive -Path dist/QuotaBubble/* -DestinationPath ${{ matrix.artifact }}
 
+      # The Store re-signs MSIX packages itself, so this one is submitted to
+      # Partner Center as-is and is not meant to be installed directly.
+      - name: Build Microsoft Store MSIX
+        if: runner.os == 'Windows'
+        run: uv run python scripts/build_msix.py --output QuotaBubble-windows-x64.msix
+
       - name: Package Linux build
         if: runner.os == 'Linux'
         run: |
@@ -96,6 +102,13 @@ jobs:
           name: ${{ matrix.artifact }}
           path: ${{ matrix.artifact }}
 
+      - name: Upload Microsoft Store MSIX
+        if: runner.os == 'Windows'
+        uses: actions/upload-artifact@v7
+        with:
+          name: QuotaBubble-windows-x64.msix
+          path: QuotaBubble-windows-x64.msix
+
   # Fan-in: waits for every platform in the build matrix, then creates ONE
   # GitHub Release with all of their archives attached at once. Downstream
   # per-channel jobs depend on this job, never on individual build entries,
@@ -116,6 +129,8 @@ jobs:
       - uses: softprops/action-gh-release@v3
         with:
           files: artifacts/*
+          body: |
+            `QuotaBubble-windows-x64.msix` is the package submitted to the Microsoft Store. It is not signed for direct installation, so on Windows use the ZIP, winget, Chocolatey, or Scoop instead.
 
   winget:
     needs: github-release
