@@ -3,6 +3,13 @@ const rawBase = import.meta.env.BASE_URL;
 const base = rawBase.endsWith("/") ? rawBase : `${rawBase}/`;
 const repo = "https://github.com/izzet/quotabubble";
 const releases = `${repo}/releases/latest`;
+const asset = (name: string) => `${repo}/releases/latest/download/${name}`;
+const downloads = [
+  { os: "windows", label: "Windows", file: "QuotaBubble-windows-x64.zip" },
+  { os: "macos", label: "macOS (Apple Silicon)", file: "QuotaBubble-macos-arm64.dmg" },
+  { os: "macos-intel", label: "macOS (Intel)", file: "QuotaBubble-macos-x64.dmg" },
+  // TODO: add the Ubuntu .deb here once a release actually ships it (v0.2.4 doesn't).
+];
 const canonical = new URL(base, Astro.site).href;
 const ogImage = new URL(`${base}screenshot-expanded.png`, Astro.site).href;
 const ogCard = new URL(`${base}og.png`, Astro.site).href;
@@ -109,9 +116,37 @@ const providers = [
           idle and expands when you click it.
         </p>
         <div class="cta">
-          <a class="primary" href={releases}>Download for Windows, macOS, or Linux</a>
+          <a class="primary" id="download" href={releases}>Download for Windows, macOS, or Linux</a>
           <a class="secondary" href={repo}>View on GitHub</a>
         </div>
+        <p class="alt-downloads" hidden>
+          Direct downloads:
+          {downloads.map((d) => (
+            <a href={asset(d.file)}>{d.label}</a>
+          ))}
+          <a href={releases}>All releases</a>
+        </p>
+        <script define:vars={{ downloads: downloads.map((d) => ({ ...d, href: asset(d.file) })) }}>
+          // Progressive enhancement: without JS the button just opens the releases page.
+          const ua = navigator.userAgent;
+          const os = /Android|iPhone|iPad/i.test(ua)
+            ? null
+            : /Windows/i.test(ua)
+              ? "windows"
+              : /Macintosh|Mac OS X/i.test(ua)
+                ? "macos"
+                : /Linux|X11|CrOS/i.test(ua)
+                  ? "linux"
+                  : null;
+          const pick = downloads.find((d) => d.os === os);
+          const button = document.getElementById("download");
+          if (button && pick) {
+            button.href = pick.href;
+            button.textContent = `Download for ${pick.os === "macos" ? "macOS" : pick.label}`;
+          }
+          const alt = document.querySelector(".alt-downloads");
+          if (alt) alt.hidden = false;
+        </script>
         <div class="shots">
           <img src={`${base}screenshot-compact.png`} width="260" alt="Idle bubble" />
           <img src={`${base}screenshot-expanded.png`} width="300" alt="Expanded detail" />
@@ -344,6 +379,15 @@ quotabubble`}</code></pre>
   .secondary:hover {
     text-decoration: none;
     background: rgba(255, 255, 255, 0.04);
+  }
+  .alt-downloads {
+    margin: 14px 0 0;
+    font-size: 14px;
+    color: var(--dim);
+    display: flex;
+    gap: 6px 14px;
+    justify-content: center;
+    flex-wrap: wrap;
   }
   .shots {
     display: flex;
