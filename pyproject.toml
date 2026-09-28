@@ -1,6 +1,6 @@
 [project]
 name = "quotabubble"
-version = "0.2.4"
+version = "0.2.5"
 description = "A lightweight cross-platform floating widget that shows AI usage quotas."
 readme = "README.md"
 license = "MIT"
@@ -18,6 +18,10 @@ keywords = [
     "antigravity",
     "deepseek",
     "openrouter",
+    "kimi",
+    "zai",
+    "grok",
+    "zed",
     "desktop-widget",
     "pyside6",
 ]
@@ -42,10 +46,15 @@ dependencies = [
     # while this remains a supported release target.
     "pyside6>=6.7,<6.10",
     "pyobjc-framework-Security>=12.0; sys_platform == 'darwin'",
+    "dbus-fast>=5.0.22; sys_platform == 'linux'",
 ]
 
 [project.gui-scripts]
 quotabubble = "quotabubble.app.main:main"
+quotabubble-settings = "quotabubble.settings_main:main"
+
+[project.scripts]
+quotabubble-service = "quotabubble.service.main:main"
 
 [project.urls]
 Homepage = "https://izzet.github.io/quotabubble/"

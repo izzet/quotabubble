@@ -32,14 +32,20 @@ QuotaBubble is a small, frameless desktop widget that keeps the usage limits for
 | --- | --- |
 | Claude Code | macOS Keychain or `~/.claude/.credentials.json` |
 | Codex | `~/.codex/auth.json` |
-| Google Antigravity | Windows Credential Manager or macOS Keychain |
-| GitHub Copilot | Windows Credential Manager or macOS Keychain |
+| Google Antigravity | Windows Credential Manager, macOS Keychain, or Linux Secret Service |
+| GitHub Copilot | Windows Credential Manager, macOS Keychain, or Linux Secret Service |
 | Cursor | Cursor IDE `state.vscdb` / `auth.json` (`CURSOR_SESSION_TOKEN` override) |
+| Grok (SuperGrok) | `~/.grok/auth.json` from `grok login` (`GROK_HOME` override) |
+| Zed | Windows Credential Manager (sign in to Zed) |
+| Kimi Code | Kimi Code CLI login in `~/.kimi-code` (`KIMI_CODE_HOME` override) |
 | OpenCode | `~/.local/share/opencode/auth.json` / `opencode.jsonc` (`OPENCODE_API_KEY` override) or API key |
 | DeepSeek | API key |
 | OpenRouter | API key |
+| Z.ai (GLM Coding Plan) | API key (`Z_AI_API_KEY` override) |
 
-Providers are detected automatically. Enable or disable them in Settings; API keys are entered there and validated inline with a **Test** button. Antigravity and Copilot reuse their existing Windows Credential Manager or macOS Keychain sign-ins. Cursor reuses the IDE session token from `state.vscdb` or `auth.json` (or `CURSOR_SESSION_TOKEN`).
+Kimi Code runs separate regional services (`kimi.com` and `kimi.ai`): the login is only ever sent to the host the CLI itself is configured for (override with `KIMI_CODE_BASE_URL`). QuotaBubble never refreshes the CLI's login; when it expires, open Kimi Code to renew it.
+
+Providers are detected automatically. Enable or disable them in Settings; API keys are entered there and validated inline with a **Test** button. Antigravity and Copilot reuse their existing OS keychain sign-ins, including Linux Secret Service. Cursor reuses the IDE session token from `state.vscdb` or `auth.json` (or `CURSOR_SESSION_TOKEN`).
 
 ## Install
 
@@ -57,9 +63,57 @@ Or with [Chocolatey](https://community.chocolatey.org/packages/quotabubble):
 choco install quotabubble
 ```
 
+Or with [Scoop](https://scoop.sh):
+
+```powershell
+scoop bucket add izzet https://github.com/izzet/scoop-bucket
+scoop install izzet/quotabubble
+```
+
 Or download the latest `QuotaBubble-windows-x64.zip` from the [Releases page](https://github.com/izzet/quotabubble/releases), unzip it, and run `QuotaBubble.exe`.
 
 > The binary is not code-signed yet, so Windows SmartScreen may warn you. Choose **More info → Run anyway**.
+
+### Linux
+
+There are two Linux install paths:
+
+| Desktop | Install method | What runs |
+| --- | --- | --- |
+| Ubuntu GNOME 24.04 (amd64) | Release `.deb` | GNOME Shell extension and background service |
+| Linux Mint 22.3 Cinnamon (X11, amd64) | `pipx` | Standalone Qt bubble; tested locally |
+| Other X11 desktops on modern glibc-based Linux (for example Debian, Fedora, openSUSE, or Arch) | `pipx` | Standalone Qt bubble; expected to work but not yet tested on those distributions |
+
+For the standalone bubble, install [pipx](https://pipx.pypa.io/) and Python 3.11 or newer, then run:
+
+```bash
+pipx install quotabubble
+quotabubble
+```
+
+This is the path for Linux Mint Cinnamon, MATE, and Xfce. The `.deb` below installs a GNOME
+extension, so it does not provide the standalone `quotabubble` command on Mint. On non-GNOME
+desktops, add `quotabubble` to your desktop's Startup Applications if you want it at login; the
+Settings launch-at-login switch currently starts the GNOME service.
+
+The standalone bubble needs an X11 session for reliable positioning and always-on-top behavior.
+On Wayland, the compositor controls top-level window placement, so dragging and restoring the
+bubble's position may not work as expected. Qt documents this
+[Wayland limitation](https://doc.qt.io/qt-6.8/application-windows.html#wayland-peculiarities).
+Some distributions may also need system libraries for
+[Qt's X11 platform plugin](https://doc.qt.io/qt-6/linux-requirements.html).
+API-key storage uses the desktop Secret Service when available. On a fresh profile, create or
+unlock the default keyring if prompted; an unanswered setup prompt can hold up startup.
+
+For the Ubuntu GNOME extension, download `QuotaBubble-linux-amd64.deb` from the matching
+[GitHub Release](https://github.com/izzet/quotabubble/releases), then install it:
+
+```bash
+sudo apt install ./QuotaBubble-linux-amd64.deb
+gnome-extensions enable quotabubble@izzet.dev
+```
+
+The extension activates the user-session service on demand. Open `quotabubble-settings` to configure providers, notifications, and launch at login.
 
 ### macOS
 
@@ -78,15 +132,6 @@ Open the disk image and drag **QuotaBubble** to **Applications**. The initial ma
 yet Developer ID signed or notarized; Control-click the app, choose **Open**, then confirm the
 first-launch dialog. Signing and notarization will be added in a later release.
 
-### Linux
-
-Linux is currently supported from source on X11 desktop sessions. Native Linux release artifacts
-are not available yet; use the source-install instructions below.
-
-Wayland compositors control top-level window placement and stacking, which prevents QuotaBubble
-from reliably staying above other windows or being dragged by the app. GNOME Wayland is therefore
-not a supported session yet. Use an X11 session for the floating-widget experience.
-
 ### From source (Python 3.11+)
 
 ```bash
@@ -95,8 +140,6 @@ cd quotabubble
 uv tool install --editable .
 quotabubble
 ```
-
-You can also install it as a standalone command with [pipx](https://pipx.pypa.io/): `pipx install quotabubble`.
 
 ## Usage
 
@@ -137,14 +180,13 @@ See [AGENTS.md](AGENTS.md) for architecture and contribution conventions. The pr
 
 ## Status
 
-Windows and macOS have native release artifacts. Linux currently supports X11 source installs;
-Wayland support is limited because its window-management model does not provide the floating-widget
-behavior QuotaBubble needs. Claude, Codex, Cursor, OpenCode, DeepSeek, and OpenRouter work
-anywhere. Antigravity and Copilot support Windows Credential Manager and macOS Keychain; Linux
-credential support is still to come. API keys entered in Settings are stored in the OS credential
-store (Windows Credential Manager, macOS Keychain, Linux Secret Service) via
-[`keyring`](https://pypi.org/project/keyring/); if no OS keyring backend is available, they fall
-back to the local settings file.
+Windows, macOS, and Ubuntu GNOME 24.04 (amd64) have native release artifacts. Linux Mint 22.3
+Cinnamon on X11 has been tested with the standalone Python-package install; other X11 desktops
+listed above are not yet tested. Claude, Codex, Cursor, OpenCode, DeepSeek, OpenRouter, Kimi Code,
+Z.ai, and Grok work anywhere. Zed currently works on Windows only. Antigravity and Copilot reuse
+Windows Credential Manager, macOS Keychain, and Linux Secret Service credentials. API keys entered
+in Settings are stored in the OS credential store via [`keyring`](https://pypi.org/project/keyring/);
+if no OS keyring backend is available, they fall back to the local settings file.
 
 ## License
 

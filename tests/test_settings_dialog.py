@@ -129,6 +129,35 @@ def test_dialog_toggles_history_enabled(qapp: object, tmp_path: Path) -> None:
     assert Settings.load(tmp_path / "settings.json").history_enabled is True
 
 
+def test_launch_at_login_is_a_normal_checkbox_when_unpackaged(
+    qapp: object, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr("quotabubble.ui.settings_dialog.is_packaged", lambda: False)
+
+    dialog = SettingsDialog(Settings(launch_at_login=True), path=tmp_path / "settings.json")
+
+    assert dialog.launch_at_login.isEnabled() is True
+    assert dialog.launch_at_login.isChecked() is True
+    assert dialog.launch_at_login.text() == "Launch at login"
+
+
+def test_launch_at_login_defers_to_windows_settings_when_packaged(
+    qapp: object, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr("quotabubble.ui.settings_dialog.is_packaged", lambda: True)
+    settings = Settings(launch_at_login=True)
+
+    dialog = SettingsDialog(settings, path=tmp_path / "settings.json")
+
+    assert dialog.launch_at_login.isEnabled() is False
+    assert dialog.launch_at_login.isChecked() is False
+    assert "Windows Settings" in dialog.launch_at_login.text()
+
+    dialog.accept()
+
+    assert settings.launch_at_login is False
+
+
 def test_dialog_lists_detected_providers(qapp: object, tmp_path: Path) -> None:
     path = tmp_path / "settings.json"
     settings = Settings()
@@ -160,6 +189,88 @@ def test_dialog_collects_api_keys(
     assert fake_keyring["deepseek"] == "secret-key"
     assert "deepseek" not in settings.api_keys
     assert settings.enabled_providers == ["deepseek"]
+
+
+def test_entering_a_first_key_ticks_the_provider(
+    qapp: object, tmp_path: Path, fake_keyring: dict[str, str]
+) -> None:
+    dialog = SettingsDialog(Settings(), [_KeyProvider(False)], path=tmp_path / "settings.json")
+    checkbox = dialog.provider_checks[0][1]
+    assert checkbox.isChecked() is False
+
+    dialog.provider_keys[0][1].setText("k")
+
+    assert checkbox.isChecked() is True
+
+
+def test_unticking_a_provider_with_a_key_is_respected_and_keeps_the_key(
+    qapp: object, tmp_path: Path, fake_keyring: dict[str, str]
+) -> None:
+    settings = Settings()
+    dialog = SettingsDialog(settings, [_KeyProvider(False)], path=tmp_path / "settings.json")
+    dialog.provider_keys[0][1].setText("secret-key")
+    dialog.provider_checks[0][1].setChecked(False)
+
+    dialog.accept()
+
+    assert settings.enabled_providers == []
+    assert fake_keyring["deepseek"] == "secret-key"
+
+
+def test_a_saved_key_does_not_force_the_provider_on_when_reopened(
+    qapp: object, tmp_path: Path, fake_keyring: dict[str, str]
+) -> None:
+    fake_keyring["deepseek"] = "existing-key"
+    settings = Settings(enabled_providers=[])
+    dialog = SettingsDialog(settings, [_KeyProvider(False)], path=tmp_path / "settings.json")
+
+    assert dialog.provider_checks[0][1].isChecked() is False
+    dialog.accept()
+
+    assert settings.enabled_providers == []
+    assert fake_keyring["deepseek"] == "existing-key"
+
+
+def test_ticking_a_provider_with_a_saved_key_enables_it(
+    qapp: object, tmp_path: Path, fake_keyring: dict[str, str]
+) -> None:
+    fake_keyring["deepseek"] = "existing-key"
+    settings = Settings(enabled_providers=[])
+    dialog = SettingsDialog(settings, [_KeyProvider(False)], path=tmp_path / "settings.json")
+    dialog.provider_checks[0][1].setChecked(True)
+
+    dialog.accept()
+
+    assert settings.enabled_providers == ["deepseek"]
+
+
+def test_only_the_first_key_entry_auto_ticks(
+    qapp: object, tmp_path: Path, fake_keyring: dict[str, str]
+) -> None:
+    dialog = SettingsDialog(Settings(), [_KeyProvider(False)], path=tmp_path / "settings.json")
+    checkbox = dialog.provider_checks[0][1]
+    field = dialog.provider_keys[0][1]
+
+    field.setText("a")
+    checkbox.setChecked(False)
+    field.setText("ab")
+    assert checkbox.isChecked() is False
+
+    field.setText("")
+    field.setText("new")
+    assert checkbox.isChecked() is True
+
+
+def test_editing_an_existing_key_never_auto_ticks(
+    qapp: object, tmp_path: Path, fake_keyring: dict[str, str]
+) -> None:
+    fake_keyring["deepseek"] = "existing-key"
+    settings = Settings(enabled_providers=[])
+    dialog = SettingsDialog(settings, [_KeyProvider(False)], path=tmp_path / "settings.json")
+
+    dialog.provider_keys[0][1].setText("existing-key-2")
+
+    assert dialog.provider_checks[0][1].isChecked() is False
 
 
 def test_dialog_prefills_field_from_keyring(

@@ -1,12 +1,17 @@
 from __future__ import annotations
 
+import os
 from pathlib import Path
 
 from PySide6.QtWidgets import QWidget
 
-from quotabubble.platform.launch import launch_command
+from quotabubble.utils import write_text_atomic
 
-AUTOSTART_FILE = Path.home() / ".config" / "autostart" / "quotabubble.desktop"
+AUTOSTART_FILE = (
+    Path(os.environ.get("XDG_CONFIG_HOME", Path.home() / ".config"))
+    / "autostart"
+    / "quotabubble.desktop"
+)
 
 
 def configure_window(widget: QWidget) -> None:
@@ -15,8 +20,7 @@ def configure_window(widget: QWidget) -> None:
 
 def set_launch_at_login(enabled: bool) -> None:
     if enabled:
-        AUTOSTART_FILE.parent.mkdir(parents=True, exist_ok=True)
-        AUTOSTART_FILE.write_text(_desktop_entry(), encoding="utf-8")
+        write_text_atomic(AUTOSTART_FILE, _desktop_entry())
     elif AUTOSTART_FILE.exists():
         AUTOSTART_FILE.unlink()
 
@@ -26,6 +30,7 @@ def _desktop_entry() -> str:
         "[Desktop Entry]\n"
         "Type=Application\n"
         "Name=QuotaBubble\n"
-        f"Exec={launch_command()}\n"
+        "Exec=quotabubble-service\n"
+        "Terminal=false\n"
         "X-GNOME-Autostart-enabled=true\n"
     )

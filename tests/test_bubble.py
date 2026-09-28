@@ -1,11 +1,13 @@
 from __future__ import annotations
 
+from pathlib import Path
+
 from PySide6.QtCore import QEvent, QPointF, Qt
 from PySide6.QtGui import QMouseEvent
 
 from quotabubble.app.settings import Settings
 from quotabubble.app.state import AppState
-from quotabubble.providers.base import UsageSnapshot, UsageWindow
+from quotabubble.providers.base import Credits, ProviderStatus, UsageSnapshot, UsageWindow
 from quotabubble.ui.bubble import BubbleWindow
 
 
@@ -62,7 +64,7 @@ def test_click_toggles_expansion(qapp: object) -> None:
     window.deleteLater()
 
 
-def test_drag_moves_the_window_without_expanding(qapp: object) -> None:
+def test_drag_moves_the_window_without_expanding(qapp: object, tmp_path: Path) -> None:
     window = BubbleWindow(_state(), Settings(position=(100, 100)))
     start = QPointF(window.x() + 10, window.y() + 10)
     window.mousePressEvent(_mouse_event(QEvent.Type.MouseButtonPress, start))
@@ -79,6 +81,7 @@ def test_drag_moves_the_window_without_expanding(qapp: object) -> None:
     window.mouseReleaseEvent(_mouse_event(QEvent.Type.MouseButtonRelease, second))
     assert window._expanded is False
     assert window._dragging is False
+    assert (tmp_path / "settings.json").exists()
 
     window.deleteLater()
 
@@ -139,6 +142,7 @@ def test_paint_expanded_stale_snapshot(qapp: object) -> None:
 
     from PySide6.QtGui import QPainter, QPixmap
 
+    from quotabubble.presentation.builder import build_bubble_view
     from quotabubble.ui.panel import paint_expanded
 
     now = datetime.now(tz=UTC)
@@ -153,8 +157,53 @@ def test_paint_expanded_stale_snapshot(qapp: object) -> None:
 
     pixmap = QPixmap(300, 200)
     painter = QPainter(pixmap)
-    paint_expanded(painter, [stale_snapshot], Settings(), 0, 300)
+    view = build_bubble_view([stale_snapshot], Settings(), now=now)
+    paint_expanded(painter, view.providers, 0, 300)
     painter.end()
+
+
+def test_window_paints_the_shared_view_in_both_states(qapp: object) -> None:
+    from PySide6.QtGui import QPixmap
+
+    window = BubbleWindow(_state(), Settings(position=(0, 0)))
+    compact = QPixmap(window.size())
+    window.render(compact)
+
+    window._toggle_expanded()
+    expanded = QPixmap(window._target_size())
+    window.render(expanded)
+
+    assert compact.isNull() is False
+    assert expanded.isNull() is False
+    window.deleteLater()
+
+
+def test_expanded_status_renders_with_credits_without_duplicate_detail(qapp: object) -> None:
+    from PySide6.QtGui import QPixmap
+
+    state = AppState()
+    state.update(
+        UsageSnapshot(
+            provider="claude",
+            display_name="Claude",
+            status=ProviderStatus.EXPIRED,
+            credits=Credits(display="$4.20"),
+        )
+    )
+    window = BubbleWindow(state, Settings(position=(0, 0)))
+    window._toggle_expanded()
+
+    view = window._view()
+    assert [metric.label for metric in view.providers[0].expanded_metrics] == [
+        "expired",
+        "Credits",
+    ]
+    assert view.providers[0].expanded_metrics[0].detail is None
+
+    pixmap = QPixmap(window._target_size())
+    window.render(pixmap)
+    assert pixmap.isNull() is False
+    window.deleteLater()
 
 
 def test_tray_icon_actions_and_refresh_signal(qapp: object) -> None:

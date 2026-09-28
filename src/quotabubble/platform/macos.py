@@ -12,8 +12,8 @@ from PySide6.QtWidgets import QWidget
 from quotabubble.platform.launch import launch_arguments
 from quotabubble.utils import write_text_atomic
 
-LAUNCH_AGENT_FILE = Path.home() / "Library" / "LaunchAgents" / "com.izzet.quotabubble.plist"
-LAUNCH_AGENT_LABEL = "com.izzet.quotabubble"
+LAUNCH_AGENT_FILE = Path.home() / "Library" / "LaunchAgents" / "dev.izzet.quotabubble.plist"
+LAUNCH_AGENT_LABEL = "dev.izzet.quotabubble"
 logger = logging.getLogger(__name__)
 
 

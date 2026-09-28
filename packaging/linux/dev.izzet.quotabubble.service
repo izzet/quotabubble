@@ -1,0 +1,3 @@
+[D-BUS Service]
+Name=dev.izzet.quotabubble
+Exec=/usr/lib/quotabubble/quotabubble-service

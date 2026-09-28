@@ -5,7 +5,9 @@ from collections.abc import Callable
 from pathlib import Path
 
 import httpx2
+import pytest
 
+from quotabubble.app.runtime import PollingRuntime
 from quotabubble.providers.antigravity import (
     AntigravityProvider,
     _scan_client_ids,
@@ -107,6 +109,125 @@ def test_falls_back_to_model_quota_when_summary_is_empty() -> None:
 
     assert [window.label for window in snapshot.windows] == ["5h"]
     assert round(snapshot.windows[0].used_pct, 1) == 80.0
+
+
+def _summary_status_handler(
+    summary_response: Callable[[httpx2.Request], httpx2.Response], models: str
+) -> Callable[[httpx2.Request], httpx2.Response]:
+    def handler(request: httpx2.Request) -> httpx2.Response:
+        path = request.url.path
+        if path.endswith("loadCodeAssist"):
+            return httpx2.Response(200, json={"cloudaicompanionProject": "proj-1"})
+        if path.endswith("retrieveUserQuotaSummary"):
+            return summary_response(request)
+        if path.endswith("fetchAvailableModels"):
+            return httpx2.Response(200, text=models)
+        return httpx2.Response(404)
+
+    return handler
+
+
+def _models() -> str:
+    return (FIXTURES / "antigravity_models.json").read_text(encoding="utf-8")
+
+
+def _summary() -> str:
+    return (FIXTURES / "antigravity_quota_summary.json").read_text(encoding="utf-8")
+
+
+def _timeout(request: httpx2.Request) -> httpx2.Response:
+    raise httpx2.ReadTimeout("timed out")
+
+
+@pytest.mark.parametrize(
+    "summary_response",
+    [
+        lambda request: httpx2.Response(500),
+        lambda request: httpx2.Response(503),
+        lambda request: httpx2.Response(429),
+        lambda request: httpx2.Response(408),
+        lambda request: httpx2.Response(200, text="<html>bad gateway</html>"),
+        _timeout,
+    ],
+    ids=["500", "503", "429", "408", "garbled-body", "timeout"],
+)
+def test_transient_summary_failure_is_an_error_not_a_one_window_guess(
+    summary_response: Callable[[httpx2.Request], httpx2.Response],
+) -> None:
+    provider = AntigravityProvider(
+        credential_reader=_reader(_credentials()),
+        client=_client(_summary_status_handler(summary_response, _models())),
+    )
+
+    snapshot = provider.fetch()
+
+    assert snapshot.status is ProviderStatus.ERROR
+    assert snapshot.windows == []
+
+
+@pytest.mark.parametrize(
+    "summary_response",
+    [
+        lambda request: httpx2.Response(400),
+        lambda request: httpx2.Response(404),
+        lambda request: httpx2.Response(200, json={"groups": "unfamiliar shape"}),
+    ],
+    ids=["400", "404", "unfamiliar-shape"],
+)
+def test_unusable_summary_still_falls_back_to_model_quota(
+    summary_response: Callable[[httpx2.Request], httpx2.Response],
+) -> None:
+    provider = AntigravityProvider(
+        credential_reader=_reader(_credentials()),
+        client=_client(_summary_status_handler(summary_response, _models())),
+    )
+
+    snapshot = provider.fetch()
+
+    assert snapshot.status is ProviderStatus.OK
+    assert [window.label for window in snapshot.windows] == ["5h"]
+
+
+def test_transient_failure_on_one_endpoint_uses_the_next() -> None:
+    def handler(request: httpx2.Request) -> httpx2.Response:
+        if request.url.path.endswith("loadCodeAssist"):
+            return httpx2.Response(200, json={"cloudaicompanionProject": "proj-1"})
+        if request.url.path.endswith("retrieveUserQuotaSummary"):
+            if request.url.host == "daily-cloudcode-pa.googleapis.com":
+                return httpx2.Response(503)
+            return httpx2.Response(200, text=_summary())
+        return httpx2.Response(200, text=_models())
+
+    provider = AntigravityProvider(
+        credential_reader=_reader(_credentials()), client=_client(handler)
+    )
+
+    snapshot = provider.fetch()
+
+    assert snapshot.status is ProviderStatus.OK
+    assert [window.label for window in snapshot.windows] == ["5h", "Weekly"]
+
+
+def test_transient_summary_failure_keeps_the_last_good_weekly_window() -> None:
+    """The reported bug: one failed summary call dropped the Weekly row."""
+    good = AntigravityProvider(
+        credential_reader=_reader(_credentials()),
+        client=_client(_summary_handler(_summary(), _models())),
+    ).fetch()
+    assert [window.label for window in good.windows] == ["5h", "Weekly"]
+
+    failing = AntigravityProvider(
+        credential_reader=_reader(_credentials()),
+        client=_client(_summary_status_handler(lambda request: httpx2.Response(503), _models())),
+    )
+    runtime = PollingRuntime(
+        [failing], last_good={"antigravity": good}, save_last_good=lambda snapshots: None
+    )
+
+    (shown,) = runtime.poll(force=True)
+
+    assert shown.stale is True
+    assert [window.label for window in shown.windows] == ["5h", "Weekly"]
 
 
 def test_auth_error_reports_expired() -> None:

@@ -22,6 +22,7 @@ from PySide6.QtWidgets import (
 from quotabubble.app.providers import resolve_api_key
 from quotabubble.app.settings import Settings, format_thresholds, parse_thresholds
 from quotabubble.credentials import delete_secret, is_keyring_available, set_secret
+from quotabubble.platform import is_packaged
 from quotabubble.providers.base import ApiKeyProvider, KeyStatus, Provider
 
 _STATUS_STYLES = {
@@ -94,6 +95,12 @@ class SettingsDialog(QDialog):
 
         self.launch_at_login = QCheckBox("Launch at login")
         self.launch_at_login.setChecked(settings.launch_at_login)
+        if is_packaged():
+            self.launch_at_login.setText(
+                "Launch at login (manage in Windows Settings › Apps › Startup)"
+            )
+            self.launch_at_login.setChecked(False)
+            self.launch_at_login.setEnabled(False)
 
         self.history_enabled = QCheckBox("Collect local usage history (for future trends)")
         self.history_enabled.setChecked(settings.history_enabled)
@@ -199,6 +206,7 @@ class SettingsDialog(QDialog):
                 row.addWidget(status)
 
                 field.textChanged.connect(lambda _text, lbl=status: lbl.setText(""))
+                self._enable_on_first_key(field, checkbox)
                 button.clicked.connect(
                     lambda _checked=False, p=provider, f=field, b=button, s=status: (
                         self._start_check(p, f, b, s)
@@ -209,6 +217,23 @@ class SettingsDialog(QDialog):
             box.addLayout(row)
             self.provider_checks.append((provider, checkbox))
         return group
+
+    @staticmethod
+    def _enable_on_first_key(field: QLineEdit, checkbox: QCheckBox) -> None:
+        """Tick the provider when a key is entered where there was none.
+
+        Only that empty-to-filled transition ticks it; after that the checkbox is the
+        user's to control, and an existing key never forces a provider on.
+        """
+        had_key = [bool(field.text().strip())]
+
+        def on_text_changed(text: str) -> None:
+            has_key = bool(text.strip())
+            if has_key and not had_key[0]:
+                checkbox.setChecked(True)
+            had_key[0] = has_key
+
+        field.textChanged.connect(on_text_changed)
 
     def _start_check(
         self,
@@ -274,8 +299,6 @@ class SettingsDialog(QDialog):
                         self._settings.api_keys.pop(provider.id, None)
                     else:
                         self._settings.api_keys[provider.id] = value
-                    if provider.id not in enabled:
-                        enabled.append(provider.id)
                 else:
                     delete_secret(provider.id)
                     self._settings.api_keys.pop(provider.id, None)

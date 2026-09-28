@@ -1,0 +1,207 @@
+---
+const rawBase = import.meta.env.BASE_URL;
+const base = rawBase.endsWith("/") ? rawBase : `${rawBase}/`;
+const repo = "https://github.com/izzet/quotabubble";
+const canonical = new URL(`${base}privacy/`, Astro.site).href;
+
+const services = [
+  ["Claude Code", "api.anthropic.com"],
+  ["Codex", "chatgpt.com"],
+  ["Google Antigravity", "Google Cloud Code endpoints (googleapis.com) and oauth2.googleapis.com to refresh its token"],
+  ["GitHub Copilot", "api.github.com"],
+  ["Cursor", "cursor.com"],
+  ["OpenCode", "opencode.ai"],
+  ["DeepSeek", "api.deepseek.com"],
+  ["OpenRouter", "openrouter.ai"],
+  ["Kimi Code", "the Kimi Code API host configured by your Kimi Code CLI"],
+  ["Z.ai", "api.z.ai"],
+  ["Grok", "cli-chat-proxy.grok.com"],
+  ["Zed", "cloud.zed.dev"],
+];
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Privacy policy — QuotaBubble</title>
+    <meta
+      name="description"
+      content="QuotaBubble privacy policy: it runs on your device, reads the logins your AI tools already store, and sends nothing to its developer."
+    />
+    <link rel="icon" type="image/png" href={`${base}favicon.png`} />
+    <link rel="canonical" href={canonical} />
+    <meta name="theme-color" content="#0e0e11" />
+  </head>
+  <body>
+    <main>
+      <p class="back"><a href={base}>← QuotaBubble</a></p>
+      <h1>Privacy policy</h1>
+      <p class="dim">Last updated: September 2026</p>
+
+      <p>
+        QuotaBubble is a desktop widget that shows how much of your AI coding tools' usage limits you have
+        left. It runs entirely on your device. There is no QuotaBubble account, server, analytics, or
+        telemetry, and <strong>the developer receives none of your data</strong>.
+      </p>
+
+      <h2>What QuotaBubble accesses on your device</h2>
+      <ul>
+        <li>
+          <strong>Logins your AI tools already store.</strong> To ask each service for your usage, QuotaBubble
+          reads the sign-in token that the tool keeps in your user profile (for example a file in your home
+          folder) or in the operating system's credential store (Windows Credential Manager). It reads only
+          the tools that are detected or that you enable in Settings, and it never modifies, copies, or
+          exports those files.
+        </li>
+        <li>
+          <strong>API keys you enter.</strong> For services that use an API key, you can type one into
+          Settings. It is saved in your operating system's credential store. If none is available, it is
+          saved in QuotaBubble's local settings file instead, and Settings tells you when that happens.
+        </li>
+      </ul>
+
+      <h2>What QuotaBubble sends, and to whom</h2>
+      <p>
+        QuotaBubble makes requests only to the service each login belongs to, to read your own usage and
+        quota numbers. The login token is sent to that service as authentication, over HTTPS, and nowhere
+        else. Nothing is sent to the developer or to any other third party.
+      </p>
+      <ul class="hosts">
+        {services.map(([name, host]) => (
+          <li><strong>{name}</strong> — {host}</li>
+        ))}
+      </ul>
+      <p>
+        Those services handle your data under their own privacy policies. QuotaBubble contacts a service
+        only if you use it and it is enabled.
+      </p>
+
+      <h2>What QuotaBubble stores on your device</h2>
+      <p>
+        Everything below lives in a QuotaBubble folder in your user profile
+        (<code>%LOCALAPPDATA%\quotabubble</code> on Windows) and is not uploaded anywhere.
+      </p>
+      <ul>
+        <li>Your settings (which services are enabled, appearance, notification thresholds).</li>
+        <li>The last successful usage numbers, so the widget can keep showing them during a network error.</li>
+        <li>
+          A log file for troubleshooting. Tokens, keys, cookies, and email addresses are redacted before
+          anything is written.
+        </li>
+        <li>
+          An optional usage history, <strong>off by default</strong>. It is only collected if you turn it on
+          in Settings.
+        </li>
+      </ul>
+
+      <h2>Your choices</h2>
+      <ul>
+        <li>Disable any service in Settings, and QuotaBubble stops reading its login and contacting it.</li>
+        <li>Clear an API key in Settings to remove it from the credential store.</li>
+        <li>Delete the QuotaBubble folder above to remove all local data, or uninstall the app.</li>
+      </ul>
+
+      <h2>Children</h2>
+      <p>QuotaBubble is a developer tool and is not directed at children. It collects no personal information.</p>
+
+      <h2>Changes</h2>
+      <p>
+        If this policy changes, the updated version will be published on this page with a new date. The
+        full source code is public at <a href={repo}>github.com/izzet/quotabubble</a>, so you can verify
+        what the app does.
+      </p>
+
+      <h2>Contact</h2>
+      <p>
+        Questions or concerns can be raised as an issue at
+        <a href={`${repo}/issues`}>github.com/izzet/quotabubble/issues</a>.
+      </p>
+    </main>
+
+    <footer>
+      <span>MIT licensed</span>
+      <span>·</span>
+      <a href={repo}>github.com/izzet/quotabubble</a>
+    </footer>
+  </body>
+</html>
+
+<style>
+  :root {
+    --bg: #0e0e11;
+    --panel: #16161a;
+    --line: rgba(255, 255, 255, 0.08);
+    --text: #ececf1;
+    --dim: #9a9aa5;
+    --accent: #5ec584;
+  }
+  * {
+    box-sizing: border-box;
+  }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font: 16px/1.65 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial,
+      sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  main {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 48px 24px 24px;
+  }
+  h1 {
+    font-size: 2rem;
+    margin: 8px 0 4px;
+  }
+  h2 {
+    font-size: 1.15rem;
+    margin: 32px 0 8px;
+  }
+  a {
+    color: var(--accent);
+    text-decoration: none;
+  }
+  a:hover {
+    text-decoration: underline;
+  }
+  code {
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 1px 6px;
+    font-size: 0.9em;
+  }
+  ul {
+    padding-left: 22px;
+  }
+  li {
+    margin: 6px 0;
+  }
+  .dim {
+    color: var(--dim);
+  }
+  .back {
+    margin: 0;
+    font-size: 0.95rem;
+  }
+  .hosts {
+    font-size: 0.95rem;
+    color: var(--dim);
+  }
+  .hosts strong {
+    color: var(--text);
+  }
+  footer {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 24px;
+    color: var(--dim);
+    font-size: 0.9rem;
+    display: flex;
+    gap: 8px;
+  }
+</style>

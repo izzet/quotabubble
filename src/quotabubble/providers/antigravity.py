@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import os
 import shutil
 from collections.abc import Callable, Sequence
@@ -37,6 +38,24 @@ _SECRET_PREFIX = b"GOCSPX-"
 
 class _AuthError(Exception):
     pass
+
+
+class _HttpStatusError(ValueError):
+    def __init__(self, status: int) -> None:
+        super().__init__(f"HTTP {status}")
+        self.status = status
+
+
+_TRANSIENT_STATUSES = frozenset({408, 425, 429})
+
+
+def _is_transient(exc: Exception) -> bool:
+    """Whether a failure is worth retrying, rather than a sign the endpoint is unusable."""
+    if isinstance(exc, _HttpStatusError):
+        return exc.status in _TRANSIENT_STATUSES or exc.status >= 500
+    if isinstance(exc, json.JSONDecodeError):
+        return True
+    return isinstance(exc, httpx2.HTTPError)
 
 
 class _Token(BaseModel):
@@ -404,8 +423,13 @@ class AntigravityProvider:
                     return windows, plan
             except _AuthError:
                 raise
-            except (httpx2.HTTPError, ValueError):
-                pass
+            except (httpx2.HTTPError, ValueError) as exc:
+                # The per-model fallback below can only ever show one window, so use it
+                # when the summary endpoint answered but is unusable (unsupported, or an
+                # unfamiliar shape), never to paper over a transient failure, which
+                # would replace complete data with a partial guess.
+                if _is_transient(exc):
+                    raise
         return self._available_models(client, base, headers, project), plan
 
     def _load(
@@ -441,7 +465,7 @@ class AntigravityProvider:
         if response.status_code in (401, 403):
             raise _AuthError
         if response.status_code != 200:
-            raise ValueError(f"HTTP {response.status_code}")
+            raise _HttpStatusError(response.status_code)
         return response.json()
 
     def _snapshot(self, status: ProviderStatus, message: str | None = None) -> UsageSnapshot:

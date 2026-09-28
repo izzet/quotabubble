@@ -72,3 +72,9 @@ def test_network_error_reports_error() -> None:
     )
 
     assert provider.fetch().status is ProviderStatus.ERROR
+
+
+def test_linux_utf8_token_is_not_misread_as_utf16() -> None:
+    provider = CopilotProvider(credential_provider=lambda hint: [("copilot", b"gho_token")])
+
+    assert provider._token() == "gho_token"

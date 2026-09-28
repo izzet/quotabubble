@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=QuotaBubble Settings
+Comment=Configure QuotaBubble providers and notifications
+Exec=quotabubble-settings
+Icon=dev.izzet.QuotaBubble
+Categories=Utility;Settings;
+StartupNotify=true

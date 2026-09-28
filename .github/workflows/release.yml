@@ -25,13 +25,20 @@ jobs:
           - os: macos-15
             artifact: QuotaBubble-macos-arm64.dmg
             spec: packaging/quotabubble.macos.spec
+          - os: ubuntu-24.04
+            artifact: QuotaBubble-linux-amd64.deb
+            spec: packaging/quotabubble.linux.spec
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: astral-sh/setup-uv@v5
+      - uses: astral-sh/setup-uv@v10.2.0
         with:
           enable-cache: true
+
+      - name: Install Linux runtime dependencies
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install --yes libegl1 libgl1 libglib2.0-0 libxkbcommon0
 
       - name: Sync dependencies
         run: uv sync
@@ -51,6 +58,38 @@ jobs:
         shell: pwsh
         run: Compress-Archive -Path dist/QuotaBubble/* -DestinationPath ${{ matrix.artifact }}
 
+      # The Store re-signs MSIX packages itself, so this one is submitted to
+      # Partner Center as-is and is not meant to be installed directly.
+      - name: Build Microsoft Store MSIX
+        if: runner.os == 'Windows'
+        run: uv run python scripts/build_msix.py --output QuotaBubble-windows-x64.msix
+
+      - name: Package Linux build
+        if: runner.os == 'Linux'
+        run: |
+          uv run python packaging/linux/package_deb.py \
+            --source dist/QuotaBubble-linux \
+            --output ${{ matrix.artifact }}
+
+      - name: Smoke test Linux package
+        if: runner.os == 'Linux'
+        run: |
+          mkdir extracted
+          dpkg-deb --extract ${{ matrix.artifact }} extracted
+          dbus-run-session -- bash -c '
+            PYTHON_KEYRING_BACKEND=keyring.backends.null.Keyring \
+              extracted/usr/lib/quotabubble/quotabubble-service &
+            service_pid=$!
+            trap "kill $service_pid" EXIT
+            for attempt in $(seq 1 20); do
+              gdbus call --session --dest dev.izzet.quotabubble \
+                --object-path /dev/izzet/quotabubble \
+                --method dev.izzet.quotabubble.Service1.GetState && exit 0
+              sleep 1
+            done
+            exit 1
+          '
+
       # These initial public builds use PyInstaller's ad hoc signatures. Add
       # Developer ID signing, notarization, and stapling here once the
       # repository has the Apple Developer credentials required to do so.
@@ -58,10 +97,17 @@ jobs:
         if: runner.os == 'macOS'
         run: hdiutil create -volname QuotaBubble -srcfolder dist/QuotaBubble.app -ov -format UDZO ${{ matrix.artifact }}
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: ${{ matrix.artifact }}
           path: ${{ matrix.artifact }}
+
+      - name: Upload Microsoft Store MSIX
+        if: runner.os == 'Windows'
+        uses: actions/upload-artifact@v7
+        with:
+          name: QuotaBubble-windows-x64.msix
+          path: QuotaBubble-windows-x64.msix
 
   # Fan-in: waits for every platform in the build matrix, then creates ONE
   # GitHub Release with all of their archives attached at once. Downstream
@@ -70,19 +116,21 @@ jobs:
   # platforms are in the matrix.
   github-release:
     needs: build
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     if: startsWith(github.ref, 'refs/tags/')
     permissions:
       contents: write
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           path: artifacts
           merge-multiple: true
 
-      - uses: softprops/action-gh-release@v2
+      - uses: softprops/action-gh-release@v3
         with:
           files: artifacts/*
+          body: |
+            `QuotaBubble-windows-x64.msix` is the package submitted to the Microsoft Store. It is not signed for direct installation, so on Windows use the ZIP, winget, Chocolatey, or Scoop instead.
 
   winget:
     needs: github-release
@@ -118,7 +166,7 @@ jobs:
     env:
       CHOCOLATEY_API_KEY: ${{ secrets.CHOCOLATEY_API_KEY }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Skip when CHOCOLATEY_API_KEY is not configured
         if: env.CHOCOLATEY_API_KEY == ''
@@ -131,6 +179,8 @@ jobs:
         run: |
           $version = $env:GITHUB_REF_NAME -replace '^v', ''
           $zipUrl = "https://github.com/izzet/quotabubble/releases/download/v$version/QuotaBubble-windows-x64.zip"
+          $iconUrl = "https://cdn.jsdelivr.net/gh/izzet/quotabubble@v$version/website/public/icon.png"
+          $releaseNotes = "https://github.com/izzet/quotabubble/releases/tag/v$version"
 
           Invoke-WebRequest -Uri $zipUrl -OutFile QuotaBubble-windows-x64.zip
           $checksum = (Get-FileHash QuotaBubble-windows-x64.zip -Algorithm SHA256).Hash
@@ -141,7 +191,17 @@ jobs:
             -replace '__CHECKSUM__', $checksum |
             Set-Content $installScript
 
-          choco pack packaging/chocolatey/quotabubble.nuspec --version $version --outputdirectory .
+          $nuspec = "packaging/chocolatey/quotabubble.nuspec"
+          (Get-Content $nuspec -Raw) `
+            -replace '__ICON_URL__', $iconUrl `
+            -replace '__RELEASE_NOTES__', $releaseNotes |
+            Set-Content $nuspec
+
+          if ((Get-Content $nuspec -Raw) -match '__[A-Z]+__') {
+            throw "Unresolved Chocolatey package placeholder."
+          }
+
+          choco pack $nuspec --version $version --outputdirectory .
           choco push "quotabubble.$version.nupkg" --source https://push.chocolatey.org/ --api-key $env:CHOCOLATEY_API_KEY
 
 
@@ -152,13 +212,13 @@ jobs:
     env:
       HOMEBREW_TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Skip when HOMEBREW_TAP_TOKEN is not configured
         if: env.HOMEBREW_TAP_TOKEN == ''
         run: echo "HOMEBREW_TAP_TOKEN is not set; skipping Homebrew tap update."
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         if: env.HOMEBREW_TAP_TOKEN != ''
         with:
           repository: izzet/homebrew-tap
@@ -204,6 +264,8 @@ jobs:
           Path("homebrew-tap/Casks/quotabubble.rb").write_text(cask)
           PY
           brew tap izzet/tap
+          # Homebrew refuses to load casks from a tap it hasn't been told to trust.
+          brew trust izzet/tap
           tap_path="$(brew --repository izzet/tap)"
           cp homebrew-tap/Casks/quotabubble.rb "$tap_path/Casks/quotabubble.rb"
           brew audit --cask --strict quotabubble
@@ -235,16 +297,16 @@ jobs:
     # package itself doesn't need here would be testing the wrong thing.
     # A plain import of a non-Qt module is enough to catch real packaging
     # mistakes (missing package data, broken entry points, bad metadata).
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     if: startsWith(github.ref, 'refs/tags/v')
     environment: pypi
     permissions:
       contents: read
       id-token: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: astral-sh/setup-uv@v5
+      - uses: astral-sh/setup-uv@v10.2.0
 
       - name: Build
         run: uv build

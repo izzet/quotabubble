@@ -26,7 +26,7 @@ class _Credential(ctypes.Structure):
 _advapi32 = ctypes.windll.advapi32
 
 
-def read_generic_credential(target: str) -> bytes | None:
+def read_generic_credential_with_username(target: str) -> tuple[str, bytes] | None:
     pointer = ctypes.POINTER(_Credential)()
     ok = _advapi32.CredReadW(
         ctypes.c_wchar_p(target), CRED_TYPE_GENERIC, 0, ctypes.byref(pointer)
@@ -37,9 +37,15 @@ def read_generic_credential(target: str) -> bytes | None:
         credential = pointer.contents
         if credential.CredentialBlobSize == 0 or not credential.CredentialBlob:
             return None
-        return ctypes.string_at(credential.CredentialBlob, credential.CredentialBlobSize)
+        blob = ctypes.string_at(credential.CredentialBlob, credential.CredentialBlobSize)
+        return credential.UserName or "", blob
     finally:
         _advapi32.CredFree(pointer)
+
+
+def read_generic_credential(target: str) -> bytes | None:
+    found = read_generic_credential_with_username(target)
+    return found[1] if found else None
 
 
 def enumerate_generic_credentials(name_contains: str) -> list[tuple[str, bytes]]:

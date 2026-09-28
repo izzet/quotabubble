@@ -14,8 +14,10 @@ WS_EX_APPWINDOW = 0x00040000
 WS_EX_NOACTIVATE = 0x08000000
 RUN_KEY = r"Software\Microsoft\Windows\CurrentVersion\Run"
 APP_NAME = "QuotaBubble"
+APPMODEL_ERROR_NO_PACKAGE = 15700
 
 _user32 = ctypes.windll.user32
+_kernel32 = ctypes.windll.kernel32
 
 if ctypes.sizeof(ctypes.c_void_p) == 8:
     _get_window_long = _user32.GetWindowLongPtrW
@@ -28,6 +30,18 @@ _get_window_long.argtypes = [wintypes.HWND, ctypes.c_int]
 _get_window_long.restype = ctypes.c_ssize_t
 _set_window_long.argtypes = [wintypes.HWND, ctypes.c_int, ctypes.c_ssize_t]
 _set_window_long.restype = ctypes.c_ssize_t
+_kernel32.GetCurrentPackageFullName.argtypes = [
+    ctypes.POINTER(wintypes.UINT),
+    wintypes.LPWSTR,
+]
+_kernel32.GetCurrentPackageFullName.restype = ctypes.c_long
+
+
+def is_packaged() -> bool:
+    """Whether the app runs from an MSIX package (e.g. the Microsoft Store build)."""
+    length = wintypes.UINT(0)
+    result = _kernel32.GetCurrentPackageFullName(ctypes.byref(length), None)
+    return result != APPMODEL_ERROR_NO_PACKAGE
 
 
 def configure_window(widget: QWidget) -> None:
@@ -39,6 +53,11 @@ def configure_window(widget: QWidget) -> None:
 
 
 def set_launch_at_login(enabled: bool) -> None:
+    # A packaged app's registry writes are redirected to a private hive that
+    # Windows never reads at sign-in; its startup task is toggled by the user
+    # in Windows Settings instead.
+    if is_packaged():
+        return
     with winreg.OpenKey(winreg.HKEY_CURRENT_USER, RUN_KEY, 0, winreg.KEY_SET_VALUE) as key:
         if enabled:
             winreg.SetValueEx(key, APP_NAME, 0, winreg.REG_SZ, launch_command())
