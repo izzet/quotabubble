@@ -21,7 +21,12 @@ from PySide6.QtWidgets import (
 
 from quotabubble.app.providers import resolve_api_key
 from quotabubble.app.settings import Settings, format_thresholds, parse_thresholds
-from quotabubble.credentials import delete_secret, is_keyring_available, set_secret
+from quotabubble.credentials import (
+    delete_secret,
+    is_keyring_available,
+    secret_service_needs_setup,
+    set_secret,
+)
 from quotabubble.platform import is_packaged
 from quotabubble.providers.base import ApiKeyProvider, KeyStatus, Provider
 
@@ -168,10 +173,27 @@ class SettingsDialog(QDialog):
         group = QGroupBox("Providers")
         box = QVBoxLayout(group)
         needs_key_storage = any(provider.uses_api_key for provider in self._providers)
-        if needs_key_storage and not is_keyring_available():
-            warning = QLabel(
-                "OS keyring unavailable — API keys will be stored in settings.json instead."
-            )
+        if needs_key_storage:
+            if secret_service_needs_setup():
+                message = (
+                    "No default keyring is available. API keys are saved unencrypted in "
+                    "settings.json until you set one up. Refresh to retry afterward."
+                )
+            elif not is_keyring_available():
+                message = (
+                    "OS keyring unavailable — API keys will be stored in settings.json instead."
+                )
+            elif self._settings.api_keys:
+                message = (
+                    "Some API keys are still stored in settings.json. Save Settings "
+                    "to try moving them to the OS keyring."
+                )
+            else:
+                message = ""
+        else:
+            message = ""
+        if message:
+            warning = QLabel(message)
             warning.setWordWrap(True)
             warning.setStyleSheet("color: #e8b34c")
             box.addWidget(warning)

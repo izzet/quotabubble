@@ -37,12 +37,14 @@ class _UnavailableKeyring:
 def fake_keyring(monkeypatch: pytest.MonkeyPatch) -> _FakeKeyring:
     fake = _FakeKeyring()
     monkeypatch.setattr(secrets, "keyring", fake)
+    monkeypatch.setattr(secrets, "secret_service_needs_setup", lambda: False)
     return fake
 
 
 @pytest.fixture
 def unavailable_keyring(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(secrets, "keyring", _UnavailableKeyring())
+    monkeypatch.setattr(secrets, "secret_service_needs_setup", lambda: False)
 
 
 def test_set_and_get_secret_roundtrip(fake_keyring: _FakeKeyring) -> None:
@@ -88,3 +90,27 @@ def test_is_keyring_available_true_with_working_backend(fake_keyring: _FakeKeyri
 
 def test_is_keyring_available_false_with_broken_backend(unavailable_keyring: None) -> None:
     assert secrets.is_keyring_available() is False
+
+
+def test_missing_default_collection_skips_all_keyring_operations(
+    fake_keyring: _FakeKeyring, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(secrets, "secret_service_needs_setup", lambda: True)
+
+    assert secrets.get_secret("deepseek") is None
+    assert secrets.set_secret("deepseek", "abc123") is False
+    secrets.delete_secret("deepseek")
+    assert secrets.is_keyring_available() is False
+    assert fake_keyring._store == {}
+
+
+def test_keyring_is_rechecked_after_setup(
+    fake_keyring: _FakeKeyring, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    missing = [True]
+    monkeypatch.setattr(secrets, "secret_service_needs_setup", lambda: missing[0])
+    fake_keyring.set_password(secrets.SERVICE_NAME, "deepseek", "stored")
+
+    assert secrets.get_secret("deepseek") is None
+    missing[0] = False
+    assert secrets.get_secret("deepseek") == "stored"
