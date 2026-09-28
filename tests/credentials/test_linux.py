@@ -1,5 +1,12 @@
 from __future__ import annotations
 
+import sys
+
+import pytest
+
+if sys.platform != "linux":
+    pytest.skip("Secret Service is Linux only", allow_module_level=True)
+
 from keyring.backends.SecretService import Keyring as SecretServiceKeyring
 from secretstorage.exceptions import ItemNotFoundException
 
