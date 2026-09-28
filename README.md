@@ -74,9 +74,39 @@ Or download the latest `QuotaBubble-windows-x64.zip` from the [Releases page](ht
 
 > The binary is not code-signed yet, so Windows SmartScreen may warn you. Choose **More info → Run anyway**.
 
-### Ubuntu GNOME
+### Linux
 
-Download `QuotaBubble-linux-amd64.deb` from the matching GitHub Release, then install it:
+There are two Linux install paths:
+
+| Desktop | Install method | What runs |
+| --- | --- | --- |
+| Ubuntu GNOME 24.04 (amd64) | Release `.deb` | GNOME Shell extension and background service |
+| Linux Mint 22.3 Cinnamon (X11, amd64) | `pipx` | Standalone Qt bubble; tested locally |
+| Other X11 desktops on modern glibc-based Linux (for example Debian, Fedora, openSUSE, or Arch) | `pipx` | Standalone Qt bubble; expected to work but not yet tested on those distributions |
+
+For the standalone bubble, install [pipx](https://pipx.pypa.io/) and Python 3.11 or newer, then run:
+
+```bash
+pipx install quotabubble
+quotabubble
+```
+
+This is the path for Linux Mint Cinnamon, MATE, and Xfce. The `.deb` below installs a GNOME
+extension, so it does not provide the standalone `quotabubble` command on Mint. On non-GNOME
+desktops, add `quotabubble` to your desktop's Startup Applications if you want it at login; the
+Settings launch-at-login switch currently starts the GNOME service.
+
+The standalone bubble needs an X11 session for reliable positioning and always-on-top behavior.
+On Wayland, the compositor controls top-level window placement, so dragging and restoring the
+bubble's position may not work as expected. Qt documents this
+[Wayland limitation](https://doc.qt.io/qt-6.8/application-windows.html#wayland-peculiarities).
+Some distributions may also need system libraries for
+[Qt's X11 platform plugin](https://doc.qt.io/qt-6/linux-requirements.html).
+API-key storage uses the desktop Secret Service when available. On a fresh profile, create or
+unlock the default keyring if prompted; an unanswered setup prompt can hold up startup.
+
+For the Ubuntu GNOME extension, download `QuotaBubble-linux-amd64.deb` from the matching
+[GitHub Release](https://github.com/izzet/quotabubble/releases), then install it:
 
 ```bash
 sudo apt install ./QuotaBubble-linux-amd64.deb
@@ -85,7 +115,7 @@ gnome-extensions enable quotabubble@izzet.dev
 
 The extension activates the user-session service on demand. Open `quotabubble-settings` to configure providers, notifications, and launch at login.
 
-## macOS
+### macOS
 
 Download the matching disk image from the [Releases page](https://github.com/izzet/quotabubble/releases):
 
@@ -110,8 +140,6 @@ cd quotabubble
 uv tool install --editable .
 quotabubble
 ```
-
-You can also install it as a standalone command with [pipx](https://pipx.pypa.io/): `pipx install quotabubble`.
 
 ## Usage
 
@@ -152,7 +180,13 @@ See [AGENTS.md](AGENTS.md) for architecture and contribution conventions. The pr
 
 ## Status
 
-Windows, macOS, and Ubuntu GNOME 24.04 (amd64) have native release artifacts. Claude, Codex, Cursor, OpenCode, DeepSeek, OpenRouter, Kimi Code, Z.ai, and Grok work anywhere. Zed currently works on Windows only. Antigravity and Copilot reuse Windows Credential Manager, macOS Keychain, and Linux Secret Service credentials. API keys entered in Settings are stored in the OS credential store via [`keyring`](https://pypi.org/project/keyring/); if no OS keyring backend is available, they fall back to the local settings file.
+Windows, macOS, and Ubuntu GNOME 24.04 (amd64) have native release artifacts. Linux Mint 22.3
+Cinnamon on X11 has been tested with the standalone Python-package install; other X11 desktops
+listed above are not yet tested. Claude, Codex, Cursor, OpenCode, DeepSeek, OpenRouter, Kimi Code,
+Z.ai, and Grok work anywhere. Zed currently works on Windows only. Antigravity and Copilot reuse
+Windows Credential Manager, macOS Keychain, and Linux Secret Service credentials. API keys entered
+in Settings are stored in the OS credential store via [`keyring`](https://pypi.org/project/keyring/);
+if no OS keyring backend is available, they fall back to the local settings file.
 
 ## License
 
