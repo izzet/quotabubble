@@ -68,6 +68,18 @@ def test_resolve_api_key_falls_back_to_settings_when_keyring_empty(monkeypatch) 
     assert resolve_api_key(settings, "deepseek") == "from-settings"
 
 
+def test_resolve_api_key_retries_keyring_on_later_refresh(monkeypatch) -> None:
+    keyring_value: list[str | None] = [None]
+    monkeypatch.setattr(
+        "quotabubble.app.providers.get_secret", lambda _provider_id: keyring_value[0]
+    )
+    settings = Settings(api_keys={"deepseek": "from-settings"})
+
+    assert resolve_api_key(settings, "deepseek") == "from-settings"
+    keyring_value[0] = "from-keyring"
+    assert resolve_api_key(settings, "deepseek") == "from-keyring"
+
+
 def test_resolve_api_key_falls_back_to_environment(monkeypatch) -> None:
     monkeypatch.setattr("quotabubble.app.providers.get_secret", lambda provider_id: None)
     monkeypatch.setenv("DEEPSEEK_API_KEY", "from-env")
