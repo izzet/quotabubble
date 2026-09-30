@@ -56,10 +56,10 @@ const structuredData = {
 };
 
 const features = [
-  ["Frameless bubble", "Translucent, rounded, always on top — and it never steals keyboard focus."],
-  ["Fades when idle", "A configurable low opacity keeps it out of the way; hover to bring it back."],
+  ["Frameless bubble", "Translucent, rounded, always on top, and it never steals keyboard focus."],
+  ["Fades when idle", "A configurable low opacity keeps it out of the way, and hovering brings it back."],
   ["Click to expand", "Every usage window, the percentage used, and a live reset countdown."],
-  ["Drag anywhere", "Move it across monitors; its position is remembered."],
+  ["Drag anywhere", "Move it across monitors, and its position is remembered."],
   ["Stays accurate", "Refreshes every 5 minutes and keeps the last good values through transient errors."],
   ["Local only", "Reuses the credentials your tools already store. No telemetry, no server."],
 ];
@@ -83,11 +83,11 @@ const faq = [
   ],
   [
     "How often does it update, and what if I'm offline?",
-    "Every 5 minutes by default; you can change that in Settings. If a refresh fails because of a network or rate-limit error, it keeps showing the last good values, dimmed, and tries again on the next refresh.",
+    "Every 5 minutes by default, configurable in Settings. If a refresh fails because of a network or rate-limit error, it keeps showing the last good values, dimmed, and tries again on the next refresh.",
   ],
   [
     "Which systems does it run on?",
-    "Windows and macOS (Apple Silicon and Intel), plus Ubuntu GNOME through a package with a GNOME extension. You can also run it from source with Python 3.11 or newer; other setups aren't tested.",
+    "Windows and macOS (Apple Silicon and Intel), plus Ubuntu GNOME through a package with a GNOME extension. You can also run it from source with Python 3.11 or newer, though other setups aren't tested.",
   ],
 ];
 
@@ -112,7 +112,7 @@ const providers = [
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>QuotaBubble — your AI usage limits, always in sight</title>
+    <title>QuotaBubble: your AI usage limits, always in sight</title>
     <meta
       name="description"
       content="A tiny always-on-top desktop bubble that shows your AI coding usage limits: Claude Code, Codex, Antigravity, Copilot, Cursor, Grok, Zed, Kimi Code, OpenCode, DeepSeek, OpenRouter, and Z.ai."
@@ -125,14 +125,14 @@ const providers = [
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="QuotaBubble" />
     <meta property="og:url" content={canonical} />
-    <meta property="og:title" content="QuotaBubble — your AI usage limits, always in sight" />
+    <meta property="og:title" content="QuotaBubble: your AI usage limits, always in sight" />
     <meta property="og:description" content="Your AI usage limits, always in sight." />
     <meta property="og:image" content={ogCard} />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
     <meta property="og:image:alt" content="The QuotaBubble widget showing Claude, Codex and Copilot usage." />
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="QuotaBubble — your AI usage limits, always in sight" />
+    <meta name="twitter:title" content="QuotaBubble: your AI usage limits, always in sight" />
     <meta name="twitter:description" content="Your AI usage limits, always in sight." />
     <meta name="twitter:image" content={ogCard} />
     <script type="application/ld+json" set:html={JSON.stringify(structuredData)} />
@@ -151,7 +151,7 @@ const providers = [
         <h1>Your AI usage limits,<br />always in sight.</h1>
         <p class="lede">
           QuotaBubble is a tiny, always-on-top desktop bubble that shows the usage limits for your
-          AI coding tools — without opening a dashboard, terminal, or browser. It fades away when
+          AI coding tools without opening a dashboard, terminal, or browser. It fades away when
           idle and expands when you click it.
         </p>
         <div class="cta">

@@ -18,13 +18,13 @@ QuotaBubble is a small, frameless desktop widget that keeps the usage limits for
 
 ## Features
 
-- **Frameless floating bubble** — translucent, rounded, always on top, and it never steals keyboard focus.
-- **Fades away when idle** — a configurable low opacity keeps it unobtrusive; hover to bring it back.
-- **Click to expand** — see each usage window, the percentage used, and a live reset countdown.
-- **Drag anywhere** — move it across monitors; the position is remembered.
-- **Tray icon** — show/hide, settings, open logs, and quit.
-- **Resilient** — refreshes every 5 minutes, caches the last good values, and keeps showing them (dimmed) through transient network or rate-limit errors.
-- **Local only** — it reuses the credentials your tools already store and talks straight to the providers. No telemetry, no QuotaBubble server.
+- **Frameless floating bubble:** translucent, rounded, always on top, and it never steals keyboard focus.
+- **Fades away when idle:** a configurable low opacity keeps it unobtrusive, and hovering brings it back.
+- **Click to expand:** see each usage window, the percentage used, and a live reset countdown.
+- **Drag anywhere:** move it across monitors, and the position is remembered.
+- **Tray icon:** show/hide, settings, open logs, and quit.
+- **Resilient:** refreshes every 5 minutes, caches the last good values, and keeps showing them (dimmed) through transient network or rate-limit errors.
+- **Local only:** it reuses the credentials your tools already store and talks straight to the providers. No telemetry, no QuotaBubble server.
 
 ## Supported providers
 
@@ -43,9 +43,9 @@ QuotaBubble is a small, frameless desktop widget that keeps the usage limits for
 | OpenRouter | API key |
 | Z.ai (GLM Coding Plan) | API key (`Z_AI_API_KEY` override) |
 
-Kimi Code runs separate regional services (`kimi.com` and `kimi.ai`): the login is only ever sent to the host the CLI itself is configured for (override with `KIMI_CODE_BASE_URL`). QuotaBubble never refreshes the CLI's login; when it expires, open Kimi Code to renew it.
+Kimi Code runs separate regional services (`kimi.com` and `kimi.ai`): the login is only ever sent to the host the CLI itself is configured for (override with `KIMI_CODE_BASE_URL`). QuotaBubble never refreshes the CLI's login. When it expires, open Kimi Code to renew it.
 
-Providers are detected automatically. Enable or disable them in Settings; API keys are entered there and validated inline with a **Test** button. Antigravity and Copilot reuse their existing OS keychain sign-ins, including Linux Secret Service. Cursor reuses the IDE session token from `state.vscdb` or `auth.json` (or `CURSOR_SESSION_TOKEN`).
+Providers are detected automatically. Enable or disable them in Settings, where API keys can be entered and validated inline with a **Test** button. Antigravity and Copilot reuse their existing OS keychain sign-ins, including Linux Secret Service. Cursor reuses the IDE session token from `state.vscdb` or `auth.json` (or `CURSOR_SESSION_TOKEN`).
 
 ## Install
 
@@ -99,7 +99,7 @@ brew install --cask izzet/tap/quotabubble
 ```
 
 Open the disk image and drag **QuotaBubble** to **Applications**. The initial macOS builds are not
-yet Developer ID signed or notarized; Control-click the app, choose **Open**, then confirm the
+yet Developer ID signed or notarized, so Control-click the app, choose **Open**, then confirm the
 first-launch dialog. Signing and notarization will be added in a later release.
 
 ### From source (Python 3.11+)
@@ -115,11 +115,11 @@ You can also install it as a standalone command with [pipx](https://pipx.pypa.io
 
 ## Usage
 
-- **Idle** — a faint bubble; hover to make it fully visible.
-- **Click** — expand the detail panel; click again to collapse.
-- **Drag** — grab and move it anywhere, including across monitors.
-- **Right-click / tray** — Settings, Open logs, Show/Hide, Quit.
-- **Launch at login** — enable it in Settings.
+- **Idle:** a faint bubble, and hovering makes it fully visible.
+- **Click:** expand the detail panel, and click again to collapse.
+- **Drag:** grab and move it anywhere, including across monitors.
+- **Right-click / tray:** Settings, Open logs, Show/Hide, Quit.
+- **Launch at login:** enable it in Settings.
 
 ## Settings
 
@@ -152,7 +152,7 @@ See [AGENTS.md](AGENTS.md) for architecture and contribution conventions. The pr
 
 ## Status
 
-Windows, macOS, and Ubuntu GNOME 24.04 (amd64) have native release artifacts. Claude, Codex, Cursor, OpenCode, DeepSeek, OpenRouter, Kimi Code, Z.ai, and Grok work anywhere. Zed currently works on Windows only. Antigravity and Copilot reuse Windows Credential Manager, macOS Keychain, and Linux Secret Service credentials. API keys entered in Settings are stored in the OS credential store via [`keyring`](https://pypi.org/project/keyring/); if no OS keyring backend is available, they fall back to the local settings file.
+Windows, macOS, and Ubuntu GNOME 24.04 (amd64) have native release artifacts. Claude, Codex, Cursor, OpenCode, DeepSeek, OpenRouter, Kimi Code, Z.ai, and Grok work anywhere. Zed currently works on Windows only. Antigravity and Copilot reuse Windows Credential Manager, macOS Keychain, and Linux Secret Service credentials. API keys entered in Settings are stored in the OS credential store via [`keyring`](https://pypi.org/project/keyring/). If no OS keyring backend is available, they fall back to the local settings file.
 
 ## License
 
