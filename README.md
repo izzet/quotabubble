@@ -51,28 +51,24 @@ Providers are detected automatically. Enable or disable them in Settings; API ke
 
 ### Windows
 
-With [winget](https://learn.microsoft.com/windows/package-manager/winget/):
+Install from the [Microsoft Store](https://apps.microsoft.com/detail/9MZZX0C41972) for a certified, one-click install with automatic background updates.
 
-```powershell
-winget install Izzet.QuotaBubble
-```
-
-Or with [Chocolatey](https://community.chocolatey.org/packages/quotabubble):
+Or install via [Chocolatey](https://community.chocolatey.org/packages/quotabubble):
 
 ```powershell
 choco install quotabubble
 ```
 
-Or with [Scoop](https://scoop.sh):
+Or via [Scoop](https://scoop.sh):
 
 ```powershell
 scoop bucket add izzet https://github.com/izzet/scoop-bucket
 scoop install izzet/quotabubble
 ```
 
-Or download the latest `QuotaBubble-windows-x64.zip` from the [Releases page](https://github.com/izzet/quotabubble/releases), unzip it, and run `QuotaBubble.exe`.
+Or download the portable `QuotaBubble-windows-x64.zip` from the [Releases page](https://github.com/izzet/quotabubble/releases), unzip it, and run `QuotaBubble.exe`.
 
-> The binary is not code-signed yet, so Windows SmartScreen may warn you. Choose **More info → Run anyway**.
+> Note: The Microsoft Store build is certified and signed with zero warnings. The standalone portable zip is unsigned for now, so Windows SmartScreen may ask you to choose **More info → Run anyway**.
 
 ### Ubuntu GNOME
 
