@@ -6,6 +6,7 @@ const rawBase = import.meta.env.BASE_URL;
 const base = rawBase.endsWith("/") ? rawBase : `${rawBase}/`;
 const repo = "https://github.com/izzet/quotabubble";
 const releases = `${repo}/releases/latest`;
+const microsoftStore = "https://apps.microsoft.com/detail/9MZZX0C41972";
 const asset = (name: string) => `${repo}/releases/latest/download/${name}`;
 const downloads = [
   { os: "windows", label: "Windows", file: "QuotaBubble-windows-x64.zip" },
@@ -49,16 +50,16 @@ const structuredData = {
       downloadUrl: releases,
       author: { "@id": "https://iyildirim.com/#person" },
       creator: { "@id": "https://iyildirim.com/#person" },
-      sameAs: [repo, "https://pypi.org/project/quotabubble/"],
+      sameAs: [repo, "https://pypi.org/project/quotabubble/", microsoftStore],
     },
   ],
 };
 
 const features = [
-  ["Frameless bubble", "Translucent, rounded, always on top — and it never steals keyboard focus."],
-  ["Fades when idle", "A configurable low opacity keeps it out of the way; hover to bring it back."],
+  ["Frameless bubble", "Translucent, rounded, always on top, and it never steals keyboard focus."],
+  ["Fades when idle", "A configurable low opacity keeps it out of the way, and hovering brings it back."],
   ["Click to expand", "Every usage window, the percentage used, and a live reset countdown."],
-  ["Drag anywhere", "Move it across monitors; its position is remembered."],
+  ["Drag anywhere", "Move it across monitors, and its position is remembered."],
   ["Stays accurate", "Refreshes every 5 minutes and keeps the last good values through transient errors."],
   ["Local only", "Reuses the credentials your tools already store. No telemetry, no server."],
 ];
@@ -74,7 +75,7 @@ const faq = [
   ],
   [
     "Why does Windows or macOS warn me when I open it?",
-    "The builds are not code-signed yet. On Windows choose “More info → Run anyway” in SmartScreen; on macOS Control-click the app, choose Open, and confirm. Signing is planned, and installing through winget, Chocolatey, Scoop, or Homebrew doesn't change the warning.",
+    "The standalone ZIP and DMG builds are not code-signed yet. On Windows choose “More info → Run anyway” in SmartScreen, and on macOS Control-click the app, choose Open, and confirm. If you install from the Microsoft Store on Windows, it is certified and signed with zero warnings.",
   ],
   [
     "My provider isn't showing up. What do I do?",
@@ -82,11 +83,11 @@ const faq = [
   ],
   [
     "How often does it update, and what if I'm offline?",
-    "Every 5 minutes by default; you can change that in Settings. If a refresh fails because of a network or rate-limit error, it keeps showing the last good values, dimmed, and tries again on the next refresh.",
+    "Every 5 minutes by default, configurable in Settings. If a refresh fails because of a network or rate-limit error, it keeps showing the last good values, dimmed, and tries again on the next refresh.",
   ],
   [
     "Which systems does it run on?",
-    "Windows and macOS (Apple Silicon and Intel), plus Ubuntu GNOME through a package with a GNOME extension. You can also run it from source with Python 3.11 or newer; other setups aren't tested.",
+    "Windows and macOS (Apple Silicon and Intel), plus Ubuntu GNOME through a package with a GNOME extension. You can also run it from source with Python 3.11 or newer, though other setups aren't tested.",
   ],
 ];
 
@@ -150,7 +151,7 @@ const providers = [
         <h1>Your AI usage limits,<br />always in sight.</h1>
         <p class="lede">
           QuotaBubble is a tiny, always-on-top desktop bubble that shows the usage limits for your
-          AI coding tools — without opening a dashboard, terminal, or browser. It fades away when
+          AI coding tools without opening a dashboard, terminal, or browser. It fades away when
           idle and expands when you click it.
         </p>
         <div class="cta">
@@ -164,7 +165,7 @@ const providers = [
           ))}
           <a href={releases}>All releases</a>
         </p>
-        <script define:vars={{ downloads: downloads.map((d) => ({ ...d, href: asset(d.file) })) }}>
+        <script define:vars={{ downloads: downloads.map((d) => ({ ...d, href: asset(d.file) })), storeUrl: microsoftStore }}>
           // Progressive enhancement: without JS the button just opens the releases page.
           const ua = navigator.userAgent;
           const os = /Android|iPhone|iPad/i.test(ua)
@@ -179,8 +180,8 @@ const providers = [
           const pick = downloads.find((d) => d.os === os);
           const button = document.getElementById("download");
           if (button && pick) {
-            button.href = pick.href;
-            button.textContent = `Download for ${pick.os === "macos" ? "macOS" : pick.label}`;
+            button.href = pick.os === "windows" ? storeUrl : pick.href;
+            button.textContent = pick.os === "windows" ? "Get it from Microsoft Store" : `Download for ${pick.os === "macos" ? "macOS" : pick.label}`;
           }
           const alt = document.querySelector(".alt-downloads");
           if (alt) alt.hidden = false;
@@ -227,11 +228,19 @@ const providers = [
         <div class="os-panel" role="tabpanel" data-os="windows">
           <h3>Windows</h3>
           <p>
-            With <a href="https://learn.microsoft.com/windows/package-manager/winget/">winget</a>:
+            Install from the Microsoft Store for a certified build with automatic background updates:
           </p>
-          <pre><code>winget install Izzet.QuotaBubble</code></pre>
           <p>
-            Or with <a href="https://community.chocolatey.org/packages/quotabubble">Chocolatey</a>:
+            <a href={microsoftStore}>
+              <img
+                src="https://get.microsoft.com/images/en-us%20dark.svg"
+                width="200"
+                alt="Get it from Microsoft Store"
+              />
+            </a>
+          </p>
+          <p>
+            Or install with <a href="https://community.chocolatey.org/packages/quotabubble">Chocolatey</a>:
           </p>
           <pre><code>choco install quotabubble</code></pre>
           <p>
@@ -240,11 +249,11 @@ const providers = [
           <pre><code>scoop bucket add izzet https://github.com/izzet/scoop-bucket
 scoop install izzet/quotabubble</code></pre>
           <p>
-            Or download the latest <code>QuotaBubble-windows-x64.zip</code> from
+            Or download the portable <code>QuotaBubble-windows-x64.zip</code> from
             <a href={releases}>Releases</a>, unzip it, and run <code>QuotaBubble.exe</code>.
           </p>
           <p class="note">
-            The build is unsigned for now, so SmartScreen may warn you — choose “More info → Run anyway”.
+            The Microsoft Store package is certified with zero warnings. The standalone portable zip is unsigned for now, so Windows SmartScreen may ask you to choose “More info → Run anyway”.
           </p>
         </div>
 
