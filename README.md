@@ -51,6 +51,10 @@ Providers are detected automatically. Enable or disable them in Settings; API ke
 
 ### Windows
 
+<a href="https://apps.microsoft.com/detail/9MZZX0C41972">
+  <img src="https://get.microsoft.com/images/en-us%20dark.svg" width="200" alt="Get it from Microsoft Store"/>
+</a>
+
 Install from the [Microsoft Store](https://apps.microsoft.com/detail/9MZZX0C41972) for a certified, one-click install with automatic background updates.
 
 Or install via [Chocolatey](https://community.chocolatey.org/packages/quotabubble):
