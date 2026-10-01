@@ -5,10 +5,10 @@ import sys
 import time
 from collections.abc import Callable
 from datetime import datetime
-from importlib import metadata
 
 import httpx2
 
+from quotabubble import __version__
 from quotabubble.credentials.kimi import (
     KimiCodeLogin,
     kimi_code_base_url,
@@ -138,18 +138,11 @@ def _ascii(value: str, fallback: str = "unknown") -> str:
     return cleaned or fallback
 
 
-def _version() -> str:
-    try:
-        return metadata.version("quotabubble")
-    except metadata.PackageNotFoundError:
-        return "development"
-
-
 def _identity_headers() -> dict[str, str]:
     return {
-        "User-Agent": f"QuotaBubble/{_version()}",
+        "User-Agent": f"QuotaBubble/{__version__}",
         "X-Msh-Platform": "kimi_code_cli",
-        "X-Msh-Version": _version(),
+        "X-Msh-Version": __version__,
         "X-Msh-Device-Name": _ascii(socket.gethostname()),
         "X-Msh-Device-Model": _ascii(sys.platform),
         "X-Msh-Device-Id": kimi_code_device_id(),

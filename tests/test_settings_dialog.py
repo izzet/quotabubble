@@ -375,3 +375,11 @@ def test_dialog_test_notification_button(qapp: object, tmp_path: Path) -> None:
 
     assert emitted == [True]
     assert dialog.test_notification_status.text() == "Sent!"
+
+
+def test_dialog_displays_running_version(qapp: object, tmp_path: Path) -> None:
+    from quotabubble import __version__
+
+    settings = Settings()
+    dialog = SettingsDialog(settings, path=tmp_path / "settings.json")
+    assert dialog.version_label.text() == f"QuotaBubble v{__version__}"

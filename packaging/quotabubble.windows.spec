@@ -3,6 +3,7 @@
 import tomllib
 from pathlib import Path
 
+from PyInstaller.utils.hooks import copy_metadata
 from PyInstaller.utils.win32.versioninfo import (
     FixedFileInfo,
     StringFileInfo,
@@ -47,7 +48,7 @@ a = Analysis(
     [str(Path(SPECPATH) / "launcher.py")],
     pathex=[str(ROOT / "src")],
     binaries=[],
-    datas=[],
+    datas=copy_metadata("quotabubble"),
     # keyring picks its backend via importlib.metadata entry points at
     # runtime, so PyInstaller's static analysis never sees the Windows
     # backend chain (keyring.backends.Windows -> win32ctypes.pywin32.* ->
