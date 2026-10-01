@@ -25,14 +25,17 @@ def test_resolve_version_fallback_to_pyproject(monkeypatch: pytest.MonkeyPatch) 
     def fake_version(_name: str) -> str:
         raise metadata.PackageNotFoundError
 
+    pyproject_path = Path(__file__).resolve().parent.parent / "pyproject.toml"
+    data = tomllib.loads(pyproject_path.read_text(encoding="utf-8"))
     monkeypatch.setattr(metadata, "version", fake_version)
-    assert _resolve_version() == "0.2.5"
+    assert _resolve_version() == data["project"]["version"]
 
 
-def test_resolve_version_fallback_default(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_resolve_version_raises_when_unresolvable(monkeypatch: pytest.MonkeyPatch) -> None:
     def fake_version(_name: str) -> str:
         raise metadata.PackageNotFoundError
 
     monkeypatch.setattr(metadata, "version", fake_version)
     monkeypatch.setattr(Path, "is_file", lambda _self: False)
-    assert _resolve_version() == "0.2.5"
+    with pytest.raises(RuntimeError, match="Cannot determine QuotaBubble version"):
+        _resolve_version()

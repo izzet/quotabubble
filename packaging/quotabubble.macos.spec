@@ -3,14 +3,7 @@
 from pathlib import Path
 from tomllib import loads
 
-from PyInstaller.utils.hooks import collect_submodules
-
-try:
-    from PyInstaller.utils.hooks import copy_metadata
-
-    datas = copy_metadata("quotabubble")
-except Exception:
-    datas = []
+from PyInstaller.utils.hooks import collect_submodules, copy_metadata
 
 PACKAGING_ROOT = Path(SPECPATH)
 PROJECT_ROOT = PACKAGING_ROOT.parent
@@ -22,7 +15,7 @@ a = Analysis(
     [str(PACKAGING_ROOT / "launcher.py")],
     pathex=[str(PROJECT_ROOT / "src")],
     binaries=[],
-    datas=datas,
+    datas=copy_metadata("quotabubble"),
     # keyring discovers its platform backend through entry points. Collecting
     # its macOS package preserves Keychain support in the frozen app.
     hiddenimports=collect_submodules("keyring.backends.macOS"),

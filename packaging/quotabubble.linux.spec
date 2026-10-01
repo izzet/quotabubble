@@ -2,16 +2,11 @@
 
 from pathlib import Path
 
+from PyInstaller.utils.hooks import copy_metadata
+
 PACKAGING_ROOT = Path(SPECPATH)
 PROJECT_ROOT = PACKAGING_ROOT.parent
 LINUX_ROOT = PACKAGING_ROOT / "linux"
-
-try:
-    from PyInstaller.utils.hooks import copy_metadata
-
-    datas = copy_metadata("quotabubble")
-except Exception:
-    datas = []
 
 hiddenimports = [
     "dbus_fast.aio",
@@ -23,7 +18,7 @@ service_analysis = Analysis(
     [str(LINUX_ROOT / "service_launcher.py")],
     pathex=[str(PROJECT_ROOT / "src")],
     binaries=[],
-    datas=datas,
+    datas=copy_metadata("quotabubble"),
     hiddenimports=hiddenimports,
     hookspath=[],
     hooksconfig={},
@@ -35,7 +30,7 @@ settings_analysis = Analysis(
     [str(LINUX_ROOT / "settings_launcher.py")],
     pathex=[str(PROJECT_ROOT / "src")],
     binaries=[],
-    datas=datas,
+    datas=copy_metadata("quotabubble"),
     hiddenimports=hiddenimports,
     hookspath=[],
     hooksconfig={},
