@@ -19,6 +19,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from quotabubble import __version__
 from quotabubble.app.providers import resolve_api_key
 from quotabubble.app.settings import Settings, format_thresholds, parse_thresholds
 from quotabubble.credentials import delete_secret, is_keyring_available, set_secret
@@ -122,7 +123,14 @@ class SettingsDialog(QDialog):
         )
         buttons.accepted.connect(self.accept)
         buttons.rejected.connect(self.reject)
-        form.addRow(buttons)
+
+        footer = QHBoxLayout()
+        self.version_label = QLabel(f"QuotaBubble v{__version__}")
+        self.version_label.setStyleSheet("color: #9a9aa5; font-size: 11px;")
+        footer.addWidget(self.version_label, alignment=Qt.AlignmentFlag.AlignVCenter)
+        footer.addStretch()
+        footer.addWidget(buttons)
+        form.addRow(footer)
 
     def _build_notifications(self) -> QGroupBox:
         group = QGroupBox("Notifications")
