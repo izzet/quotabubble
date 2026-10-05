@@ -1,5 +1,5 @@
 {
-  "$comment": "Single source of truth for the provider list shown on the website and in the README. tests/test_provider_docs.py keeps the README in sync. 'icon' is a file name (without .svg) under website/public/agents/, sourced from @lobehub/icons (MIT); null renders the provider name as a text tile.",
+  "$comment": "Single source of truth for the provider list shown on the website and in the README. tests/test_provider_docs.py keeps the README in sync. 'icon' names a mark registered in website/src/data/provider-icons.ts (from @lobehub/icons-static-svg, MIT); null renders the provider name as a text tile.",
   "providers": [
     {
       "id": "claude",
@@ -14,10 +14,16 @@
       "credential": "~/.codex/auth.json"
     },
     {
-      "id": "antigravity",
-      "name": "Google Antigravity",
-      "icon": "antigravity",
-      "credential": "Windows Credential Manager, macOS Keychain, or Linux Secret Service"
+      "id": "cursor",
+      "name": "Cursor",
+      "icon": "cursor",
+      "credential": "Cursor IDE state.vscdb or auth.json"
+    },
+    {
+      "id": "deepseek",
+      "name": "DeepSeek",
+      "icon": "deepseek",
+      "credential": "API key"
     },
     {
       "id": "copilot",
@@ -26,22 +32,16 @@
       "credential": "Windows Credential Manager, macOS Keychain, or Linux Secret Service"
     },
     {
-      "id": "cursor",
-      "name": "Cursor",
-      "icon": "cursor",
-      "credential": "Cursor IDE state.vscdb or auth.json"
+      "id": "antigravity",
+      "name": "Google Antigravity",
+      "icon": "antigravity",
+      "credential": "Windows Credential Manager, macOS Keychain, or Linux Secret Service"
     },
     {
       "id": "grok",
       "name": "Grok (SuperGrok)",
       "icon": "grok",
       "credential": "~/.grok/auth.json from grok login"
-    },
-    {
-      "id": "zed",
-      "name": "Zed",
-      "icon": null,
-      "credential": "Windows Credential Manager (sign in to Zed)"
     },
     {
       "id": "kimi",
@@ -56,12 +56,6 @@
       "credential": "~/.local/share/opencode/auth.json or an API key"
     },
     {
-      "id": "deepseek",
-      "name": "DeepSeek",
-      "icon": "deepseek",
-      "credential": "API key"
-    },
-    {
       "id": "openrouter",
       "name": "OpenRouter",
       "icon": "openrouter",
@@ -72,6 +66,12 @@
       "name": "Z.ai (GLM Coding Plan)",
       "icon": "zai",
       "credential": "API key"
+    },
+    {
+      "id": "zed",
+      "name": "Zed",
+      "icon": null,
+      "credential": "Windows Credential Manager (sign in to Zed)"
     }
   ]
 }

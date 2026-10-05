@@ -2,7 +2,7 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { providers } from "../data/providers.json";
-import { providerIcons } from "../data/icons";
+import { providerIcons } from "../data/provider-icons";
 
 const rawBase = import.meta.env.BASE_URL;
 const base = rawBase.endsWith("/") ? rawBase : `${rawBase}/`;
@@ -58,7 +58,7 @@ const structuredData = {
 };
 
 // Resolve each provider's icon URL at build time and fail loudly if providers.json
-// names an icon that icons.ts does not register -- this replaces an untracked copy
+// names an icon that provider-icons.ts does not register -- this replaces an untracked copy
 // of the SVGs with a pinned npm dependency (@lobehub/icons-static-svg, MIT).
 const tools = providers.map((provider) => {
   const iconUrl = provider.icon ? providerIcons[provider.icon] : null;
@@ -264,8 +264,9 @@ const faq = [
           });
         </script>
         <p class="note tools-note">
-          Icons identify compatible tools and belong to their respective owners; their use does
-          not imply any affiliation or endorsement.
+          Tool icons from <a href="https://github.com/lobehub/lobe-icons">LobeHub</a> (MIT).
+          Product names and logos belong to their respective owners; their use does not imply any
+          affiliation or endorsement.
         </p>
       </section>
 

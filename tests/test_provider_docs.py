@@ -2,7 +2,7 @@
 
 The website renders its "Works with your tools" grid from
 ``website/src/data/providers.json`` and resolves icons through
-``website/src/data/icons.ts``. The README mirrors the same list as a table.
+``website/src/data/provider-icons.ts``. The README mirrors the same list as a table.
 These tests fail if the copies drift apart or a provider icon is unregistered.
 """
 
@@ -14,7 +14,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 PROVIDERS_JSON = ROOT / "website" / "src" / "data" / "providers.json"
-ICONS_TS = ROOT / "website" / "src" / "data" / "icons.ts"
+ICONS_TS = ROOT / "website" / "src" / "data" / "provider-icons.ts"
 README = ROOT / "README.md"
 
 SECTION_HEADING = "## Works with your tools"
@@ -78,7 +78,7 @@ def test_every_provider_icon_is_registered() -> None:
         if icon is None:
             continue
         assert icon in registered, (
-            f"{provider['name']} icon {icon!r} is not imported in website/src/data/icons.ts"
+            f"{provider['name']} icon {icon!r} is not registered in provider-icons.ts"
         )
 
 

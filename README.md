@@ -34,16 +34,18 @@ QuotaBubble reads the sign-in each tool already stores, so there is no QuotaBubb
 | --- | --- |
 | Claude Code | macOS Keychain (`Claude Code-credentials`) or `~/.claude/.credentials.json` |
 | Codex | `~/.codex/auth.json` |
-| Google Antigravity | Windows Credential Manager, macOS Keychain, or Linux Secret Service |
-| GitHub Copilot | Windows Credential Manager, macOS Keychain, or Linux Secret Service |
 | Cursor | Cursor IDE `state.vscdb` or `auth.json` (`CURSOR_SESSION_TOKEN` override) |
+| DeepSeek | API key |
+| GitHub Copilot | Windows Credential Manager, macOS Keychain, or Linux Secret Service |
+| Google Antigravity | Windows Credential Manager, macOS Keychain, or Linux Secret Service |
 | Grok (SuperGrok) | `~/.grok/auth.json` from `grok login` (`GROK_HOME` override) |
-| Zed | Windows Credential Manager (sign in to Zed) |
 | Kimi Code | Kimi Code CLI login in `~/.kimi-code` (`KIMI_CODE_HOME` override) |
 | OpenCode | `~/.local/share/opencode/auth.json` or an API key (`opencode.jsonc` and `OPENCODE_API_KEY` are also honoured) |
-| DeepSeek | API key |
 | OpenRouter | API key |
 | Z.ai (GLM Coding Plan) | API key (`Z_AI_API_KEY` override) |
+| Zed | Windows Credential Manager (sign in to Zed) |
+
+Tool icons on the website come from [@lobehub/icons](https://github.com/lobehub/lobe-icons) (MIT). All product names and logos belong to their respective owners and indicate compatibility only.
 
 Kimi Code runs separate regional services (`kimi.com` and `kimi.ai`): the login is only ever sent to the host the CLI itself is configured for (override with `KIMI_CODE_BASE_URL`). QuotaBubble never refreshes the CLI's login. When it expires, open Kimi Code to renew it.
 
