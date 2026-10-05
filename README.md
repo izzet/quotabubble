@@ -45,8 +45,6 @@ QuotaBubble reads the sign-in each tool already stores, so there is no QuotaBubb
 | Z.ai (GLM Coding Plan) | API key (`Z_AI_API_KEY` override) |
 | Zed | Windows Credential Manager (sign in to Zed) |
 
-Tool icons on the website come from [@lobehub/icons](https://github.com/lobehub/lobe-icons) (MIT). All product names and logos belong to their respective owners and indicate compatibility only.
-
 Kimi Code runs separate regional services (`kimi.com` and `kimi.ai`): the login is only ever sent to the host the CLI itself is configured for (override with `KIMI_CODE_BASE_URL`). QuotaBubble never refreshes the CLI's login. When it expires, open Kimi Code to renew it.
 
 Providers are detected automatically. Enable or disable them in Settings, where API keys can be entered and validated inline with a **Test** button. Antigravity and Copilot reuse their existing OS keychain sign-ins, including Linux Secret Service. Cursor reuses the IDE session token from `state.vscdb` or `auth.json` (or `CURSOR_SESSION_TOKEN`).
