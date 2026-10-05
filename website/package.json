@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@astrojs/sitemap": "^3.7.4",
+    "@lobehub/icons-static-svg": "^1.95.1",
     "astro": "^5.0.0"
   }
 }

@@ -1,6 +1,8 @@
 ---
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
+import { providers } from "../data/providers.json";
+import { providerIcons } from "../data/provider-icons";
 
 const rawBase = import.meta.env.BASE_URL;
 const base = rawBase.endsWith("/") ? rawBase : `${rawBase}/`;
@@ -55,6 +57,17 @@ const structuredData = {
   ],
 };
 
+// Resolve each provider's icon URL at build time and fail loudly if providers.json
+// names an icon that provider-icons.ts does not register -- this replaces an untracked copy
+// of the SVGs with a pinned npm dependency (@lobehub/icons-static-svg, MIT).
+const tools = providers.map((provider) => {
+  const iconUrl = provider.icon ? providerIcons[provider.icon] : null;
+  if (provider.icon && !iconUrl) {
+    throw new Error(`No icon registered for provider ${provider.name}: ${provider.icon}`);
+  }
+  return { ...provider, iconUrl };
+});
+
 const features = [
   ["Frameless bubble", "Translucent, rounded, always on top, and it never steals keyboard focus."],
   ["Fades when idle", "A configurable low opacity keeps it out of the way, and hovering brings it back."],
@@ -91,20 +104,6 @@ const faq = [
   ],
 ];
 
-const providers = [
-  ["Claude Code", "macOS Keychain or ~/.claude/.credentials.json"],
-  ["Codex", "~/.codex/auth.json"],
-  ["Google Antigravity", "Windows Credential Manager, macOS Keychain, or Linux Secret Service"],
-  ["GitHub Copilot", "Windows Credential Manager, macOS Keychain, or Linux Secret Service"],
-  ["Cursor", "Cursor IDE state.vscdb / auth.json"],
-  ["Grok (SuperGrok)", "~/.grok/auth.json from grok login"],
-  ["Zed", "Windows Credential Manager (sign in to Zed)"],
-  ["Kimi Code", "Kimi Code CLI login in ~/.kimi-code"],
-  ["OpenCode", "~/.local/share/opencode/auth.json or an API key"],
-  ["DeepSeek", "API key"],
-  ["OpenRouter", "API key"],
-  ["Z.ai (GLM Coding Plan)", "API key"],
-];
 ---
 
 <!doctype html>
@@ -204,16 +203,71 @@ const providers = [
         </ul>
       </section>
 
-      <section>
-        <h2>Supported providers</h2>
-        <ul class="providers">
-          {providers.map(([name, auth]) => (
-            <li>
-              <span class="pname">{name}</span>
-              <span class="pauth">{auth}</span>
+      <section id="tools">
+        <h2>Works with your tools</h2>
+        <p class="section-lede">
+          QuotaBubble reads the sign-in each tool already stores, so there is no QuotaBubble
+          account and nothing extra to log into.
+        </p>
+        <ul class="tools">
+          {tools.map((tool) => (
+            <li class="tool">
+              <button type="button" class="tool-btn" aria-describedby={`tool-tip-${tool.id}`}>
+                {tool.iconUrl ? (
+                  <>
+                    <span class="tool-icon" aria-hidden="true" style={`--icon:url(${tool.iconUrl})`} />
+                    <span class="tool-name">{tool.name}</span>
+                  </>
+                ) : (
+                  <span class="tool-name">{tool.name}</span>
+                )}
+              </button>
+              <span class="tool-tip" id={`tool-tip-${tool.id}`} role="tooltip">
+                {tool.tooltip}
+              </span>
             </li>
           ))}
         </ul>
+        <noscript>
+          <style>
+            .tool-tip {
+              position: static;
+              opacity: 1;
+              visibility: visible;
+              transform: none;
+              max-width: none;
+              margin: 0 12px 14px;
+              text-align: left;
+            }
+          </style>
+        </noscript>
+        <script>
+          // Tap/click toggles a tooltip for touch; hover and keyboard focus are handled in CSS.
+          const toolItems = [...document.querySelectorAll<HTMLElement>(".tool")];
+          const closeTools = (keep?: HTMLElement) => {
+            for (const item of toolItems) {
+              if (item !== keep) item.removeAttribute("data-open");
+            }
+          };
+          for (const item of toolItems) {
+            item.querySelector<HTMLButtonElement>(".tool-btn")?.addEventListener("click", (event) => {
+              event.stopPropagation();
+              const isOpen = item.hasAttribute("data-open");
+              closeTools();
+              if (!isOpen) item.setAttribute("data-open", "");
+            });
+          }
+          document.addEventListener("click", () => closeTools());
+          document.addEventListener("keydown", (event) => {
+            if (event.key === "Escape") closeTools();
+          });
+        </script>
+        <p class="note tools-note">Hover, focus, or tap a tool to see where it reads from.</p>
+        <p class="tools-fineprint">
+          Tool icons on the website come from
+          <a href="https://github.com/lobehub/lobe-icons">@lobehub/icons</a> (MIT). All product
+          names and logos belong to their respective owners and indicate compatibility only.
+        </p>
       </section>
 
       <section>
@@ -602,34 +656,172 @@ quotabubble`}</code></pre>
     color: var(--dim);
     margin: 0;
   }
-  .providers {
+  .section-lede {
+    color: var(--dim);
+    margin: 0 0 20px;
+  }
+  .tools {
     list-style: none;
     padding: 0;
     margin: 0;
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-    gap: 8px;
-  }
-  .providers li {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 12px;
-    background: var(--panel);
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1px;
+    background: var(--line);
     border: 1px solid var(--line);
-    border-radius: 10px;
-    padding: 12px 14px;
+    border-radius: 14px;
   }
-  .pname {
-    font-weight: 600;
-    flex-shrink: 0;
+  .tool {
+    position: relative;
+    background: var(--panel);
+    transition: background 0.2s;
   }
-  .pauth {
-    min-width: 0;
+  /* Round the outer corners of the grid. The container cannot clip its children
+     (tooltips overflow it), so the corner tiles are rounded to match instead. */
+  .tools > :first-child {
+    border-top-left-radius: 13px;
+  }
+  .tools > :nth-child(2) {
+    border-top-right-radius: 13px;
+  }
+  .tools > :nth-last-child(2) {
+    border-bottom-left-radius: 13px;
+  }
+  .tools > :last-child {
+    border-bottom-right-radius: 13px;
+  }
+  .tool:hover,
+  .tool:focus-within,
+  .tool[data-open] {
+    background: #1d2825;
+  }
+  .tool-btn {
+    appearance: none;
+    width: 100%;
+    min-height: 104px;
+    padding: 22px 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    background: transparent;
+    border: 0;
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+    text-align: center;
+  }
+  .tool-btn:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: -2px;
+  }
+  .tool-icon {
+    display: block;
+    width: 100%;
+    height: 28px;
+    background-color: var(--dim);
+    -webkit-mask-image: var(--icon);
+    mask-image: var(--icon);
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
+    -webkit-mask-position: center;
+    mask-position: center;
+    -webkit-mask-size: contain;
+    mask-size: contain;
+    transition: background-color 0.2s;
+  }
+  .tool:hover .tool-icon,
+  .tool:focus-within .tool-icon,
+  .tool[data-open] .tool-icon {
+    background-color: var(--text);
+  }
+  .tool-name {
+    font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 11px;
+    line-height: 1.3;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
     color: var(--dim);
-    font-size: 13px;
-    text-align: right;
+    transition: color 0.2s;
+  }
+  .tool:hover .tool-name,
+  .tool:focus-within .tool-name,
+  .tool[data-open] .tool-name {
+    color: var(--text);
+  }
+  .tool-tip {
+    position: absolute;
+    left: 50%;
+    bottom: calc(100% + 8px);
+    z-index: 10;
+    width: max-content;
+    max-width: min(260px, 78vw);
+    padding: 8px 10px;
+    border-radius: 8px;
+    background: #08080a;
+    border: 1px solid var(--line);
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.5);
+    color: var(--text);
+    font-size: 12px;
+    line-height: 1.45;
+    text-align: center;
     overflow-wrap: anywhere;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transform: translate(-50%, 4px);
+    transition: opacity 0.15s, transform 0.15s;
+  }
+  .tool:hover .tool-tip,
+  .tool:focus-within .tool-tip,
+  .tool[data-open] .tool-tip {
+    opacity: 1;
+    visibility: visible;
+    transform: translate(-50%, 0);
+  }
+  .tools-note {
+    margin: 14px 0 0;
+  }
+  .tools-fineprint {
+    margin: 6px 0 0;
+    font-size: 12px;
+    color: var(--dim);
+    opacity: 0.85;
+  }
+  @media (min-width: 640px) {
+    .tools {
+      grid-template-columns: repeat(3, 1fr);
+    }
+    .tools > :nth-child(2) {
+      border-top-right-radius: 0;
+    }
+    .tools > :nth-last-child(2) {
+      border-bottom-left-radius: 0;
+    }
+    .tools > :nth-child(3) {
+      border-top-right-radius: 13px;
+    }
+    .tools > :nth-last-child(3) {
+      border-bottom-left-radius: 13px;
+    }
+  }
+  @media (min-width: 880px) {
+    .tools {
+      grid-template-columns: repeat(4, 1fr);
+    }
+    .tools > :nth-child(3) {
+      border-top-right-radius: 0;
+    }
+    .tools > :nth-last-child(3) {
+      border-bottom-left-radius: 0;
+    }
+    .tools > :nth-child(4) {
+      border-top-right-radius: 13px;
+    }
+    .tools > :nth-last-child(4) {
+      border-bottom-left-radius: 13px;
+    }
   }
   .os-tabs {
     display: flex;
