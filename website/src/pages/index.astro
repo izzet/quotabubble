@@ -2,6 +2,7 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { providers } from "../data/providers.json";
+import { providerIcons } from "../data/icons";
 
 const rawBase = import.meta.env.BASE_URL;
 const base = rawBase.endsWith("/") ? rawBase : `${rawBase}/`;
@@ -55,6 +56,17 @@ const structuredData = {
     },
   ],
 };
+
+// Resolve each provider's icon URL at build time and fail loudly if providers.json
+// names an icon that icons.ts does not register -- this replaces an untracked copy
+// of the SVGs with a pinned npm dependency (@lobehub/icons-static-svg, MIT).
+const tools = providers.map((provider) => {
+  const iconUrl = provider.icon ? providerIcons[provider.icon] : null;
+  if (provider.icon && !iconUrl) {
+    throw new Error(`No icon registered for provider ${provider.name}: ${provider.icon}`);
+  }
+  return { ...provider, iconUrl };
+});
 
 const features = [
   ["Frameless bubble", "Translucent, rounded, always on top, and it never steals keyboard focus."],
@@ -199,28 +211,20 @@ const faq = [
           reads from.
         </p>
         <ul class="tools">
-          {providers.map((provider) => (
+          {tools.map((tool) => (
             <li class="tool">
-              <button
-                type="button"
-                class="tool-btn"
-                aria-describedby={`tool-tip-${provider.id}`}
-              >
-                {provider.icon ? (
+              <button type="button" class="tool-btn" aria-describedby={`tool-tip-${tool.id}`}>
+                {tool.iconUrl ? (
                   <>
-                    <span
-                      class="tool-icon"
-                      aria-hidden="true"
-                      style={`--icon:url(${base}agents/${provider.icon}.svg)`}
-                    />
-                    <span class="tool-name">{provider.name}</span>
+                    <span class="tool-icon" aria-hidden="true" style={`--icon:url(${tool.iconUrl})`} />
+                    <span class="tool-name">{tool.name}</span>
                   </>
                 ) : (
-                  <span class="tool-name tool-name-only">{provider.name}</span>
+                  <span class="tool-name tool-name-only">{tool.name}</span>
                 )}
               </button>
-              <span class="tool-tip" id={`tool-tip-${provider.id}`} role="tooltip">
-                {provider.credential}
+              <span class="tool-tip" id={`tool-tip-${tool.id}`} role="tooltip">
+                {tool.credential}
               </span>
             </li>
           ))}

@@ -1,9 +1,9 @@
-"""Keep the provider list in the README, the website, and the vendored icons in sync.
+"""Keep the provider list in the README, the website, and its icons in sync.
 
 The website renders its "Works with your tools" grid from
-``website/src/data/providers.json``. The README mirrors the same list as a table.
-These tests fail if the two drift apart, a vendor icon goes missing, or the
-provider order changes in only one place.
+``website/src/data/providers.json`` and resolves icons through
+``website/src/data/icons.ts``. The README mirrors the same list as a table.
+These tests fail if the copies drift apart or a provider icon is unregistered.
 """
 
 from __future__ import annotations
@@ -14,7 +14,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 PROVIDERS_JSON = ROOT / "website" / "src" / "data" / "providers.json"
-AGENTS_DIR = ROOT / "website" / "public" / "agents"
+ICONS_TS = ROOT / "website" / "src" / "data" / "icons.ts"
 README = ROOT / "README.md"
 
 SECTION_HEADING = "## Works with your tools"
@@ -22,6 +22,11 @@ SECTION_HEADING = "## Works with your tools"
 
 def _providers() -> list[dict]:
     return json.loads(PROVIDERS_JSON.read_text(encoding="utf-8"))["providers"]
+
+
+def _registered_icons() -> set[str]:
+    text = ICONS_TS.read_text(encoding="utf-8")
+    return set(re.findall(r"icons/([a-z0-9]+)\.svg", text))
 
 
 def _strip_emphasis(text: str) -> str:
@@ -66,11 +71,17 @@ def test_readme_documents_every_credential_source() -> None:
         )
 
 
-def test_every_provider_icon_is_vendored() -> None:
+def test_every_provider_icon_is_registered() -> None:
+    registered = _registered_icons()
     for provider in _providers():
         icon = provider["icon"]
         if icon is None:
             continue
-        assert (AGENTS_DIR / f"{icon}.svg").is_file(), (
-            f"missing vendored icon for {provider['name']}: {icon}.svg"
+        assert icon in registered, (
+            f"{provider['name']} icon {icon!r} is not imported in website/src/data/icons.ts"
         )
+
+
+def test_no_unused_registered_icons() -> None:
+    used = {provider["icon"] for provider in _providers() if provider["icon"]}
+    assert _registered_icons() == used
