@@ -207,8 +207,7 @@ const faq = [
         <h2>Works with your tools</h2>
         <p class="section-lede">
           QuotaBubble reads the sign-in each tool already stores, so there is no QuotaBubble
-          account and nothing extra to log into. Hover, focus, or tap a tool to see where it
-          reads from.
+          account and nothing extra to log into.
         </p>
         <ul class="tools">
           {tools.map((tool) => (
@@ -220,7 +219,7 @@ const faq = [
                     <span class="tool-name">{tool.name}</span>
                   </>
                 ) : (
-                  <span class="tool-name tool-name-only">{tool.name}</span>
+                  <span class="tool-name">{tool.name}</span>
                 )}
               </button>
               <span class="tool-tip" id={`tool-tip-${tool.id}`} role="tooltip">
@@ -263,7 +262,8 @@ const faq = [
             if (event.key === "Escape") closeTools();
           });
         </script>
-        <p class="note tools-note">
+        <p class="note tools-note">Hover, focus, or tap a tool to see where it reads from.</p>
+        <p class="tools-fineprint">
           Tool icons on the website come from
           <a href="https://github.com/lobehub/lobe-icons">@lobehub/icons</a> (MIT). All product
           names and logos belong to their respective owners and indicate compatibility only.
@@ -658,7 +658,6 @@ quotabubble`}</code></pre>
   }
   .section-lede {
     color: var(--dim);
-    max-width: 620px;
     margin: 0 0 20px;
   }
   .tools {
@@ -677,25 +676,24 @@ quotabubble`}</code></pre>
     background: var(--panel);
     transition: background 0.2s;
   }
-  .tool::before {
-    content: "";
-    position: absolute;
-    inset: 0 0 auto;
-    height: 1px;
-    background: var(--accent);
-    transform: scaleX(0);
-    transform-origin: left;
-    transition: transform 0.2s;
+  /* Round the outer corners of the grid. The container cannot clip its children
+     (tooltips overflow it), so the corner tiles are rounded to match instead. */
+  .tools > :first-child {
+    border-top-left-radius: 13px;
+  }
+  .tools > :nth-child(2) {
+    border-top-right-radius: 13px;
+  }
+  .tools > :nth-last-child(2) {
+    border-bottom-left-radius: 13px;
+  }
+  .tools > :last-child {
+    border-bottom-right-radius: 13px;
   }
   .tool:hover,
   .tool:focus-within,
   .tool[data-open] {
-    background: #1b1b21;
-  }
-  .tool:hover::before,
-  .tool:focus-within::before,
-  .tool[data-open]::before {
-    transform: scaleX(1);
+    background: #1d2825;
   }
   .tool-btn {
     appearance: none;
@@ -747,12 +745,6 @@ quotabubble`}</code></pre>
     color: var(--dim);
     transition: color 0.2s;
   }
-  .tool-name-only {
-    font-size: 14px;
-    text-transform: none;
-    letter-spacing: 0;
-    color: var(--text);
-  }
   .tool:hover .tool-name,
   .tool:focus-within .tool-name,
   .tool[data-open] .tool-name {
@@ -791,14 +783,44 @@ quotabubble`}</code></pre>
   .tools-note {
     margin: 14px 0 0;
   }
+  .tools-fineprint {
+    margin: 6px 0 0;
+    font-size: 12px;
+    color: var(--dim);
+    opacity: 0.85;
+  }
   @media (min-width: 640px) {
     .tools {
       grid-template-columns: repeat(3, 1fr);
+    }
+    .tools > :nth-child(2) {
+      border-top-right-radius: 0;
+    }
+    .tools > :nth-last-child(2) {
+      border-bottom-left-radius: 0;
+    }
+    .tools > :nth-child(3) {
+      border-top-right-radius: 13px;
+    }
+    .tools > :nth-last-child(3) {
+      border-bottom-left-radius: 13px;
     }
   }
   @media (min-width: 880px) {
     .tools {
       grid-template-columns: repeat(4, 1fr);
+    }
+    .tools > :nth-child(3) {
+      border-top-right-radius: 0;
+    }
+    .tools > :nth-last-child(3) {
+      border-bottom-left-radius: 0;
+    }
+    .tools > :nth-child(4) {
+      border-top-right-radius: 13px;
+    }
+    .tools > :nth-last-child(4) {
+      border-bottom-left-radius: 13px;
     }
   }
   .os-tabs {
