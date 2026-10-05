@@ -1,0 +1,77 @@
+{
+  "$comment": "Single source of truth for the provider list shown on the website and in the README. tests/test_provider_docs.py keeps the README in sync. 'icon' is a file name (without .svg) under website/public/agents/, sourced from @lobehub/icons (MIT); null renders the provider name as a text tile.",
+  "providers": [
+    {
+      "id": "claude",
+      "name": "Claude Code",
+      "icon": "claudecode",
+      "credential": "macOS Keychain (Claude Code-credentials) or ~/.claude/.credentials.json"
+    },
+    {
+      "id": "codex",
+      "name": "Codex",
+      "icon": "codex",
+      "credential": "~/.codex/auth.json"
+    },
+    {
+      "id": "antigravity",
+      "name": "Google Antigravity",
+      "icon": "antigravity",
+      "credential": "Windows Credential Manager, macOS Keychain, or Linux Secret Service"
+    },
+    {
+      "id": "copilot",
+      "name": "GitHub Copilot",
+      "icon": "githubcopilot",
+      "credential": "Windows Credential Manager, macOS Keychain, or Linux Secret Service"
+    },
+    {
+      "id": "cursor",
+      "name": "Cursor",
+      "icon": "cursor",
+      "credential": "Cursor IDE state.vscdb or auth.json"
+    },
+    {
+      "id": "grok",
+      "name": "Grok (SuperGrok)",
+      "icon": "grok",
+      "credential": "~/.grok/auth.json from grok login"
+    },
+    {
+      "id": "zed",
+      "name": "Zed",
+      "icon": null,
+      "credential": "Windows Credential Manager (sign in to Zed)"
+    },
+    {
+      "id": "kimi",
+      "name": "Kimi Code",
+      "icon": "kimi",
+      "credential": "Kimi Code CLI login in ~/.kimi-code"
+    },
+    {
+      "id": "opencode",
+      "name": "OpenCode",
+      "icon": "opencode",
+      "credential": "~/.local/share/opencode/auth.json or an API key"
+    },
+    {
+      "id": "deepseek",
+      "name": "DeepSeek",
+      "icon": "deepseek",
+      "credential": "API key"
+    },
+    {
+      "id": "openrouter",
+      "name": "OpenRouter",
+      "icon": "openrouter",
+      "credential": "API key"
+    },
+    {
+      "id": "zai",
+      "name": "Z.ai (GLM Coding Plan)",
+      "icon": "zai",
+      "credential": "API key"
+    }
+  ]
+}

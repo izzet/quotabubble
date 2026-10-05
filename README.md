@@ -26,19 +26,21 @@ QuotaBubble is a small, frameless desktop widget that keeps the usage limits for
 - **Resilient:** refreshes every 5 minutes, caches the last good values, and keeps showing them (dimmed) through transient network or rate-limit errors.
 - **Local only:** it reuses the credentials your tools already store and talks straight to the providers. No telemetry, no QuotaBubble server.
 
-## Supported providers
+## Works with your tools
 
-| Provider | Authentication |
+QuotaBubble reads the sign-in each tool already stores, so there is no QuotaBubble account and nothing extra to log into.
+
+| Tool | Where QuotaBubble reads it |
 | --- | --- |
-| Claude Code | macOS Keychain or `~/.claude/.credentials.json` |
+| Claude Code | macOS Keychain (`Claude Code-credentials`) or `~/.claude/.credentials.json` |
 | Codex | `~/.codex/auth.json` |
 | Google Antigravity | Windows Credential Manager, macOS Keychain, or Linux Secret Service |
 | GitHub Copilot | Windows Credential Manager, macOS Keychain, or Linux Secret Service |
-| Cursor | Cursor IDE `state.vscdb` / `auth.json` (`CURSOR_SESSION_TOKEN` override) |
+| Cursor | Cursor IDE `state.vscdb` or `auth.json` (`CURSOR_SESSION_TOKEN` override) |
 | Grok (SuperGrok) | `~/.grok/auth.json` from `grok login` (`GROK_HOME` override) |
 | Zed | Windows Credential Manager (sign in to Zed) |
 | Kimi Code | Kimi Code CLI login in `~/.kimi-code` (`KIMI_CODE_HOME` override) |
-| OpenCode | `~/.local/share/opencode/auth.json` / `opencode.jsonc` (`OPENCODE_API_KEY` override) or API key |
+| OpenCode | `~/.local/share/opencode/auth.json` or an API key (`opencode.jsonc` and `OPENCODE_API_KEY` are also honoured) |
 | DeepSeek | API key |
 | OpenRouter | API key |
 | Z.ai (GLM Coding Plan) | API key (`Z_AI_API_KEY` override) |
