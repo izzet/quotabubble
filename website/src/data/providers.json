@@ -1,77 +1,77 @@
 {
-  "$comment": "Single source of truth for the provider list shown on the website and in the README. tests/test_provider_docs.py keeps the README in sync. 'icon' names a mark registered in website/src/data/provider-icons.ts (from @lobehub/icons-static-svg, MIT); null renders the provider name as a text tile.",
+  "$comment": "Single source of truth for the provider list shown on the website and in the README. tests/test_provider_docs.py keeps the README in sync. 'icon' names a mark registered in website/src/data/provider-icons.ts (from @lobehub/icons-static-svg, MIT); null renders the provider name as a text tile. 'tooltip' is the text shown when a visitor hovers, focuses, or taps the tile.",
   "providers": [
     {
       "id": "claude",
       "name": "Claude Code",
       "icon": "claudecode",
-      "credential": "macOS Keychain (Claude Code-credentials) or ~/.claude/.credentials.json"
+      "tooltip": "macOS Keychain (Claude Code-credentials) or ~/.claude/.credentials.json"
     },
     {
       "id": "codex",
       "name": "Codex",
       "icon": "codex",
-      "credential": "~/.codex/auth.json"
+      "tooltip": "~/.codex/auth.json"
     },
     {
       "id": "cursor",
       "name": "Cursor",
       "icon": "cursor",
-      "credential": "Cursor IDE state.vscdb or auth.json"
+      "tooltip": "Cursor IDE state.vscdb or auth.json"
     },
     {
       "id": "deepseek",
       "name": "DeepSeek",
       "icon": "deepseek",
-      "credential": "API key"
+      "tooltip": "API key"
     },
     {
       "id": "copilot",
       "name": "GitHub Copilot",
       "icon": "githubcopilot",
-      "credential": "Windows Credential Manager, macOS Keychain, or Linux Secret Service"
+      "tooltip": "Windows Credential Manager, macOS Keychain, or Linux Secret Service"
     },
     {
       "id": "antigravity",
       "name": "Google Antigravity",
       "icon": "antigravity",
-      "credential": "Windows Credential Manager, macOS Keychain, or Linux Secret Service"
+      "tooltip": "Windows Credential Manager, macOS Keychain, or Linux Secret Service"
     },
     {
       "id": "grok",
       "name": "Grok (SuperGrok)",
       "icon": "grok",
-      "credential": "~/.grok/auth.json from grok login"
+      "tooltip": "~/.grok/auth.json from grok login"
     },
     {
       "id": "kimi",
       "name": "Kimi Code",
       "icon": "kimi",
-      "credential": "Kimi Code CLI login in ~/.kimi-code"
+      "tooltip": "Kimi Code CLI login in ~/.kimi-code"
     },
     {
       "id": "opencode",
       "name": "OpenCode",
       "icon": "opencode",
-      "credential": "~/.local/share/opencode/auth.json or an API key"
+      "tooltip": "~/.local/share/opencode/auth.json or an API key"
     },
     {
       "id": "openrouter",
       "name": "OpenRouter",
       "icon": "openrouter",
-      "credential": "API key"
+      "tooltip": "API key"
     },
     {
       "id": "zai",
       "name": "Z.ai (GLM Coding Plan)",
       "icon": "zai",
-      "credential": "API key"
+      "tooltip": "API key"
     },
     {
       "id": "zed",
       "name": "Zed",
       "icon": null,
-      "credential": "Windows Credential Manager (sign in to Zed)"
+      "tooltip": "Windows Credential Manager (sign in to Zed)"
     }
   ]
 }

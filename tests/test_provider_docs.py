@@ -63,11 +63,11 @@ def test_readme_lists_the_same_providers_in_the_same_order() -> None:
     assert [provider["name"] for provider in providers] == [name for name, _ in rows]
 
 
-def test_readme_documents_every_credential_source() -> None:
+def test_readme_documents_every_tooltip() -> None:
     documented = "\n".join(_strip_emphasis(cell) for _, cell in _readme_rows())
     for provider in _providers():
-        assert provider["credential"] in documented, (
-            f"{provider['name']} credential source is not documented in the README"
+        assert provider["tooltip"] in documented, (
+            f"{provider['name']} tooltip is not documented in the README"
         )
 
 
