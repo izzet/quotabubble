@@ -59,6 +59,12 @@ Install from the [Microsoft Store](https://apps.microsoft.com/detail/9MZZX0C4197
   <img src="https://get.microsoft.com/images/en-us%20dark.svg" width="200" alt="Get it from Microsoft Store"/>
 </a>
 
+Or install with [winget](https://github.com/microsoft/winget-pkgs/tree/master/manifests/i/Izzet/QuotaBubble) (built into Windows 10/11, and updates arrive automatically with `winget upgrade`):
+
+```powershell
+winget install Izzet.QuotaBubble
+```
+
 Or install via [Chocolatey](https://community.chocolatey.org/packages/quotabubble):
 
 ```powershell
