@@ -42,6 +42,21 @@ def test_select_respects_explicit_selection() -> None:
     assert [provider.id for provider in selected] == ["codex"]
 
 
+def test_explicit_selection_initializes_selected_provider_credentials() -> None:
+    provider = _FakeProvider("claude", True)
+    calls = 0
+
+    def detect() -> bool:
+        nonlocal calls
+        calls += 1
+        return True
+
+    provider.detect = detect
+
+    assert select_providers([provider], Settings(enabled_providers=["claude"])) == [provider]
+    assert calls == 1
+
+
 def test_loading_snapshot_marks_loading() -> None:
     snapshot = loading_snapshot(_FakeProvider("claude", True))
 

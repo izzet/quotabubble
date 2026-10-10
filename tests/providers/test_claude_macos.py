@@ -16,7 +16,7 @@ def test_keychain_credentials_are_read() -> None:
     blob = (FIXTURES / "claude_credentials.json").read_bytes()
 
     credentials = read_keychain_credentials(
-        lambda hint: [(f"{hint}-example:account", blob)]
+        lambda hint, **_: [(f"{hint}-example:account", blob)]
     )
 
     assert credentials is not None
@@ -28,7 +28,27 @@ def test_keychain_credentials_take_priority(tmp_path: Path) -> None:
     blob = (FIXTURES / "claude_credentials.json").read_bytes()
     provider = ClaudeProvider(
         credentials_path=tmp_path / "absent.json",
-        keychain_credentials_provider=lambda _: [("Claude Code-credentials", blob)],
+        keychain_credentials_provider=lambda _, **__: [("Claude Code-credentials", blob)],
     )
 
     assert provider.detect() is True
+
+
+def test_detect_authorizes_once_then_fetch_uses_cached_keychain_credential(
+    tmp_path: Path,
+) -> None:
+    blob = (FIXTURES / "claude_credentials.json").read_bytes()
+    interactions = []
+
+    def credentials(hint: str, *, allow_interaction: bool) -> list[tuple[str, bytes]]:
+        interactions.append((hint, allow_interaction))
+        return [(hint, blob)]
+
+    provider = ClaudeProvider(
+        credentials_path=tmp_path / "absent.json",
+        keychain_credentials_provider=credentials,
+    )
+
+    assert provider.detect() is True
+    assert provider._credentials() is not None
+    assert interactions == [("Claude Code-credentials", True)]

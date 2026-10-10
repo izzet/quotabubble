@@ -5,6 +5,7 @@ from dataclasses import dataclass
 
 from Security import (
     SecItemCopyMatching,
+    SecKeychainSetUserInteractionAllowed,
     errSecSuccess,
     kSecAttrAccount,
     kSecAttrModificationDate,
@@ -15,6 +16,9 @@ from Security import (
     kSecMatchLimitAll,
     kSecReturnAttributes,
     kSecReturnData,
+    kSecUseAuthenticationUI,
+    kSecUseAuthenticationUIAllow,
+    kSecUseAuthenticationUIFail,
 )
 
 
@@ -25,12 +29,29 @@ class _Item:
     modified: float
 
 
-def _copy_matching(query: dict[object, object]) -> object | None:
-    status, result = SecItemCopyMatching(query, None)
+def _copy_matching(
+    query: dict[object, object], *, allow_interaction: bool = False
+) -> object | None:
+    # Quota polling runs without an interactive application flow. A keychain
+    # item that requires approval must fail rather than block that worker.
+    if allow_interaction:
+        status, result = SecItemCopyMatching(
+            {**query, kSecUseAuthenticationUI: kSecUseAuthenticationUIAllow}, None
+        )
+    else:
+        SecKeychainSetUserInteractionAllowed(False)
+        try:
+            status, result = SecItemCopyMatching(
+                {**query, kSecUseAuthenticationUI: kSecUseAuthenticationUIFail}, None
+            )
+        finally:
+            SecKeychainSetUserInteractionAllowed(True)
     return result if status == errSecSuccess else None
 
 
-def _copy_data(service: str, account: str | None = None) -> bytes | None:
+def _copy_data(
+    service: str, account: str | None = None, *, allow_interaction: bool = False
+) -> bytes | None:
     query: dict[object, object] = {
         kSecClass: kSecClassGenericPassword,
         kSecAttrService: service,
@@ -38,17 +59,19 @@ def _copy_data(service: str, account: str | None = None) -> bytes | None:
     }
     if account is not None:
         query[kSecAttrAccount] = account
-    result = _copy_matching(query)
+    result = _copy_matching(query, allow_interaction=allow_interaction)
     return bytes(result) if result is not None else None
 
 
-def _items() -> list[_Item]:
+def _items(service: str, *, allow_interaction: bool = False) -> list[_Item]:
     result = _copy_matching(
         {
             kSecClass: kSecClassGenericPassword,
+            kSecAttrService: service,
             kSecReturnAttributes: True,
             kSecMatchLimit: kSecMatchLimitAll,
-        }
+        },
+        allow_interaction=allow_interaction,
     )
     if result is None:
         return []
@@ -75,14 +98,20 @@ def read_generic_credential(target: str) -> bytes | None:
     return _copy_data(service, account if separator else None)
 
 
-def enumerate_generic_credentials(name_contains: str) -> list[tuple[str, bytes]]:
+def enumerate_generic_credentials(
+    name_contains: str, *, allow_interaction: bool = False
+) -> list[tuple[str, bytes]]:
     needle = name_contains.lower()
     results: list[tuple[str, bytes]] = []
-    for item in _items():
+    # Callers use a known Keychain service name. Searching every generic
+    # password can block on an unrelated item that requires authentication.
+    for item in _items(name_contains, allow_interaction=allow_interaction):
         target = f"{item.service}:{item.account}" if item.account else item.service
         if needle not in target.lower():
             continue
-        data = _copy_data(item.service, item.account)
+        data = _copy_data(
+            item.service, item.account, allow_interaction=allow_interaction
+        )
         if data:
             results.append((target, data))
     return results
