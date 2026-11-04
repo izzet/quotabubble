@@ -841,7 +841,7 @@ wheels = [
 
 [[package]]
 name = "quotabubble"
-version = "0.2.5"
+version = "0.2.6"
 source = { editable = "." }
 dependencies = [
     { name = "dbus-fast", marker = "sys_platform == 'linux'" },

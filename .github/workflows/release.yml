@@ -148,7 +148,7 @@ jobs:
         if: env.WINGET_TOKEN != ''
         shell: pwsh
         run: |
-          $url = "https://github.com/RussellBanks/Komac/releases/download/v2.16.0/komac-2.16.0-x86_64-pc-windows-msvc.exe"
+          $url = "https://github.com/RussellBanks/Komac/releases/download/v2.17.2/komac-2.17.2-x86_64-pc-windows-msvc.exe"
           Invoke-WebRequest -Uri $url -OutFile komac.exe
 
       - name: Submit winget update
