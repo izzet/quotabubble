@@ -22,6 +22,7 @@ from quotabubble.credentials.secrets import (
     delete_secret,
     get_secret,
     is_keyring_available,
+    secret_service_needs_setup,
     set_secret,
 )
 
@@ -34,6 +35,7 @@ __all__ = [
     "enumerate_generic_credentials",
     "get_secret",
     "is_keyring_available",
+    "secret_service_needs_setup",
     "read_cursor_access_token",
     "read_generic_credential",
     "read_opencode_api_key_from_auth_file",
