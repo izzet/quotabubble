@@ -6,9 +6,10 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 import httpx2
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from quotabubble.providers.base import (
+    AvailableResets,
     Credits,
     ProviderStatus,
     UsageSnapshot,
@@ -17,6 +18,7 @@ from quotabubble.providers.base import (
 )
 
 USAGE_URL = "https://chatgpt.com/backend-api/wham/usage"
+RESET_CREDITS_URL = "https://chatgpt.com/backend-api/wham/rate-limit-reset-credits"
 USER_AGENT = "codex-cli"
 REQUEST_TIMEOUT_SECONDS = 15.0
 WEEKLY_WINDOW_THRESHOLD_SECONDS = 86_400
@@ -49,10 +51,26 @@ class _Credits(BaseModel):
     balance: str | None = None
 
 
+class _RateLimitResetCreditsSummary(BaseModel):
+    available_count: int = 0
+    applicable_available_count: int = 0
+
+
+class _ResetCreditItem(BaseModel):
+    status: str | None = None
+    expires_at: datetime | None = None
+
+
+class _ResetCreditsResponse(BaseModel):
+    available_count: int = 0
+    credits: list[_ResetCreditItem] = Field(default_factory=list)
+
+
 class _UsageResponse(BaseModel):
     plan_type: str | None = None
     rate_limit: _RateLimitDetails | None = None
     credits: _Credits | None = None
+    rate_limit_reset_credits: _RateLimitResetCreditsSummary | None = None
 
 
 def default_credentials_path() -> Path:
@@ -131,28 +149,63 @@ class CodexProvider:
         client = self._client or httpx2.Client(timeout=REQUEST_TIMEOUT_SECONDS)
         try:
             response = client.get(USAGE_URL, headers=headers)
+            if response.status_code in (401, 403):
+                return self._snapshot(ProviderStatus.EXPIRED, "Sign in with Codex again")
+            if response.status_code != 200:
+                return self._snapshot(ProviderStatus.ERROR, f"HTTP {response.status_code}")
+
+            try:
+                parsed = _UsageResponse.model_validate(response.json())
+            except ValueError:
+                return self._snapshot(ProviderStatus.ERROR, "Unexpected usage response")
+
+            resets = self._resets(client, headers, parsed.rate_limit_reset_credits)
         except httpx2.HTTPError as exc:
             return self._snapshot(ProviderStatus.ERROR, str(exc))
         finally:
             if self._client is None:
                 client.close()
 
-        if response.status_code in (401, 403):
-            return self._snapshot(ProviderStatus.EXPIRED, "Sign in with Codex again")
-        if response.status_code != 200:
-            return self._snapshot(ProviderStatus.ERROR, f"HTTP {response.status_code}")
-
-        try:
-            parsed = _UsageResponse.model_validate(response.json())
-        except ValueError:
-            return self._snapshot(ProviderStatus.ERROR, "Unexpected usage response")
-
         return UsageSnapshot(
             provider=self.id,
             display_name=self.display_name,
             windows=self._windows(parsed),
             credits=_credits(parsed.credits),
+            resets=resets,
             plan=format_plan(parsed.plan_type),
+        )
+
+    def _resets(
+        self,
+        client: httpx2.Client,
+        headers: dict[str, str],
+        summary: _RateLimitResetCreditsSummary | None,
+    ) -> AvailableResets | None:
+        if summary is None or summary.available_count <= 0:
+            return None
+
+        fallback = AvailableResets(count=summary.available_count)
+        try:
+            response = client.get(RESET_CREDITS_URL, headers=headers)
+        except httpx2.HTTPError:
+            return fallback
+        if response.status_code != 200:
+            return fallback
+
+        try:
+            parsed = _ResetCreditsResponse.model_validate(response.json())
+        except ValueError:
+            return fallback
+
+        count = parsed.available_count or summary.available_count
+        expiries = [
+            credit.expires_at
+            for credit in parsed.credits
+            if credit.status == "available" and credit.expires_at is not None
+        ]
+        return AvailableResets(
+            count=count,
+            earliest_expiry=min(expiries) if expiries else None,
         )
 
     def _windows(self, parsed: _UsageResponse) -> list[UsageWindow]:

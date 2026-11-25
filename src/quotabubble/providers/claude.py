@@ -8,10 +8,11 @@ from datetime import datetime
 from pathlib import Path
 
 import httpx2
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from quotabubble.credentials import enumerate_generic_credentials
 from quotabubble.providers.base import (
+    AvailableResets,
     Credits,
     ProviderStatus,
     UsageSnapshot,
@@ -21,8 +22,9 @@ from quotabubble.providers.base import (
     parse_retry_after,
 )
 
-USAGE_URL = "https://api.anthropic.com/api/oauth/usage"
+USAGE_URL = "https://api.anthropic.com/api/oauth/usage?cedar_ember=1"
 ANTHROPIC_BETA = "oauth-2025-04-20"
+USER_AGENT = "claude-cli/2.1.316 (external, cli)"
 REQUEST_TIMEOUT_SECONDS = 15.0
 _WINDOW_ORDER = {"session": 0, "weekly": 1}
 KEYCHAIN_CREDENTIAL_HINT = "Claude Code-credentials"
@@ -69,11 +71,24 @@ class _Limit(BaseModel):
     is_active: bool = False
 
 
+class _CedarEmberGrant(BaseModel):
+    resets_left: int = 0
+    ends_at: datetime | None = None
+    clears: list[str] = Field(default_factory=list)
+    paused: bool = False
+
+
+class _CedarEmber(BaseModel):
+    eligible: bool = False
+    grants: list[_CedarEmberGrant] = Field(default_factory=list)
+
+
 class _UsageResponse(BaseModel):
     five_hour: _Bucket | None = None
     seven_day: _Bucket | None = None
     limits: list[_Limit] | None = None
     spend: _Spend | None = None
+    cedar_ember: _CedarEmber | None = None
 
 
 def default_credentials_path() -> Path:
@@ -240,6 +255,33 @@ def _credits(spend: _Spend | None) -> Credits | None:
     )
 
 
+def _available_resets(cedar_ember: _CedarEmber | None) -> AvailableResets | None:
+    if cedar_ember is None or not cedar_ember.eligible:
+        return None
+    active = [g for g in cedar_ember.grants if not g.paused and g.resets_left > 0]
+    if not active:
+        return None
+
+    full_count = sum(g.resets_left for g in active if "seven_day" in g.clears)
+    total_count = sum(g.resets_left for g in active)
+    scoped_count = total_count - full_count
+
+    summary: str | None = None
+    if scoped_count > 0:
+        parts = []
+        if full_count > 0:
+            parts.append(f"{full_count} full")
+        parts.append(f"{scoped_count} scoped")
+        summary = ", ".join(parts)
+
+    expiries = [g.ends_at for g in active if g.ends_at is not None]
+    return AvailableResets(
+        count=total_count,
+        earliest_expiry=min(expiries) if expiries else None,
+        summary=summary,
+    )
+
+
 class ClaudeProvider:
     id = "claude"
     display_name = "Claude"
@@ -279,6 +321,7 @@ class ClaudeProvider:
         headers = {
             "Authorization": f"Bearer {credentials.access_token}",
             "anthropic-beta": ANTHROPIC_BETA,
+            "User-Agent": USER_AGENT,
         }
         client = self._client or httpx2.Client(timeout=REQUEST_TIMEOUT_SECONDS)
         try:
@@ -310,6 +353,7 @@ class ClaudeProvider:
             display_name=self.display_name,
             windows=_usage_windows(parsed),
             credits=_credits(parsed.spend),
+            resets=_available_resets(parsed.cedar_ember),
             plan=format_plan(credentials.subscription_type),
         )
 

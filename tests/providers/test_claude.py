@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable
+from datetime import UTC, datetime
 from pathlib import Path
 
 import httpx2
@@ -166,3 +167,36 @@ def test_plan_is_reported_from_credentials(tmp_path: Path) -> None:
     snapshot = _provider_with_body(tmp_path, body).fetch()
 
     assert snapshot.plan == "Max"
+
+
+def test_cedar_ember_resets_are_parsed_and_cli_user_agent_sent(tmp_path: Path) -> None:
+    body = (FIXTURES / "claude_usage_resets.json").read_text(encoding="utf-8")
+
+    def handler(request: httpx2.Request) -> httpx2.Response:
+        assert request.url.params["cedar_ember"] == "1"
+        assert request.headers["User-Agent"] == claude_module.USER_AGENT
+        return httpx2.Response(200, text=body)
+
+    provider = ClaudeProvider(
+        credentials_path=_write_credentials(tmp_path), client=_client(handler)
+    )
+    snapshot = provider.fetch()
+
+    assert snapshot.resets is not None
+    assert snapshot.resets.count == 4
+    assert snapshot.resets.summary == "2 full, 2 scoped"
+    assert snapshot.resets.earliest_expiry == datetime(2026, 12, 10, 22, 0, tzinfo=UTC)
+
+
+def test_ineligible_cedar_ember_reports_no_resets(tmp_path: Path) -> None:
+    body = '{"cedar_ember": {"eligible": false, "grants": [{"resets_left": 1}]}}'
+    snapshot = _provider_with_body(tmp_path, body).fetch()
+
+    assert snapshot.resets is None
+
+
+def test_paused_or_empty_cedar_ember_grants_report_no_resets(tmp_path: Path) -> None:
+    body = '{"cedar_ember": {"eligible": true, "grants": [{"resets_left": 1, "paused": true}]}}'
+    snapshot = _provider_with_body(tmp_path, body).fetch()
+
+    assert snapshot.resets is None

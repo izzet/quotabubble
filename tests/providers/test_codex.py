@@ -1,12 +1,13 @@
 from __future__ import annotations
 
 from collections.abc import Callable
+from datetime import UTC, datetime
 from pathlib import Path
 
 import httpx2
 
 from quotabubble.providers.base import Provider, ProviderStatus
-from quotabubble.providers.codex import CodexProvider
+from quotabubble.providers.codex import RESET_CREDITS_URL, CodexProvider
 
 FIXTURES = Path(__file__).resolve().parents[1] / "fixtures"
 
@@ -125,3 +126,69 @@ def test_detect_reflects_credential_presence(tmp_path: Path) -> None:
 
     assert present.detect() is True
     assert absent.detect() is False
+
+
+def test_available_resets_fetch_earliest_expiry(tmp_path: Path) -> None:
+    usage_body = (FIXTURES / "codex_usage_resets.json").read_text(encoding="utf-8")
+    credits_body = (FIXTURES / "codex_reset_credits.json").read_text(encoding="utf-8")
+
+    def handler(request: httpx2.Request) -> httpx2.Response:
+        if str(request.url) == RESET_CREDITS_URL:
+            return httpx2.Response(200, text=credits_body)
+        return httpx2.Response(200, text=usage_body)
+
+    provider = CodexProvider(
+        credentials_path=_write_credentials(tmp_path), client=_client(handler)
+    )
+    snapshot = provider.fetch()
+
+    assert snapshot.resets is not None
+    assert snapshot.resets.count == 3
+    assert snapshot.resets.earliest_expiry == datetime(2026, 11, 30, 18, 46, 4, tzinfo=UTC)
+
+
+def test_available_resets_fall_back_to_usage_count_when_detail_fails(tmp_path: Path) -> None:
+    usage_body = (FIXTURES / "codex_usage_resets.json").read_text(encoding="utf-8")
+
+    def handler(request: httpx2.Request) -> httpx2.Response:
+        if str(request.url) == RESET_CREDITS_URL:
+            return httpx2.Response(500)
+        return httpx2.Response(200, text=usage_body)
+
+    provider = CodexProvider(
+        credentials_path=_write_credentials(tmp_path), client=_client(handler)
+    )
+    snapshot = provider.fetch()
+
+    assert snapshot.status is ProviderStatus.OK
+    assert snapshot.resets is not None
+    assert snapshot.resets.count == 3
+    assert snapshot.resets.earliest_expiry is None
+
+
+def test_available_resets_fall_back_on_detail_network_error_or_bad_json(tmp_path: Path) -> None:
+    usage_body = (FIXTURES / "codex_usage_resets.json").read_text(encoding="utf-8")
+
+    def network_error_handler(request: httpx2.Request) -> httpx2.Response:
+        if str(request.url) == RESET_CREDITS_URL:
+            raise httpx2.ConnectError("boom")
+        return httpx2.Response(200, text=usage_body)
+
+    snapshot1 = CodexProvider(
+        credentials_path=_write_credentials(tmp_path), client=_client(network_error_handler)
+    ).fetch()
+    assert snapshot1.resets is not None
+    assert snapshot1.resets.count == 3
+    assert snapshot1.resets.earliest_expiry is None
+
+    def bad_json_handler(request: httpx2.Request) -> httpx2.Response:
+        if str(request.url) == RESET_CREDITS_URL:
+            return httpx2.Response(200, text="not json")
+        return httpx2.Response(200, text=usage_body)
+
+    snapshot2 = CodexProvider(
+        credentials_path=_write_credentials(tmp_path), client=_client(bad_json_handler)
+    ).fetch()
+    assert snapshot2.resets is not None
+    assert snapshot2.resets.count == 3
+    assert snapshot2.resets.earliest_expiry is None

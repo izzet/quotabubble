@@ -76,12 +76,20 @@ def _paint_metric_row(
         )
         if metric.detail is None:
             return
-        painter.setPen(TEXT_DIM)
+        detail_width = right - left - LABEL_WIDTH - (RESET_WIDTH if metric.reset_text else 0)
+        painter.setPen(TEXT)
         painter.drawText(
-            QRectF(left + LABEL_WIDTH, top, right - left - LABEL_WIDTH, WINDOW_ROW_HEIGHT),
+            QRectF(left + LABEL_WIDTH, top, detail_width, WINDOW_ROW_HEIGHT),
             vertical | Qt.AlignmentFlag.AlignLeft,
             metric.detail,
         )
+        if metric.reset_text:
+            painter.setPen(TEXT_DIM)
+            painter.drawText(
+                QRectF(right - RESET_WIDTH, top, RESET_WIDTH, WINDOW_ROW_HEIGHT),
+                vertical | Qt.AlignmentFlag.AlignRight,
+                metric.reset_text,
+            )
         return
 
     painter.setPen(TEXT_LABEL)
