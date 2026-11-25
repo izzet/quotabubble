@@ -164,3 +164,31 @@ def test_available_resets_fall_back_to_usage_count_when_detail_fails(tmp_path: P
     assert snapshot.resets is not None
     assert snapshot.resets.count == 3
     assert snapshot.resets.earliest_expiry is None
+
+
+def test_available_resets_fall_back_on_detail_network_error_or_bad_json(tmp_path: Path) -> None:
+    usage_body = (FIXTURES / "codex_usage_resets.json").read_text(encoding="utf-8")
+
+    def network_error_handler(request: httpx2.Request) -> httpx2.Response:
+        if str(request.url) == RESET_CREDITS_URL:
+            raise httpx2.ConnectError("boom")
+        return httpx2.Response(200, text=usage_body)
+
+    snapshot1 = CodexProvider(
+        credentials_path=_write_credentials(tmp_path), client=_client(network_error_handler)
+    ).fetch()
+    assert snapshot1.resets is not None
+    assert snapshot1.resets.count == 3
+    assert snapshot1.resets.earliest_expiry is None
+
+    def bad_json_handler(request: httpx2.Request) -> httpx2.Response:
+        if str(request.url) == RESET_CREDITS_URL:
+            return httpx2.Response(200, text="not json")
+        return httpx2.Response(200, text=usage_body)
+
+    snapshot2 = CodexProvider(
+        credentials_path=_write_credentials(tmp_path), client=_client(bad_json_handler)
+    ).fetch()
+    assert snapshot2.resets is not None
+    assert snapshot2.resets.count == 3
+    assert snapshot2.resets.earliest_expiry is None

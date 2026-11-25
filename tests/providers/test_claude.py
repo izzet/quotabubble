@@ -193,3 +193,10 @@ def test_ineligible_cedar_ember_reports_no_resets(tmp_path: Path) -> None:
     snapshot = _provider_with_body(tmp_path, body).fetch()
 
     assert snapshot.resets is None
+
+
+def test_paused_or_empty_cedar_ember_grants_report_no_resets(tmp_path: Path) -> None:
+    body = '{"cedar_ember": {"eligible": true, "grants": [{"resets_left": 1, "paused": true}]}}'
+    snapshot = _provider_with_body(tmp_path, body).fetch()
+
+    assert snapshot.resets is None

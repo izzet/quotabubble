@@ -142,3 +142,20 @@ def test_build_bubble_view_adds_resets_only_to_expanded_metrics() -> None:
     assert [m.label for m in codex_view.expanded_metrics] == ["5h", "Resets"]
     assert codex_view.expanded_metrics[1].detail == "3 available"
     assert codex_view.expanded_metrics[1].reset_text == "6d"
+
+
+def test_build_bubble_view_preserves_resets_on_non_ok_status() -> None:
+    snapshot = UsageSnapshot(
+        provider="codex",
+        display_name="Codex",
+        status=ProviderStatus.ERROR,
+        stale=True,
+        resets=AvailableResets(count=2),
+    )
+
+    view = build_bubble_view([snapshot], Settings())
+
+    assert [m.label for m in view.providers[0].compact_metrics] == ["error"]
+    assert [m.label for m in view.providers[0].expanded_metrics] == ["error", "Resets"]
+    assert view.providers[0].expanded_metrics[1].detail == "2 available"
+    assert view.providers[0].expanded_metrics[1].reset_text is None
