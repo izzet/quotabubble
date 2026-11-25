@@ -13,7 +13,7 @@ QuotaBubble is a small, frameless desktop widget that keeps the usage limits for
 
 <p align="center">
   <img src="https://izzet.github.io/quotabubble/screenshot-compact.png?v=2" width="260" alt="Idle bubble">
-  <img src="https://izzet.github.io/quotabubble/screenshot-expanded.png?v=2" width="300" alt="Expanded detail">
+  <img src="https://izzet.github.io/quotabubble/screenshot-expanded.png?v=3" width="300" alt="Expanded detail">
 </p>
 
 ## Features
