@@ -1,0 +1,55 @@
+{
+  "five_hour": {
+    "utilization": 27.0,
+    "resets_at": "2026-11-25T04:10:00+00:00"
+  },
+  "seven_day": {
+    "utilization": 56.0,
+    "resets_at": "2026-11-29T01:00:00+00:00"
+  },
+  "cedar_ember": {
+    "eligible": true,
+    "grants": [
+      {
+        "id": "full-reset-2611",
+        "resets_total": 1,
+        "resets_left": 1,
+        "ends_at": "2026-12-10T22:00:00+00:00",
+        "clears": ["five_hour", "seven_day", "seven_day_overage_included"],
+        "paused": false
+      },
+      {
+        "id": "free_reset_oct_2026",
+        "resets_total": 1,
+        "resets_left": 1,
+        "ends_at": "2026-12-16T04:59:00+00:00",
+        "clears": ["five_hour", "seven_day", "seven_day_overage_included"],
+        "paused": false
+      },
+      {
+        "id": "launch-2610-fable",
+        "resets_total": 1,
+        "resets_left": 1,
+        "ends_at": "2027-03-09T07:59:00+00:00",
+        "clears": ["five_hour", "seven_day_overage_included"],
+        "paused": false
+      },
+      {
+        "id": "launch-2610-fable-6mo",
+        "resets_total": 1,
+        "resets_left": 1,
+        "ends_at": "2027-03-09T07:59:00+00:00",
+        "clears": ["five_hour", "seven_day_overage_included"],
+        "paused": false
+      },
+      {
+        "id": "paused-or-spent",
+        "resets_total": 1,
+        "resets_left": 1,
+        "ends_at": "2026-11-26T00:00:00+00:00",
+        "clears": ["five_hour", "seven_day"],
+        "paused": true
+      }
+    ]
+  }
+}

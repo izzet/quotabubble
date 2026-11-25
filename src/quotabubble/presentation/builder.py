@@ -3,7 +3,12 @@ from __future__ import annotations
 from datetime import datetime
 
 from quotabubble.app.settings import Settings
-from quotabubble.providers.base import ProviderStatus, UsageSnapshot, UsageWindow
+from quotabubble.providers.base import (
+    AvailableResets,
+    ProviderStatus,
+    UsageSnapshot,
+    UsageWindow,
+)
 
 from .formatting import format_age, format_reset
 from .models import AppearanceView, BubbleView, MetricView, ProviderView
@@ -37,26 +42,44 @@ def _provider_view(
         metrics = [MetricView(label=status)]
         if snapshot.credits is not None:
             metrics.append(MetricView(label="Credits", detail=snapshot.credits.display))
+        expanded = list(metrics)
+        if snapshot.resets is not None and snapshot.resets.count > 0:
+            expanded.append(_resets_metric(snapshot.resets, now=now))
         return ProviderView(
             name=snapshot.display_name,
             trailing=trailing,
             stale=snapshot.stale,
             compact_metrics=metrics[:1],
-            expanded_metrics=metrics,
+            expanded_metrics=expanded,
         )
 
     metrics = [_metric_view(window, settings, now=now) for window in snapshot.windows]
     if snapshot.credits is not None:
         metrics.append(MetricView(label="Credits", detail=snapshot.credits.display))
-    if not metrics:
+    if not metrics and (snapshot.resets is None or snapshot.resets.count <= 0):
         metrics.append(MetricView(label="—"))
+
+    expanded = list(metrics)
+    if snapshot.resets is not None and snapshot.resets.count > 0:
+        expanded.append(_resets_metric(snapshot.resets, now=now))
 
     return ProviderView(
         name=snapshot.display_name,
         trailing=trailing,
         stale=snapshot.stale,
         compact_metrics=metrics[:2],
-        expanded_metrics=metrics,
+        expanded_metrics=expanded,
+    )
+
+
+def _resets_metric(resets: AvailableResets, *, now: datetime | None) -> MetricView:
+    detail = f"{resets.count} available"
+    if resets.summary:
+        detail = f"{detail} ({resets.summary})"
+    return MetricView(
+        label="Resets",
+        detail=detail,
+        reset_text=format_reset(resets.earliest_expiry, now=now),
     )
 
 

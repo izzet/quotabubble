@@ -4,7 +4,13 @@ from datetime import UTC, datetime, timedelta
 
 from quotabubble.app.settings import Settings
 from quotabubble.presentation.builder import build_bubble_view
-from quotabubble.providers.base import Credits, ProviderStatus, UsageSnapshot, UsageWindow
+from quotabubble.providers.base import (
+    AvailableResets,
+    Credits,
+    ProviderStatus,
+    UsageSnapshot,
+    UsageWindow,
+)
 
 
 def test_build_bubble_view_prepares_compact_and_expanded_metrics() -> None:
@@ -100,3 +106,39 @@ def test_build_bubble_view_includes_saved_position() -> None:
 
     view_none = build_bubble_view([], Settings())
     assert view_none.position is None
+
+
+def test_build_bubble_view_adds_resets_only_to_expanded_metrics() -> None:
+    now = datetime(2026, 11, 24, 12, tzinfo=UTC)
+    claude_snapshot = UsageSnapshot(
+        provider="claude",
+        display_name="Claude",
+        windows=[
+            UsageWindow(label="5h", short="5h", used_pct=27),
+            UsageWindow(label="Weekly", short="wk", used_pct=56),
+        ],
+        resets=AvailableResets(
+            count=4,
+            earliest_expiry=now + timedelta(days=16),
+            summary="2 full, 2 scoped",
+        ),
+    )
+    codex_snapshot = UsageSnapshot(
+        provider="codex",
+        display_name="Codex",
+        windows=[UsageWindow(label="5h", short="5h", used_pct=100)],
+        resets=AvailableResets(count=3, earliest_expiry=now + timedelta(days=6)),
+    )
+
+    view = build_bubble_view([claude_snapshot, codex_snapshot], Settings(), now=now)
+
+    claude_view, codex_view = view.providers
+    assert [m.label for m in claude_view.compact_metrics] == ["5h", "Weekly"]
+    assert [m.label for m in claude_view.expanded_metrics] == ["5h", "Weekly", "Resets"]
+    assert claude_view.expanded_metrics[2].detail == "4 available (2 full, 2 scoped)"
+    assert claude_view.expanded_metrics[2].reset_text == "16d"
+
+    assert [m.label for m in codex_view.compact_metrics] == ["5h"]
+    assert [m.label for m in codex_view.expanded_metrics] == ["5h", "Resets"]
+    assert codex_view.expanded_metrics[1].detail == "3 available"
+    assert codex_view.expanded_metrics[1].reset_text == "6d"

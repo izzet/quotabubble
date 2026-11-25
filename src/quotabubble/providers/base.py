@@ -40,12 +40,19 @@ class Credits(BaseModel):
     used_pct: float | None = None
 
 
+class AvailableResets(BaseModel):
+    count: int
+    earliest_expiry: datetime | None = None
+    summary: str | None = None
+
+
 class UsageSnapshot(BaseModel):
     provider: str
     display_name: str
     status: ProviderStatus = ProviderStatus.OK
     windows: list[UsageWindow] = Field(default_factory=list)
     credits: Credits | None = None
+    resets: AvailableResets | None = None
     plan: str | None = None
     message: str | None = None
     stale: bool = False
