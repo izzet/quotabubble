@@ -190,7 +190,9 @@ export class BubbleRenderer {
                 color: metric.detail != null ? color.text : color.textDim,
             });
             if (metric.detail != null)
-                text(cr, metric.detail, size.padding + size.metricLabelWidth, baseline, {color: color.textDim});
+                text(cr, metric.detail, size.padding + size.metricLabelWidth, baseline, {color: color.text});
+            if (metric.reset_text)
+                text(cr, metric.reset_text, width - size.padding, baseline, {align: 'right', color: color.textDim});
             return;
         }
         text(cr, metric.label, size.padding, baseline, {color: color.text});
